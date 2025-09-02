@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Viáticos</title>
+    <link rel="stylesheet" href="StylesUser.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="brand-icon">
+                        <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="brand-title">Viáticos</h1>
+                        <p class="brand-subtitle">Gestión de gastos de viaje</p>
+                    </div>
+                </div>
+                
+                <div class="header-controls">
+                    <!-- Toggle de tema -->
+                    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
+                        <svg class="theme-icon" id="themeIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+
+                    <!-- Botón de perfil -->
+                    <div class="profile-container">
+                        <button class="profile-btn" id="profileBtn" title="Ver perfil">
+                            <svg class="profile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </button>
+
+                        <!-- Dropdown de perfil -->
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div class="profile-info">
+                                <p class="profile-name">Juan Pérez</p>
+                                <p class="profile-email">usuario@mineduc.gob.gt</p>
+                            </div>
+                            <button class="dropdown-item">Ver perfil</button>
+                            <button class="dropdown-item">Configuración</button>
+                            <hr class="dropdown-divider">
+                            <button class="dropdown-item logout">Cerrar sesión</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <!-- Stats cards -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Los stats se generan dinámicamente -->
+        </div>
+
+        <!-- Panel de filtros y tickets -->
+        <div class="main-panel">
+            <h2 class="panel-title">Mis Tickets de Viáticos</h2>
+            
+            <!-- Filtros -->
+            <div class="filters" id="filters">
+                <!-- Los filtros se generan dinámicamente -->
+            </div>
+            
+            <!-- Lista de tickets -->
+            <div class="tickets-grid" id="ticketsGrid">
+                <!-- Los tickets se generan dinámicamente -->
+            </div>
+
+            <!-- Estado sin datos -->
+            <div class="no-data" id="noData" style="display: none;">
+                <div class="no-data-icon">
+                    <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <p class="no-data-text">No se encontraron tickets</p>
+                <p class="no-data-subtext" id="noDataSubtext">Prueba cambiando el filtro</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="ScriptUser.js"></script>
+</body>
+</html>
