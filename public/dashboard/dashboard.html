@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Administrativo - Sistema de Gestión</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+  <link rel="stylesheet" href="dashboardstyles.css">
+</head>
+<body id="body" class="dark">
+  <!-- Loading State -->
+  <div id="loadingState" class="hidden">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- Header -->
+  <header id="header" class="header">
+    <div class="header-content">
+      <h1 id="headerTitle" class="header-title">Dashboard Administrativo</h1>
+      <p id="headerSubtitle" class="header-subtitle">Sistema de Gestión de Presupuestos y Tickets</p>
+    </div>
+    <div class="header-controls">
+      <div class="control-group">
+        <label class="text-sm opacity-70">Período:</label>
+        <select id="dateRangeFilter" class="btn btn-secondary">
+          <option value="7">Últimos 7 días</option>
+          <option value="30" selected>Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+          <option value="365">Último año</option>
+        </select>
+      </div>
+      <button id="refreshButton" class="btn btn-primary">
+        <i id="refreshIcon" class="fas fa-sync-alt"></i>
+        Actualizar
+      </button>
+      <button id="themeToggle" class="btn btn-secondary" title="Cambiar tema">
+        <i id="moonIcon" class="fas fa-moon"></i>
+        <i id="sunIcon" class="fas fa-sun hidden"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent" class="main-content">
+    <!-- Overview Cards -->
+    <div class="grid grid-4">
+      <div class="card stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-wallet"></i>
+        </div>
+        <div id="totalBudget" class="stat-value">Q0</div>
+        <div class="stat-label">Presupuesto Total</div>
+        <div id="budgetChange" class="stat-change">+0%</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669)">
+          <i class="fas fa-ticket-alt"></i>
+        </div>
+        <div id="activeTickets" class="stat-value">0</div>
+        <div class="stat-label">Tickets Activos</div>
+        <div id="ticketsChange" class="stat-change">+0%</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed)">
+          <i class="fas fa-users"></i>
+        </div>
+        <div id="activeUsers" class="stat-value">0</div>
+        <div class="stat-label">Usuarios Activos</div>
+        <div id="usersChange" class="stat-change">+0%</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div id="efficiency" class="stat-value">0%</div>
+        <div class="stat-label">Eficiencia Promedio</div>
+        <div id="efficiencyChange" class="stat-change">+0%</div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Gastos por Mes</h3>
+          <p class="card-subtitle">Últimos 6 meses (mes y monto)</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="monthlyExpensesChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Tendencias de Presupuesto</h3>
+          <p class="card-subtitle">Gastos vs Presupuesto</p>
+          <div class="chart-controls">
+            <button id="trendDaily" class="chart-btn btn-primary">Diario</button>
+            <button id="trendWeekly" class="chart-btn btn-secondary">Semanal</button>
+            <button id="trendMonthly" class="chart-btn btn-secondary">Mensual</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="budgetTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Estado del Presupuesto</h3>
+          <p class="card-subtitle">Utilización actual</p>
+          <div class="chart-controls">
+            <select id="budgetStatusPeriod" class="btn btn-secondary">
+              <option value="current">Período Actual</option>
+              <option value="quarterly">Trimestral</option>
+              <option value="annual">Anual</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="budgetStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Top Usuarios por Gasto</h3>
+          <p class="card-subtitle">Mayores gastos del período</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container chart-container-large">
+            <canvas id="topUsersChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Gasto por Tipo</h3>
+          <p class="card-subtitle">Ver todos o por usuario</p>
+          <div class="chart-controls">
+            <select id="expenseTypeUserFilter" class="btn btn-secondary">
+              <option value="all" selected>Todos los usuarios</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container chart-container-large">
+            <canvas id="expenseByTypeChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Tables -->
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Transacciones Recientes</h3>
+          <p class="card-subtitle">Últimas 10 transacciones</p>
+          <button id="exportTransactions" class="btn btn-secondary">
+            <i class="fas fa-download"></i>
+            Exportar CSV
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <div id="transactionsTable"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Rendimiento de Usuarios</h3>
+          <p class="card-subtitle">Ranking por eficiencia</p>
+          <div class="chart-controls">
+            <select id="performanceMetric" class="btn btn-secondary">
+              <option value="efficiency">Eficiencia</option>
+              <option value="budget">Utilización Presupuesto</option>
+              <option value="tickets">Tickets Procesados</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="userPerformanceList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Alerts -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Alertas del Sistema</h3>
+        <p class="card-subtitle">Notificaciones importantes</p>
+      </div>
+      <div class="card-body">
+        <div id="systemAlerts">
+          <div class="alert alert-warning">
+            <strong>Presupuesto Alto:</strong> 3 usuarios han superado el 90% de su presupuesto asignado.
+          </div>
+          <div class="alert alert-info">
+            <strong>Actualización Programada:</strong> Mantenimiento del sistema el próximo domingo 2-6 AM.
+          </div>
+          <div class="alert alert-error">
+            <strong>Tickets Pendientes:</strong> 15 tickets requieren aprobación urgente.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Stats -->
+    <div class="footer-stats">
+      <div class="footer-stat">
+        <div id="totalTickets" class="footer-stat-value">0</div>
+        <div class="footer-stat-label">Total Tickets</div>
+      </div>
+      <div class="footer-stat">
+        <div id="completedTickets" class="footer-stat-value">0</div>
+        <div class="footer-stat-label">Completados</div>
+      </div>
+      <div class="footer-stat">
+        <div id="pendingTickets" class="footer-stat-value">0</div>
+        <div class="footer-stat-label">Pendientes</div>
+      </div>
+      <div class="footer-stat">
+        <div id="avgProcessingTime" class="footer-stat-value">0d</div>
+        <div class="footer-stat-label">Tiempo Promedio</div>
+      </div>
+      <div class="footer-stat">
+        <div id="budgetUtilization" class="footer-stat-value">0%</div>
+        <div class="footer-stat-label">Utilización Presup.</div>
+      </div>
+      <div class="footer-stat">
+        <div id="overbudgetAlerts" class="footer-stat-value">0</div>
+        <div class="footer-stat-label">Alertas Presupuesto</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="dashboardscript.js"></script>
+</body>
+</html>

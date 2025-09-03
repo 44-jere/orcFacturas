@@ -1,0 +1,635 @@
+/* Profile Page Styles */
+
+/* Animaciones personalizadas */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Aplicar animaciones */
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.shake {
+    animation: shake 0.3s ease-in-out;
+}
+
+/* Transiciones suaves */
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+}
+
+/* Estilos para modo oscuro */
+.dark-mode {
+    background: linear-gradient(135deg, rgb(15 23 42), rgb(30 41 59), rgb(15 23 42));
+}
+
+.dark-mode .header {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(71, 85, 105, 0.5);
+}
+
+.dark-mode .profile-card {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(71, 85, 105, 0.5);
+}
+
+.dark-mode .theme-toggle {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+.dark-mode .input-field {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(71, 85, 105, 0.5);
+    color: white;
+}
+
+.dark-mode .input-field::placeholder {
+    color: rgb(148 163 184);
+}
+
+.dark-mode .text-primary {
+    color: white;
+}
+
+.dark-mode .text-secondary {
+    color: rgb(148 163 184);
+}
+
+.dark-mode .text-tertiary {
+    color: rgb(203 213 225);
+}
+
+.dark-mode .card-bg {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(71, 85, 105, 0.5);
+}
+
+.dark-mode .tab-button {
+    background: rgba(51, 65, 85, 0.5);
+    color: rgb(203 213 225);
+}
+
+.dark-mode .tab-button:hover {
+    background: rgb(51, 65, 85);
+}
+
+.dark-mode .tab-button.active {
+    background: rgb(59, 130, 246);
+    color: white;
+}
+
+/* Estilos para modo claro */
+.light-mode {
+    background: linear-gradient(135deg, rgb(249 250 251), white, rgb(243 244 246));
+}
+
+.light-mode .header {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(229, 231, 235, 0.5);
+}
+
+.light-mode .profile-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(229, 231, 235, 0.5);
+}
+
+.light-mode .theme-toggle {
+    background: rgba(229, 231, 235, 0.5);
+}
+
+.light-mode .input-field {
+    background: rgb(249 250 251);
+    border-color: rgb(209 213 219);
+    color: rgb(17 24 39);
+}
+
+.light-mode .input-field::placeholder {
+    color: rgb(107 114 128);
+}
+
+.light-mode .text-primary {
+    color: rgb(17 24 39);
+}
+
+.light-mode .text-secondary {
+    color: rgb(107 114 128);
+}
+
+.light-mode .text-tertiary {
+    color: rgb(55 65 81);
+}
+
+.light-mode .card-bg {
+    background: rgb(249 250 251);
+    border-color: rgb(229, 231, 235);
+}
+
+.light-mode .tab-button {
+    background: rgb(243 244 246);
+    color: rgb(55 65 81);
+}
+
+.light-mode .tab-button:hover {
+    background: rgb(229, 231, 235);
+}
+
+.light-mode .tab-button.active {
+    background: rgb(59, 130, 246);
+    color: white;
+}
+
+/* Efectos hover mejorados */
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+}
+
+.input-field:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+}
+
+/* Estados de botón */
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-loading {
+    pointer-events: none;
+}
+
+/* Tarjetas de estadísticas */
+.stat-card {
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .stat-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+}
+
+.light-mode .stat-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Toggle switch personalizado */
+.toggle-switch {
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 32px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #475569;
+    border-radius: 34px;
+    transition: 0.3s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #3b82f6;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Badges y estados */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.badge-admin {
+    background: rgba(168, 85, 247, 0.2);
+    color: rgb(196, 181, 253);
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.badge-user {
+    background: rgba(59, 130, 246, 0.2);
+    color: rgb(147, 197, 253);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.badge-active {
+    background: rgba(34, 197, 94, 0.2);
+    color: rgb(134, 239, 172);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-inactive {
+    background: rgba(239, 68, 68, 0.2);
+    color: rgb(248, 113, 113);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Ministerios asignados */
+.ministry-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: rgb(147, 197, 253);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Foto de perfil */
+.profile-photo {
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.photo-upload-btn {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
+    background: #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: none;
+}
+
+.photo-upload-btn:hover {
+    background: #2563eb;
+}
+
+/* Tabs de navegación */
+.nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.tab-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dark-mode .tab-btn {
+    background: rgba(51, 65, 85, 0.5);
+    color: rgb(203, 213, 225);
+}
+
+.dark-mode .tab-btn:hover {
+    background: rgb(51, 65, 85);
+}
+
+.dark-mode .tab-btn.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.light-mode .tab-btn {
+    background: rgb(243, 244, 246);
+    color: rgb(55, 65, 81);
+}
+
+.light-mode .tab-btn:hover {
+    background: rgb(229, 231, 235);
+}
+
+.light-mode .tab-btn.active {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Gráfico de progreso del presupuesto */
+.budget-progress {
+    width: 100%;
+    height: 1rem;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.dark-mode .budget-progress {
+    background: rgb(71, 85, 105);
+}
+
+.light-mode .budget-progress {
+    background: rgb(229, 231, 235);
+}
+
+.budget-bar {
+    height: 100%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    transition: width 1s ease-in-out;
+    border-radius: 9999px;
+}
+
+/* Tarjetas de configuración */
+.config-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid;
+}
+
+.dark-mode .config-card {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(71, 85, 105, 0.5);
+}
+
+.light-mode .config-card {
+    background: rgb(249, 250, 251);
+    border-color: rgb(229, 231, 235);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .nav-tabs {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.5rem;
+    }
+    
+    .tab-btn {
+        flex-shrink: 0;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .header-content {
+        padding: 1rem;
+    }
+    
+    .main-content {
+        padding: 1rem;
+    }
+    
+    .profile-card {
+        padding: 1.5rem;
+    }
+    
+    .profile-header {
+        gap: 1rem;
+    }
+    
+    .profile-photo {
+        width: 4rem;
+        height: 4rem;
+    }
+    
+    .profile-initials {
+        font-size: 1rem;
+    }
+}
+
+/* Estados de carga */
+.loading {
+    pointer-events: none;
+}
+
+.loading * {
+    cursor: wait !important;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Scrollbar personalizada */
+.dark-mode ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.8);
+    border-radius: 4px;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: rgba(71, 85, 105, 1);
+}
+
+.light-mode ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.light-mode ::-webkit-scrollbar-track {
+    background: rgba(229, 231, 235, 0.3);
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.8);
+    border-radius: 4px;
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 1);
+}
+
+/* Estados de error */
+.error-state {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.5);
+}
+
+.success-message {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: rgb(134, 239, 172);
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: rgb(248, 113, 113);
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.focus-visible:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Utilidades adicionales */
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.opacity-0 {
+    opacity: 0 !important;
+}
+
+.opacity-50 {
+    opacity: 0.5 !important;
+}
+
+.pointer-events-none {
+    pointer-events: none !important;
+}
+
+.cursor-wait {
+    cursor: wait !important;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed !important;
+}
