@@ -1,7 +1,12 @@
 // import { baseDeDatos } from "../../models/posgres/baseDeDatos.js";
 
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// recrear __filename y __dirname en ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT ?? 8080;
@@ -19,6 +24,10 @@ app.get("/login", (req, res) =>
 
 app.get("/admin", (req, res) =>
   res.sendFile(path.join(__dirname, "/public/adminMain/admin.html"))
+);
+
+app.get("/perfil", (req, res) =>
+  res.sendFile(path.join(__dirname, "/public/perfil/PerfilIndex.html"))
 );
 
 app.listen(port);
