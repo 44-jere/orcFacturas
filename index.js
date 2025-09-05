@@ -26,6 +26,10 @@ app.get("/admin", (req, res) =>
   res.sendFile(path.join(__dirname, "/public/adminMain/admin.html"))
 );
 
+app.get("/dashboard", (req, res) =>
+  res.sendFile(path.join(__dirname, "/public/dashboard/dashboard.html"))
+);
+
 app.get("/perfil", (req, res) =>
   res.sendFile(path.join(__dirname, "/public/perfil/PerfilIndex.html"))
 );
