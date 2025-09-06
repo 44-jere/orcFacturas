@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador - Automatix Solutions</title>
-    <link rel="stylesheet" href="admin-styles.css">
+    <link rel="stylesheet" href="adminStyles.css">
 </head>
 <body class="dark-theme" id="body">
     <!-- Header -->
@@ -18,13 +18,41 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 12l2 2 4-4" />
                         </svg>
                     </div>
-                    <div class="brand-text">
+                    <div class="brand-text"> 
                         <h1 class="brand-title">Panel Administrador</h1>
                         <p class="brand-subtitle">Gestión de tickets de viáticos</p>
                     </div>
                 </div>
                 
                 <div class="header-controls">
+                    <!-- ====== NUEVOS BOTONES (atajos a otras vistas) ====== -->
+                    <div class="quick-links">
+                        <a id="btnDashGeneral"
+                           class="quick-btn"
+                           href="#"
+                           onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
+                           title="Ir a Dashboard general" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                            </svg>
+                            <span class="btn-label">Dashboard general</span>
+                        </a>
+
+                        <a id="btnDescargarFacturas"
+                           class="quick-btn"
+                           href="#"
+                           onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
+                           title="Ir a Descargar facturas" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+                            </svg>
+                            <span class="btn-label">Descargar facturas</span>
+                        </a>
+                    </div>
+                    <!-- ====== FIN NUEVOS BOTONES ====== -->
+
                     <!-- Toggle de tema -->
                     <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
                         <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,7 +78,13 @@
                                 <p class="profile-email">admin@gobierno.gob.gt</p>
                                 <span class="profile-role">Administrador</span>
                             </div>
-                            <button class="dropdown-item">Ver perfil</button>
+                            <!-- SOLO esta opción redirige -->
+                            <button class="dropdown-item"
+                                    id="viewProfileItem"
+                                    type="button"
+                                    onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
+                                Ver perfil
+                            </button>
                             <button class="dropdown-item">Configuración</button>
                             <hr class="dropdown-divider">
                             <button id="logoutBtn" class="dropdown-item logout">Cerrar sesión</button>
@@ -160,7 +194,7 @@
                                 </div>
                                 <div class="dashboard-icon red">
                                     <svg class="dashboard-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1" />
                                     </svg>
                                 </div>
                             </div>
@@ -213,7 +247,7 @@
 
                         <div class="info-banner">
                             <p class="info-text">
-                                💡 <strong>Próximamente:</strong> Gráficos interactivos, reportes exportables y análisis predictivo de gastos.
+                                💡 <strong>Informacion:</strong> para ver el dashboard mas completo vaya a la seccion dashboard.
                             </p>
                         </div>
                     </div>
@@ -372,7 +406,7 @@
         </div>
     </div>
 
-    <script src="admin-script.js"></script>
+    <script src="adminScript.js"></script>
     <!-- ===== Modal Editar Ticket ===== -->
 <div id="editModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
   <div class="modal">

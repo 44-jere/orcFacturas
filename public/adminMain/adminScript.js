@@ -1,10 +1,11 @@
 /* =========================================================================
    Panel Administrador – Automatix Solutions
-   Archivo: admin-script.js (ARREGLADO)
+   Archivo: admin-script.js (CON MENÚ LATERAL)
    - Pestañas funcionando con data-tab
    - Toggle de tema, perfil y logout
    - Formulario de creación con validaciones
    - Dashboard, Gestión e Historial actualizables
+   - NUEVO: Menú lateral hamburguesa
    ========================================================================= */
 
 /* ====================== Datos de ejemplo (mock) ====================== */
@@ -99,6 +100,7 @@ const SAMPLE_HISTORICAL_TICKETS = [
 let appState = {
   isDark: true,
   showProfile: false,
+  showSidebar: false,  // NUEVO: Estado del sidebar
   activeTab: "dashboard",
   users: [...SAMPLE_USERS],
   tickets: [...SAMPLE_ADMIN_TICKETS],
@@ -187,6 +189,57 @@ function updateTheme() {
   }
 }
 
+/* ====================== SIDEBAR FUNCTIONS ====================== */
+function openSidebar() {
+  appState.showSidebar = true;
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  
+  if (sidebar) sidebar.classList.remove("hidden");
+  if (overlay) overlay.classList.remove("hidden");
+  
+  // Evitar scroll del fondo
+  document.body.style.overflow = "hidden";
+}
+
+function closeSidebar() {
+  appState.showSidebar = false;
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  
+  if (sidebar) {
+    sidebar.classList.add("closing");
+    setTimeout(() => {
+      sidebar.classList.add("hidden");
+      sidebar.classList.remove("closing");
+    }, 300);
+  }
+  
+  if (overlay) overlay.classList.add("hidden");
+  
+  // Restaurar scroll del fondo
+  document.body.style.overflow = "";
+}
+
+function updateSidebarBadges() {
+  const sidebarTicketCount = document.getElementById("sidebarTicketCount");
+  const sidebarHistorialCount = document.getElementById("sidebarHistorialCount");
+  
+  if (sidebarTicketCount) sidebarTicketCount.textContent = appState.tickets.length;
+  if (sidebarHistorialCount) sidebarHistorialCount.textContent = appState.historicalTickets.length;
+}
+
+function updateSidebarActiveState() {
+  const navItems = document.querySelectorAll('.nav-item[data-tab]');
+  navItems.forEach(item => {
+    if (item.dataset.tab === appState.activeTab) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
 /* ====================== Stats y Dashboard ====================== */
 function updateStats() {
   const totalTickets = document.getElementById("totalTickets");
@@ -212,6 +265,9 @@ function updateStats() {
     if (ticketCount) ticketCount.textContent = appState.tickets.length;
     if (historialCount) historialCount.textContent = appState.historicalTickets.length;
   }
+  
+  // Actualizar badges del sidebar
+  updateSidebarBadges();
 }
 
 function generateDashboardStats() {
@@ -659,8 +715,7 @@ async function deleteTicket(ticketId) {
 }
 
 function editTicket(ticketId) {
-  console.log(`Editar ticket: ${ticketId}`);
-  showNotification("Función de edición próximamente", "info");
+  openEditModal(ticketId);
 }
 
 function viewExpenses(ticketId) {
@@ -692,7 +747,7 @@ function handleLogout() {
 function switchTab(tabName) {
   appState.activeTab = tabName;
 
-  // Botones
+  // Botones principales
   const tabBtns = document.querySelectorAll(".tab-btn");
   tabBtns.forEach((btn) => {
     if (btn.dataset.tab === tabName) btn.classList.add("active");
@@ -706,6 +761,9 @@ function switchTab(tabName) {
     else content.classList.remove("active");
   });
 
+  // Actualizar estado activo del sidebar
+  updateSidebarActiveState();
+
   // Carga específica
   if (tabName === "dashboard") {
     updateDashboard();
@@ -716,6 +774,11 @@ function switchTab(tabName) {
     updateTicketsTab();
   } else if (tabName === "historial") {
     updateHistorialTab();
+  }
+
+  // Cerrar sidebar en móvil al cambiar tab
+  if (window.innerWidth <= 768 && appState.showSidebar) {
+    closeSidebar();
   }
 }
 
@@ -741,108 +804,12 @@ async function loadAdminData() {
     updateDashboard();
     updateTicketsTab();
     updateHistorialTab();
+    updateSidebarActiveState();
   }
 }
 
-/* ====================== Wiring (DOMContentLoaded) ====================== */
-document.addEventListener("DOMContentLoaded", () => {
-  // Conectar tabs (pestañas) definidas en admin.html con data-tab
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tabName = btn.dataset.tab; // dashboard | crear | gestionar | historial
-      switchTab(tabName);
-    });
-  });
-
-  // Toggle de tema
-  const themeToggle = document.getElementById("themeToggle");
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      appState.isDark = !appState.isDark;
-      updateTheme();
-    });
-  }
-
-  // Perfil (abrir/cerrar)
-  const profileToggle = document.getElementById("profileToggle");
-  const profileDropdown = document.getElementById("profileDropdown");
-  if (profileToggle && profileDropdown) {
-    profileToggle.addEventListener("click", () => {
-      profileDropdown.classList.toggle("hidden");
-    });
-    // Cerrar al hacer click fuera
-    document.addEventListener("click", (e) => {
-      if (!profileDropdown.contains(e.target) && !profileToggle.contains(e.target)) {
-        profileDropdown.classList.add("hidden");
-      }
-    });
-  }
-
-  // Logout
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
-
-  // Formulario Crear Ticket
-  const ticketForm = document.getElementById("ticketForm");
-  if (ticketForm) {
-    ticketForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      // Tomar valores actuales del form al estado
-      const usuarioSelect = document.getElementById("usuarioSelect");
-      const ministerioSelect = document.getElementById("ministerioSelect");
-      const descripcionInput = document.getElementById("descripcionInput");
-      const presupuestoInput = document.getElementById("presupuestoInput");
-      const fechaVencimientoInput = document.getElementById("fechaVencimientoInput");
-      const monedaSelect = document.getElementById("monedaSelect");
-
-      appState.ticketForm.usuario_id = usuarioSelect?.value || "";
-      appState.ticketForm.ministerio_id = ministerioSelect?.value || "";
-      appState.ticketForm.descripcion = descripcionInput?.value?.trim() || "";
-      appState.ticketForm.presupuesto = presupuestoInput?.value || "";
-      appState.ticketForm.fecha_vencimiento = fechaVencimientoInput?.value || "";
-      appState.ticketForm.moneda = monedaSelect?.value || "Q";
-
-      createTicket();
-    });
-  }
-
-  // Selects e inputs que afectan validez del botón crear
-  const usuarioSelect = document.getElementById("usuarioSelect");
-  if (usuarioSelect) {
-    usuarioSelect.addEventListener("change", (e) => {
-      handleUserSelect(e.target.value);
-      updateCreateButton();
-    });
-  }
-
-  const ministerioSelect = document.getElementById("ministerioSelect");
-  if (ministerioSelect) {
-    ministerioSelect.addEventListener("change", (e) => {
-      handleMinisterioSelect(e.target.value);
-      updateCreateButton();
-    });
-  }
-
-  ["descripcionInput", "presupuestoInput", "fechaVencimientoInput"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("input", updateCreateButton);
-  });
-
-  // Filtros de historial
-  const ministerioFilter = document.getElementById("ministerioFilter");
-  if (ministerioFilter) ministerioFilter.addEventListener("change", updateHistorialTab);
-
-  const monthFilter = document.getElementById("monthFilter");
-  if (monthFilter) monthFilter.addEventListener("change", updateHistorialTab);
-
-  // Tema inicial + datos
-  updateTheme();
-  loadAdminData();
-});
-
-
 /* =======================================================================
-   AÑADIDO: Modal de edición (presupuesto + fechas) — SIN CAMBIAR NADA MÁS
+   MODAL DE EDICIÓN (presupuesto + fechas)
    ======================================================================= */
 
 /* ===== Utilidades de fecha: dd/mm/yyyy <-> yyyy-mm-dd ===== */
@@ -853,6 +820,7 @@ function ddmmyyyy_to_iso(dmy) {
   if (!d || !m || !y) return "";
   return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
 }
+
 function iso_to_ddmmyyyy(iso) {
   // "2025-08-28" -> "28/08/2025"
   if (!iso) return "";
@@ -951,25 +919,150 @@ function saveEditModal(e) {
   showNotification("Cambios guardados correctamente", "success");
 }
 
-/* ===== Wire de botones del modal ===== */
-(function initEditModalWiring(){
-  const backdrop = document.getElementById("editModalBackdrop");
-  const form = document.getElementById("editForm");
-  const closeBtn = document.getElementById("editCloseBtn");
-  const cancelBtn = document.getElementById("editCancelBtn");
+/* ====================== Wiring (DOMContentLoaded) ====================== */
+document.addEventListener("DOMContentLoaded", () => {
+  // ===== SIDEBAR WIRING =====
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebarClose = document.getElementById("sidebarClose");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  const sidebarLogoutBtn = document.getElementById("sidebarLogoutBtn");
 
-  if (form) form.addEventListener("submit", saveEditModal);
-  if (closeBtn) closeBtn.addEventListener("click", closeEditModal);
-  if (cancelBtn) cancelBtn.addEventListener("click", closeEditModal);
-  if (backdrop) {
-    // Cerrar al hacer click fuera del modal
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) closeEditModal();
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", openSidebar);
+  }
+
+  if (sidebarClose) {
+    sidebarClose.addEventListener("click", closeSidebar);
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", closeSidebar);
+  }
+
+  if (sidebarLogoutBtn) {
+    sidebarLogoutBtn.addEventListener("click", handleLogout);
+  }
+
+  // Navegación desde sidebar
+  document.querySelectorAll('.nav-item[data-tab]').forEach((item) => {
+    item.addEventListener("click", () => {
+      const tabName = item.dataset.tab;
+      switchTab(tabName);
+    });
+  });
+
+  // Cerrar sidebar con tecla Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && appState.showSidebar) {
+      closeSidebar();
+    }
+  });
+
+  // ===== TABS PRINCIPALES =====
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tabName = btn.dataset.tab;
+      switchTab(tabName);
+    });
+  });
+
+  // ===== TEMA =====
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      appState.isDark = !appState.isDark;
+      updateTheme();
     });
   }
-})();
 
-/* ===== Reemplaza tu placeholder: abre el modal real ===== */
-function editTicket(ticketId) {
-  openEditModal(ticketId);
-}
+  // ===== PERFIL =====
+  const profileToggle = document.getElementById("profileToggle");
+  const profileDropdown = document.getElementById("profileDropdown");
+  if (profileToggle && profileDropdown) {
+    profileToggle.addEventListener("click", () => {
+      profileDropdown.classList.toggle("hidden");
+    });
+    // Cerrar al hacer click fuera
+    document.addEventListener("click", (e) => {
+      if (!profileDropdown.contains(e.target) && !profileToggle.contains(e.target)) {
+        profileDropdown.classList.add("hidden");
+      }
+    });
+  }
+
+  // ===== LOGOUT =====
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+  // ===== FORMULARIO CREAR TICKET =====
+  const ticketForm = document.getElementById("ticketForm");
+  if (ticketForm) {
+    ticketForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      // Tomar valores actuales del form al estado
+      const usuarioSelect = document.getElementById("usuarioSelect");
+      const ministerioSelect = document.getElementById("ministerioSelect");
+      const descripcionInput = document.getElementById("descripcionInput");
+      const presupuestoInput = document.getElementById("presupuestoInput");
+      const fechaVencimientoInput = document.getElementById("fechaVencimientoInput");
+      const monedaSelect = document.getElementById("monedaSelect");
+
+      appState.ticketForm.usuario_id = usuarioSelect?.value || "";
+      appState.ticketForm.ministerio_id = ministerioSelect?.value || "";
+      appState.ticketForm.descripcion = descripcionInput?.value?.trim() || "";
+      appState.ticketForm.presupuesto = presupuestoInput?.value || "";
+      appState.ticketForm.fecha_vencimiento = fechaVencimientoInput?.value || "";
+      appState.ticketForm.moneda = monedaSelect?.value || "Q";
+
+      createTicket();
+    });
+  }
+
+  // Selects e inputs que afectan validez del botón crear
+  const usuarioSelect = document.getElementById("usuarioSelect");
+  if (usuarioSelect) {
+    usuarioSelect.addEventListener("change", (e) => {
+      handleUserSelect(e.target.value);
+      updateCreateButton();
+    });
+  }
+
+  const ministerioSelect = document.getElementById("ministerioSelect");
+  if (ministerioSelect) {
+    ministerioSelect.addEventListener("change", (e) => {
+      handleMinisterioSelect(e.target.value);
+      updateCreateButton();
+    });
+  }
+
+  ["descripcionInput", "presupuestoInput", "fechaVencimientoInput"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", updateCreateButton);
+  });
+
+  // ===== FILTROS DE HISTORIAL =====
+  const ministerioFilter = document.getElementById("ministerioFilter");
+  if (ministerioFilter) ministerioFilter.addEventListener("change", updateHistorialTab);
+
+  const monthFilter = document.getElementById("monthFilter");
+  if (monthFilter) monthFilter.addEventListener("change", updateHistorialTab);
+
+  // ===== MODAL DE EDICIÓN =====
+  const editForm = document.getElementById("editForm");
+  const editCloseBtn = document.getElementById("editCloseBtn");
+  const editCancelBtn = document.getElementById("editCancelBtn");
+  const editModalBackdrop = document.getElementById("editModalBackdrop");
+
+  if (editForm) editForm.addEventListener("submit", saveEditModal);
+  if (editCloseBtn) editCloseBtn.addEventListener("click", closeEditModal);
+  if (editCancelBtn) editCancelBtn.addEventListener("click", closeEditModal);
+  if (editModalBackdrop) {
+    editModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === editModalBackdrop) closeEditModal();
+    });
+  }
+
+  // ===== INICIALIZACIÓN =====
+  updateTheme();
+  loadAdminData();
+});
