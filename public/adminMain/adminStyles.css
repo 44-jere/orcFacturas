@@ -1153,3 +1153,46 @@ textarea:focus-visible {
 * {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
+/* ===== Modal base ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  width: min(640px, 92vw);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  box-shadow: 0 35px 60px -12px var(--card-shadow);
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.modal-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+
+.modal-close {
+  border: none; background: transparent; font-size: 24px; line-height: 1;
+  color: var(--text-tertiary); cursor: pointer; padding: 4px 8px; border-radius: 8px;
+}
+.modal-close:hover { background: var(--input-bg); }
+
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.modal-footer {
+  display: flex; gap: 12px; justify-content: flex-end;
+  padding: 16px 20px; border-top: 1px solid var(--border-secondary);
+}

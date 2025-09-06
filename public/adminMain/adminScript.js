@@ -839,3 +839,137 @@ document.addEventListener("DOMContentLoaded", () => {
   updateTheme();
   loadAdminData();
 });
+
+
+/* =======================================================================
+   AÑADIDO: Modal de edición (presupuesto + fechas) — SIN CAMBIAR NADA MÁS
+   ======================================================================= */
+
+/* ===== Utilidades de fecha: dd/mm/yyyy <-> yyyy-mm-dd ===== */
+function ddmmyyyy_to_iso(dmy) {
+  // "28/08/2025" -> "2025-08-28"
+  if (!dmy) return "";
+  const [d, m, y] = dmy.split("/");
+  if (!d || !m || !y) return "";
+  return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+}
+function iso_to_ddmmyyyy(iso) {
+  // "2025-08-28" -> "28/08/2025"
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return "";
+  return `${d.padStart(2,"0")}/${m.padStart(2,"0")}/${y}`;
+}
+
+/* ===== Estado local para edición ===== */
+let editingTicketId = null;
+
+/* ===== Apertura del modal con datos ===== */
+function openEditModal(ticketId) {
+  const t = appState.tickets.find(x => x.id === ticketId);
+  if (!t) {
+    showNotification("No se encontró el ticket a editar", "error");
+    return;
+  }
+  editingTicketId = ticketId;
+
+  // Rellena los campos
+  const $id = document.getElementById("editTicketId");
+  const $pres = document.getElementById("editPresupuesto");
+  const $fCre = document.getElementById("editFechaCreacion");
+  const $fVen = document.getElementById("editFechaVencimiento");
+
+  if ($id) $id.textContent = t.id;
+  if ($pres) $pres.value = parseFloat(t.presupuesto || 0).toFixed(2);
+  if ($fCre) $fCre.value = ddmmyyyy_to_iso(t.fecha_creacion);
+  if ($fVen) $fVen.value = ddmmyyyy_to_iso(t.fecha_vencimiento);
+
+  // Muestra modal
+  const backdrop = document.getElementById("editModalBackdrop");
+  if (backdrop) backdrop.classList.remove("hidden");
+  // Evita scroll de fondo
+  document.body.style.overflow = "hidden";
+}
+
+/* ===== Cierre del modal ===== */
+function closeEditModal() {
+  const backdrop = document.getElementById("editModalBackdrop");
+  if (backdrop) backdrop.classList.add("hidden");
+  document.body.style.overflow = "";
+  editingTicketId = null;
+  // Reset simple del form
+  const form = document.getElementById("editForm");
+  if (form) form.reset();
+  const $id = document.getElementById("editTicketId");
+  if ($id) $id.textContent = "";
+}
+
+/* ===== Guardar cambios ===== */
+function saveEditModal(e) {
+  e.preventDefault();
+  if (!editingTicketId) return;
+
+  const pres = document.getElementById("editPresupuesto")?.value;
+  const fCre = document.getElementById("editFechaCreacion")?.value;     // yyyy-mm-dd
+  const fVen = document.getElementById("editFechaVencimiento")?.value;  // yyyy-mm-dd
+
+  // Validaciones básicas
+  const presNum = parseFloat(pres);
+  if (isNaN(presNum) || presNum < 0) {
+    showNotification("El presupuesto debe ser un número válido ≥ 0", "error");
+    return;
+  }
+  if (!fCre || !fVen) {
+    showNotification("Completa ambas fechas", "error");
+    return;
+  }
+  if (new Date(fVen) < new Date(fCre)) {
+    showNotification("La fecha de vencimiento no puede ser anterior a la fecha de creación", "error");
+    return;
+  }
+
+  // Actualiza estado
+  const idx = appState.tickets.findIndex(x => x.id === editingTicketId);
+  if (idx === -1) {
+    showNotification("No se pudo actualizar el ticket", "error");
+    return;
+  }
+
+  appState.tickets[idx] = {
+    ...appState.tickets[idx],
+    presupuesto: presNum.toFixed(2),
+    fecha_creacion: iso_to_ddmmyyyy(fCre),
+    fecha_vencimiento: iso_to_ddmmyyyy(fVen),
+  };
+
+  // Refresca UI
+  updateStats();
+  updateDashboard();
+  updateTicketsTab();
+
+  closeEditModal();
+  showNotification("Cambios guardados correctamente", "success");
+}
+
+/* ===== Wire de botones del modal ===== */
+(function initEditModalWiring(){
+  const backdrop = document.getElementById("editModalBackdrop");
+  const form = document.getElementById("editForm");
+  const closeBtn = document.getElementById("editCloseBtn");
+  const cancelBtn = document.getElementById("editCancelBtn");
+
+  if (form) form.addEventListener("submit", saveEditModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeEditModal);
+  if (cancelBtn) cancelBtn.addEventListener("click", closeEditModal);
+  if (backdrop) {
+    // Cerrar al hacer click fuera del modal
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) closeEditModal();
+    });
+  }
+})();
+
+/* ===== Reemplaza tu placeholder: abre el modal real ===== */
+function editTicket(ticketId) {
+  openEditModal(ticketId);
+}
