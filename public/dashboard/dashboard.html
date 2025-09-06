@@ -31,14 +31,13 @@
         </select>
       </div>
 
-      <!-- ===== NUEVO BOTÓN MENU ===== -->
+      <!-- Botón Menu -->
       <button id="btnMenu"
               class="btn btn-secondary"
               onclick="window.location.assign('http://localhost:8080/adminmain/admin.html'); return false;"
               title="Ir al menú principal">
         Menu
       </button>
-      <!-- ===== FIN NUEVO BOTÓN MENU ===== -->
 
       <button id="refreshButton" class="btn btn-primary">
         <i id="refreshIcon" class="fas fa-sync-alt"></i>
@@ -185,7 +184,22 @@
         </div>
         <div class="card-body">
           <div class="table-container">
-            <div id="transactionsTable"></div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Ministerio</th>
+                  <th>Tipo</th>
+                  <th>Monto</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsTable">
+                <!-- Filas dinámicas renderizadas por JS -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

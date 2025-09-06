@@ -3,18 +3,10 @@ const profileState = {
     isDark: true,
     activeTab: "perfil",
     userProfile: null,
-    loading: false,
-    editing: false,
-    saving: false,
-    editForm: {
-        nombre: "",
-        apellidos: "",
-        telefono: "",
-        email: ""
-    }
+    loading: false
 };
 
-// Datos de ejemplo del usuario
+// Datos de ejemplo del usuario (sin cambios)
 const SAMPLE_USER_PROFILE = {
     id: "user_001",
     nombre: "Juan Carlos",
@@ -29,12 +21,7 @@ const SAMPLE_USER_PROFILE = {
     estado: "activo",
     foto_perfil: null,
     ministerios_asignados: [
-        {
-            id: "min_001",
-            nombre: "Ministerio de Educación",
-            codigo: "ME",
-            fecha_asignacion: "2024-03-15"
-        }
+        { id: "min_001", nombre: "Ministerio de Educación", codigo: "ME", fecha_asignacion: "2024-03-15" }
     ],
     configuraciones: {
         notificaciones_push: false,
@@ -130,23 +117,6 @@ function initializeElements() {
         contentConfiguracion: document.getElementById('contentConfiguracion'),
         contentEstadisticas: document.getElementById('contentEstadisticas'),
         
-        // Edit Mode
-        editButton: document.getElementById('editButton'),
-        editButtons: document.getElementById('editButtons'),
-        cancelEditButton: document.getElementById('cancelEditButton'),
-        saveButton: document.getElementById('saveButton'),
-        saveIcon: document.getElementById('saveIcon'),
-        savingIcon: document.getElementById('savingIcon'),
-        saveButtonText: document.getElementById('saveButtonText'),
-        
-        // Edit Form
-        editForm: document.getElementById('editForm'),
-        viewMode: document.getElementById('viewMode'),
-        editNombre: document.getElementById('editNombre'),
-        editApellidos: document.getElementById('editApellidos'),
-        editTelefono: document.getElementById('editTelefono'),
-        editEmail: document.getElementById('editEmail'),
-        
         // View Mode
         viewNombreCompleto: document.getElementById('viewNombreCompleto'),
         viewEmail: document.getElementById('viewEmail'),
@@ -183,11 +153,6 @@ function setupEventListeners() {
     elements.tabConfiguracion.addEventListener('click', () => switchTab('configuracion'));
     elements.tabEstadisticas.addEventListener('click', () => switchTab('estadisticas'));
     
-    // Edit Mode
-    elements.editButton.addEventListener('click', startEdit);
-    elements.cancelEditButton.addEventListener('click', cancelEdit);
-    elements.saveButton.addEventListener('click', saveProfile);
-    
     // Photo Upload
     elements.changePhotoBtn.addEventListener('click', () => elements.photoUpload.click());
     elements.photoUpload.addEventListener('change', handlePhotoUpload);
@@ -197,16 +162,10 @@ function setupEventListeners() {
     elements.timezoneSelect.addEventListener('change', updateTimezone);
     elements.changePasswordBtn.addEventListener('click', handleChangePassword);
     elements.logoutBtn.addEventListener('click', handleLogout);
-    
-    // Form inputs
-    elements.editNombre.addEventListener('input', (e) => profileState.editForm.nombre = e.target.value);
-    elements.editApellidos.addEventListener('input', (e) => profileState.editForm.apellidos = e.target.value);
-    elements.editTelefono.addEventListener('input', (e) => profileState.editForm.telefono = e.target.value);
 }
 
 // Configurar tema inicial
 function setupTheme() {
-    // Cargar tema desde localStorage o usar preferencia del sistema
     const savedTheme = localStorage.getItem('profile-theme');
     if (savedTheme) {
         profileState.isDark = savedTheme === 'dark';
@@ -261,12 +220,6 @@ function updateThemeClasses() {
     
     // Update tabs
     updateTabStyles();
-    
-    // Update form elements
-    updateFormStyles();
-    
-    // Update configuration elements
-    updateConfigurationStyles();
 }
 
 // Actualizar estilos de tabs
@@ -285,33 +238,6 @@ function updateTabStyles() {
     });
 }
 
-// Actualizar estilos de formulario
-function updateFormStyles() {
-    const isDark = profileState.isDark;
-    const inputs = [elements.editNombre, elements.editApellidos, elements.editTelefono, elements.editEmail];
-    
-    inputs.forEach(input => {
-        if (input) {
-            input.className = `w-full px-4 py-3 ${isDark ? 'bg-slate-700/30 border-slate-600/50' : 'bg-gray-50 border-gray-300'} border rounded-xl ${isDark ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all${input === elements.editEmail ? ' opacity-60' : ''}`;
-        }
-    });
-}
-
-// Actualizar estilos de configuración
-function updateConfigurationStyles() {
-    const isDark = profileState.isDark;
-    
-    // Timezone select
-    if (elements.timezoneSelect) {
-        elements.timezoneSelect.className = `w-full px-4 py-3 ${isDark ? 'bg-slate-700/30 border-slate-600/50' : 'bg-gray-50 border-gray-300'} border rounded-xl ${isDark ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500/50`;
-    }
-    
-    // Change password button
-    if (elements.changePasswordBtn) {
-        elements.changePasswordBtn.className = `w-full md:w-auto px-6 py-3 ${isDark ? 'bg-slate-600 hover:bg-slate-500' : 'bg-gray-200 hover:bg-gray-300'} ${isDark ? 'text-white' : 'text-gray-900'} rounded-xl transition-colors flex items-center space-x-2`;
-    }
-}
-
 // Cargar perfil del usuario
 async function loadUserProfile() {
     setLoadingState(true);
@@ -325,12 +251,6 @@ async function loadUserProfile() {
         const profileData = isAdmin ? SAMPLE_ADMIN_PROFILE : SAMPLE_USER_PROFILE;
         
         profileState.userProfile = profileData;
-        profileState.editForm = {
-            nombre: profileData.nombre,
-            apellidos: profileData.apellidos,
-            telefono: profileData.telefono,
-            email: profileData.email
-        };
         
         renderProfile();
         
@@ -436,7 +356,7 @@ function renderTabContent() {
     renderStatistics();
 }
 
-// Renderizar información personal
+// Renderizar información personal (solo vista)
 function renderPersonalInfo() {
     const user = profileState.userProfile;
     
@@ -605,7 +525,7 @@ function renderUserStats() {
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
                     <svg class="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1" />
                     </svg>
                 </div>
                 <div>
@@ -654,7 +574,6 @@ function renderBudgetProgress() {
     elements.budgetPercentage.textContent = `${stats.promedio_uso_presupuesto.toFixed(1)}% del presupuesto total utilizado`;
     elements.budgetPercentage.className = `text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'} text-center`;
     
-    // Animar la barra de progreso
     setTimeout(() => {
         elements.budgetBar.style.width = `${Math.min(stats.promedio_uso_presupuesto, 100)}%`;
     }, 500);
@@ -664,114 +583,17 @@ function renderBudgetProgress() {
 function switchTab(tabName) {
     profileState.activeTab = tabName;
     
-    // Ocultar todos los contenidos
     elements.contentPerfil.classList.add('hidden');
     elements.contentConfiguracion.classList.add('hidden');
     elements.contentEstadisticas.classList.add('hidden');
     
-    // Mostrar contenido activo
     const activeContent = elements[`content${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`];
     if (activeContent) {
         activeContent.classList.remove('hidden');
         activeContent.classList.add('slide-in');
     }
     
-    // Actualizar estilos de tabs
     updateTabStyles();
-}
-
-// Iniciar edición
-function startEdit() {
-    profileState.editing = true;
-    
-    // Llenar formulario
-    elements.editNombre.value = profileState.editForm.nombre;
-    elements.editApellidos.value = profileState.editForm.apellidos;
-    elements.editTelefono.value = profileState.editForm.telefono;
-    elements.editEmail.value = profileState.editForm.email;
-    
-    // Cambiar vista
-    elements.editButton.classList.add('hidden');
-    elements.editButtons.classList.remove('hidden');
-    elements.viewMode.classList.add('hidden');
-    elements.editForm.classList.remove('hidden');
-    elements.editForm.classList.add('slide-in');
-}
-
-// Cancelar edición
-function cancelEdit() {
-    profileState.editing = false;
-    
-    // Restaurar valores originales
-    profileState.editForm = {
-        nombre: profileState.userProfile.nombre,
-        apellidos: profileState.userProfile.apellidos,
-        telefono: profileState.userProfile.telefono,
-        email: profileState.userProfile.email
-    };
-    
-    // Cambiar vista
-    elements.editButton.classList.remove('hidden');
-    elements.editButtons.classList.add('hidden');
-    elements.editForm.classList.add('hidden');
-    elements.viewMode.classList.remove('hidden');
-}
-
-// Guardar perfil
-async function saveProfile() {
-    if (!profileState.editForm.nombre.trim() || !profileState.editForm.apellidos.trim()) {
-        showError("Nombre y apellidos son requeridos");
-        return;
-    }
-    
-    setSavingState(true);
-    
-    try {
-        // Simular guardado en API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Actualizar perfil
-        profileState.userProfile.nombre = profileState.editForm.nombre.trim();
-        profileState.userProfile.apellidos = profileState.editForm.apellidos.trim();
-        profileState.userProfile.telefono = profileState.editForm.telefono.trim();
-        
-        // Salir del modo edición
-        profileState.editing = false;
-        
-        // Actualizar vista
-        renderProfile();
-        
-        // Cambiar vista
-        elements.editButton.classList.remove('hidden');
-        elements.editButtons.classList.add('hidden');
-        elements.editForm.classList.add('hidden');
-        elements.viewMode.classList.remove('hidden');
-        
-        showSuccess("Perfil actualizado exitosamente");
-        
-    } catch (error) {
-        console.error("Error actualizando perfil:", error);
-        showError("Error al actualizar el perfil. Intenta nuevamente.");
-    } finally {
-        setSavingState(false);
-    }
-}
-
-// Estado de guardado
-function setSavingState(saving) {
-    profileState.saving = saving;
-    
-    if (saving) {
-        elements.saveIcon.classList.add('hidden');
-        elements.savingIcon.classList.remove('hidden');
-        elements.saveButtonText.textContent = "Guardando...";
-        elements.saveButton.disabled = true;
-    } else {
-        elements.saveIcon.classList.remove('hidden');
-        elements.savingIcon.classList.add('hidden');
-        elements.saveButtonText.textContent = "Guardar";
-        elements.saveButton.disabled = false;
-    }
 }
 
 // Toggle notificaciones
@@ -784,14 +606,8 @@ function toggleNotifications() {
 async function updateSettings(settingKey, value) {
     try {
         // TODO: Implementar llamada a la API
-        
-        // Actualizar estado local
         profileState.userProfile.configuraciones[settingKey] = value;
-        
-        // Actualizar UI
         renderConfiguration();
-        
-        console.log(`Configuración actualizada: ${settingKey} = ${value}`);
     } catch (error) {
         console.error("Error actualizando configuración:", error);
         showError("Error al actualizar la configuración");
@@ -808,7 +624,6 @@ function handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (file) {
         // TODO: Implementar subida real
-        console.log("Subir foto:", file);
         showInfo("Función de subir foto pendiente de implementar");
     }
 }
@@ -831,9 +646,7 @@ function addAnimations() {
     elements.profileCard.classList.add('fade-in');
 }
 
-// Funciones de utilidad
-
-// Formatear fecha
+// Utilidades
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('es-GT', {
         year: 'numeric',
@@ -842,7 +655,6 @@ function formatDate(dateString) {
     });
 }
 
-// Formatear fecha y hora
 function formatDateTime(dateString) {
     return new Date(dateString).toLocaleString('es-GT', {
         year: 'numeric',
@@ -853,18 +665,9 @@ function formatDateTime(dateString) {
     });
 }
 
-// Mostrar mensajes
-function showSuccess(message) {
-    showMessage(message, 'success');
-}
-
-function showError(message) {
-    showMessage(message, 'error');
-}
-
-function showInfo(message) {
-    alert(message);
-}
+function showSuccess(message) { showMessage(message, 'success'); }
+function showError(message)   { showMessage(message, 'error'); }
+function showInfo(message)    { alert(message); }
 
 function showMessage(message, type) {
     const messageDiv = document.createElement('div');
@@ -874,32 +677,22 @@ function showMessage(message, type) {
             : 'bg-red-500/10 border border-red-500/20 text-red-400'
     }`;
     messageDiv.textContent = message;
-    
     document.body.appendChild(messageDiv);
-    
-    // Animar entrada
     messageDiv.style.opacity = '0';
     messageDiv.style.transform = 'translateX(20px)';
-    
     setTimeout(() => {
         messageDiv.style.opacity = '1';
         messageDiv.style.transform = 'translateX(0)';
         messageDiv.style.transition = 'all 0.3s ease';
     }, 100);
-    
-    // Remover después de 3 segundos
     setTimeout(() => {
         messageDiv.style.opacity = '0';
         messageDiv.style.transform = 'translateX(20px)';
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.parentNode.removeChild(messageDiv);
-            }
-        }, 300);
+        setTimeout(() => messageDiv.remove(), 300);
     }, 3000);
 }
 
-// Exportar funciones para uso externo
+// Exportar funciones
 window.ProfileApp = {
     profileState,
     toggleTheme,

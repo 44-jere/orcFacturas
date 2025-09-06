@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil - Automatix Solutions</title>
-    <link rel="stylesheet" href="PerfilStyles.css">
+    <link rel="stylesheet" href="PerfilStyles.css"><!-- MANTENER TU CSS ORIGINAL -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" id="body">
@@ -30,23 +28,23 @@
     <!-- Main Content -->
     <div id="mainContent">
         <!-- Header -->
-        <header id="header" class="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-            <div class="max-w-6xl mx-auto px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <button id="backButton" class="w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-center" title="Volver atrás">
+        <header id="header" class="header sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <button id="backButton" class="shrink-0 w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-center" title="Volver atrás">
                             <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <div>
-                            <h1 id="headerTitle" class="text-xl font-bold text-white">Mi Perfil</h1>
-                            <p id="headerSubtitle" class="text-sm text-slate-400">Gestión de información personal</p>
+                        <div class="min-w-0">
+                            <h1 id="headerTitle" class="text-lg sm:text-xl font-bold text-white truncate">Mi Perfil</h1>
+                            <p id="headerSubtitle" class="text-xs sm:text-sm text-slate-400 truncate">Gestión de información personal</p>
                         </div>
                     </div>
                     
                     <!-- Toggle de tema -->
-                    <button id="themeToggle" class="w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50" title="Cambiar a modo claro">
+                    <button id="themeToggle" class="w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0" title="Cambiar a modo claro">
                         <svg id="moonIcon" class="w-5 h-5 mx-auto text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                         </svg>
@@ -59,15 +57,15 @@
         </header>
 
         <!-- Main Content -->
-        <main class="max-w-6xl mx-auto px-6 py-8">
+        <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
             <!-- Profile Card -->
-            <div id="profileCard" class="bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-8 mb-8 shadow-2xl">
+            <div id="profileCard" class="profile-card bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 sm:p-8 mb-8 shadow-2xl">
                 
                 <!-- Profile Header -->
-                <div class="flex items-start space-x-6 mb-8">
+                <div class="profile-header flex items-start gap-4 sm:gap-6 mb-8">
                     <!-- Profile Photo -->
-                    <div class="relative">
-                        <div id="profilePhoto" class="w-24 h-24 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                    <div class="relative shrink-0">
+                        <div id="profilePhoto" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
                             <!-- Profile initials will be set by JS -->
                         </div>
                         
@@ -83,23 +81,23 @@
                     </div>
 
                     <!-- Basic Info -->
-                    <div class="flex-1">
-                        <div class="flex items-center space-x-3 mb-2">
-                            <h2 id="userName" class="text-2xl font-bold text-white">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center flex-wrap gap-2 sm:gap-3 mb-2">
+                            <h2 id="userName" class="text-xl sm:text-2xl font-bold text-white truncate">
                                 <!-- Name will be set by JS -->
                             </h2>
-                            <span id="userRoleBadge" class="px-3 py-1 rounded-full text-xs font-medium border">
+                            <span id="userRoleBadge" class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
                                 <!-- Role badge will be set by JS -->
                             </span>
-                            <span id="userStatusBadge" class="px-3 py-1 rounded-full text-xs font-medium border">
+                            <span id="userStatusBadge" class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
                                 <!-- Status badge will be set by JS -->
                             </span>
                         </div>
                         
-                        <p id="userPosition" class="text-lg text-slate-300 mb-2">
+                        <p id="userPosition" class="text-base sm:text-lg text-slate-300 mb-1 sm:mb-2 truncate">
                             <!-- Position will be set by JS -->
                         </p>
-                        <p id="userDepartment" class="text-slate-400 mb-4">
+                        <p id="userDepartment" class="text-sm sm:text-base text-slate-400 mb-4 truncate">
                             <!-- Department will be set by JS -->
                         </p>
                         
@@ -130,70 +128,29 @@
                 </div>
 
                 <!-- Navigation Tabs -->
-                <div class="flex flex-wrap gap-3 mb-8">
-                    <button id="tabPerfil" class="px-4 py-2 rounded-xl transition-all bg-blue-500 text-white">
-                        Información Personal
-                    </button>
-                    <button id="tabConfiguracion" class="px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300">
-                        Configuración
-                    </button>
-                    <button id="tabEstadisticas" class="px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300">
-                        Estadísticas
-                    </button>
+                <div class="nav-tabs -mx-1 overflow-x-auto pb-2 sm:pb-0">
+                    <div class="flex gap-2 sm:gap-3 px-1">
+                        <button id="tabPerfil" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-blue-500 text-white whitespace-nowrap">
+                            Información Personal
+                        </button>
+                        <button id="tabConfiguracion" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
+                            Configuración
+                        </button>
+                        <button id="tabEstadisticas" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
+                            Estadísticas
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Tab Content -->
-                
                 <!-- Personal Information Tab -->
                 <div id="contentPerfil" class="space-y-6">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-white">Información Personal</h3>
-                        <button id="editButton" class="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors flex items-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span>Editar</span>
-                        </button>
-                        <div id="editButtons" class="flex space-x-3 hidden">
-                            <button id="cancelEditButton" class="px-4 py-2 rounded-xl border border-slate-700/50 text-slate-300 hover:bg-slate-700/30 transition-colors">
-                                Cancelar
-                            </button>
-                            <button id="saveButton" class="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center space-x-2">
-                                <svg id="saveIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <svg id="savingIcon" class="animate-spin w-4 h-4 hidden" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span id="saveButtonText">Guardar</span>
-                            </button>
-                        </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-base sm:text-lg font-semibold text-white">Información Personal</h3>
+                        <!-- Se eliminó: botón Editar y botones Guardar/Cancelar -->
                     </div>
 
-                    <!-- Edit Form -->
-                    <div id="editForm" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-300">Nombre *</label>
-                            <input id="editNombre" type="text" class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all" placeholder="Tu nombre">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-300">Apellidos *</label>
-                            <input id="editApellidos" type="text" class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all" placeholder="Tus apellidos">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-300">Teléfono</label>
-                            <input id="editTelefono" type="tel" class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all" placeholder="+502 1234-5678">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-300">Email</label>
-                            <input id="editEmail" type="email" class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all opacity-60" disabled title="El email no se puede cambiar por seguridad">
-                            <p class="text-xs text-slate-500">El email no se puede modificar por seguridad</p>
-                        </div>
-                    </div>
-
-                    <!-- View Mode -->
-                    <div id="viewMode" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- View Mode (único modo ahora) -->
+                    <div id="viewMode" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div class="space-y-1">
                             <label class="text-sm text-slate-400">Nombre completo</label>
                             <p id="viewNombreCompleto" class="font-medium text-white"></p>
@@ -223,20 +180,20 @@
 
                 <!-- Configuration Tab -->
                 <div id="contentConfiguracion" class="space-y-6 hidden">
-                    <h3 class="text-lg font-semibold text-white">Configuración</h3>
+                    <h3 class="text-base sm:text-lg font-semibold text-white">Configuración</h3>
                     
                     <div class="space-y-6">
                         <!-- Notifications -->
-                        <div class="p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
+                        <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Notificaciones</h4>
                             
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="min-w-0">
                                         <p class="font-medium text-white">Notificaciones push</p>
                                         <p class="text-sm text-slate-400">Notificaciones en tiempo real en el navegador</p>
                                     </div>
-                                    <button id="pushNotificationToggle" class="relative w-14 h-8 rounded-full p-1 transition-colors bg-slate-600">
+                                    <button id="pushNotificationToggle" class="relative w-14 h-8 rounded-full p-1 transition-colors bg-slate-600 shrink-0">
                                         <div id="pushNotificationSlider" class="w-6 h-6 rounded-full bg-white transition-transform translate-x-0"></div>
                                     </button>
                                 </div>
@@ -244,7 +201,7 @@
                         </div>
 
                         <!-- Regional Preferences -->
-                        <div class="p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
+                        <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Preferencias Regionales</h4>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -268,23 +225,25 @@
                         </div>
 
                         <!-- Security -->
-                        <div class="p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
+                        <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Seguridad</h4>
                             
                             <div class="space-y-4">
-                                <button id="changePasswordBtn" class="w-full md:w-auto px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-xl transition-colors flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                    </svg>
-                                    <span>Cambiar contraseña</span>
-                                </button>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <button id="changePasswordBtn" class="w-full sm:w-auto px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-xl transition-colors flex items-center gap-2 justify-center">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                        </svg>
+                                        <span>Cambiar contraseña</span>
+                                    </button>
 
-                                <button id="logoutBtn" class="w-full md:w-auto px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
-                                    <span>Cerrar sesión</span>
-                                </button>
+                                    <button id="logoutBtn" class="w-full sm:w-auto px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors flex items-center gap-2 justify-center">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                        <span>Cerrar sesión</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -292,37 +251,33 @@
 
                 <!-- Statistics Tab -->
                 <div id="contentEstadisticas" class="space-y-6 hidden">
-                    <h3 class="text-lg font-semibold text-white">Estadísticas</h3>
+                    <h3 class="text-base sm:text-lg font-semibold text-white">Estadísticas</h3>
                     
                     <!-- User Statistics -->
-                    <div id="userStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div id="userStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <!-- Statistics cards will be added by JS -->
                     </div>
 
                     <!-- Admin Statistics -->
-                    <div id="adminStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+                    <div id="adminStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 hidden">
                         <!-- Admin statistics cards will be added by JS -->
                     </div>
 
                     <!-- Budget Progress (User only) -->
-                    <div id="budgetProgress" class="p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
+                    <div id="budgetProgress" class="p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                         <h4 class="font-semibold text-white mb-4">Uso de Presupuesto</h4>
                         
                         <div class="space-y-4">
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-400">Gastado</span>
-                                <span id="budgetText" class="text-white">
-                                    <!-- Budget text will be set by JS -->
-                                </span>
+                                <span id="budgetText" class="text-white"></span>
                             </div>
                             
                             <div class="w-full h-4 bg-slate-600 rounded-full overflow-hidden">
                                 <div id="budgetBar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000" style="width: 0%"></div>
                             </div>
                             
-                            <p id="budgetPercentage" class="text-sm text-slate-400 text-center">
-                                <!-- Budget percentage will be set by JS -->
-                            </p>
+                            <p id="budgetPercentage" class="text-sm text-slate-400 text-center"></p>
                         </div>
                     </div>
                 </div>
