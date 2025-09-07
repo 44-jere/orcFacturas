@@ -12,12 +12,12 @@ dotenv.config({ path: path.join(__dirname, ".env.dbConection") });
 
 const { Client } = pkg;
 
-export class baseDeDatos {
+class BaseDeDatos {
   static instancia; // propiedad estática para el singleton
 
   constructor() {
-    if (baseDeDatos.instancia) {
-      return baseDeDatos.instancia;
+    if (BaseDeDatos.instancia) {
+      return BaseDeDatos.instancia;
     }
 
     this.client = new Client({
@@ -29,17 +29,10 @@ export class baseDeDatos {
     });
 
     this.conectado = false; // bandera propia
-    baseDeDatos.instancia = this;
+    BaseDeDatos.instancia = this;
   }
 
   async conectar() {
-    console.log({
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      user: process.env.DB_USER,
-      password: String(process.env.DB_PASSWORD ?? ""),
-      database: process.env.DB_NAME,
-    });
     if (!this.conectado) {
       try {
         await this.client.connect();
@@ -60,3 +53,6 @@ export class baseDeDatos {
     }
   }
 }
+
+export const baseDeDatos = new BaseDeDatos();
+import "./login/post/post.js";
