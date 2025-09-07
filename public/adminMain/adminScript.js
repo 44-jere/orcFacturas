@@ -528,8 +528,16 @@ function clearTicketForm() {
 
 /* ====================== Gestión de Tickets ====================== */
 function createTicketCard(ticket) {
-  const budgetUsed = (parseFloat(ticket.gastado) / parseFloat(ticket.presupuesto || 1)) * 100;
-  const available = parseFloat(ticket.presupuesto || 0) - parseFloat(ticket.gastado || 0);
+  const presupuesto = parseFloat(ticket.presupuesto || 0);
+  const gastado = parseFloat(ticket.gastado || 0);
+
+  const usedRatio = presupuesto > 0 ? gastado / presupuesto : 0;
+  const usedPct = isFinite(usedRatio) ? (usedRatio * 100) : 0;
+
+  const available = Math.max(0, presupuesto - gastado);
+  const excess = Math.max(0, gastado - presupuesto);
+  const excessRatio = presupuesto > 0 ? excess / presupuesto : 0; // % relativo al presupuesto
+  const excessPct = isFinite(excessRatio) ? (excessRatio * 100) : 0;
 
   return `
     <div class="ticket-card">
@@ -549,21 +557,34 @@ function createTicketCard(ticket) {
       <div class="ticket-budget">
         <div class="budget-row">
           <span class="budget-label">Presupuesto</span>
-          <span class="budget-amount budget-total">Q${formatCurrency(ticket.presupuesto)}</span>
+          <span class="budget-amount budget-total">Q${formatCurrency(presupuesto)}</span>
         </div>
         <div class="budget-row">
           <span class="budget-label">Gastado</span>
-          <span class="budget-amount budget-spent">Q${formatCurrency(ticket.gastado)}</span>
+          <span class="budget-amount budget-spent">Q${formatCurrency(gastado)}</span>
         </div>
         <div class="budget-row">
-          <span class="budget-label">Disponible</span>
-          <span class="budget-amount budget-available">Q${formatCurrency(available)}</span>
+          <span class="budget-label">${excess > 0 ? "Exceso" : "Disponible"}</span>
+          <span class="budget-amount ${excess > 0 ? "savings-negative" : "budget-available"}">
+            ${excess > 0 ? `Q${formatCurrency(excess)}` : `Q${formatCurrency(available)}`}
+          </span>
         </div>
 
-        <div class="budget-progress">
-          <div class="budget-fill" style="width: ${Math.min(budgetUsed, 100)}%"></div>
+        <!-- Barra principal: uso (máx 100%) -->
+        <div class="budget-progress" title="Uso del presupuesto">
+          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}%"></div>
         </div>
-        <p class="budget-percentage">${isFinite(budgetUsed) ? budgetUsed.toFixed(1) : "0.0"}% utilizado</p>
+        <p class="budget-percentage">
+          ${isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"}% utilizado
+        </p>
+
+        <!-- Barra de exceso: sólo si gastó más del presupuesto -->
+        ${excess > 0 ? `
+          <div class="excess-progress" title="Exceso sobre el presupuesto">
+            <div class="excess-fill" style="width: ${Math.min(excessPct, 100)}%"></div>
+          </div>
+          <p class="excess-text">Exceso: Q${formatCurrency(excess)} (${excessPct.toFixed(1)}%)</p>
+        ` : ``}
       </div>
 
       <div class="ticket-dates">
@@ -599,9 +620,18 @@ function updateTicketsTab() {
 
 /* ====================== Historial ====================== */
 function createHistorialCard(ticket) {
-  const budgetUsed = (parseFloat(ticket.gastado) / parseFloat(ticket.presupuesto || 1)) * 100;
-  const difference = parseFloat(ticket.presupuesto || 0) - parseFloat(ticket.gastado || 0);
+  const presupuesto = parseFloat(ticket.presupuesto || 0);
+  const gastado = parseFloat(ticket.gastado || 0);
+
+  const usedRatio = presupuesto > 0 ? gastado / presupuesto : 0;
+  const usedPct = isFinite(usedRatio) ? (usedRatio * 100) : 0;
+
+  const difference = presupuesto - gastado; // + ahorro, - exceso
   const isUnderBudget = difference > 0;
+
+  const excess = Math.max(0, -difference); // gastado - presupuesto
+  const excessRatio = presupuesto > 0 ? excess / presupuesto : 0;
+  const excessPct = isFinite(excessRatio) ? (excessRatio * 100) : 0;
 
   return `
     <div class="historical-card">
@@ -619,11 +649,11 @@ function createHistorialCard(ticket) {
       <div class="ticket-budget">
         <div class="budget-row">
           <span class="budget-label">Presupuesto asignado</span>
-          <span class="budget-amount budget-total">Q${formatCurrency(ticket.presupuesto)}</span>
+          <span class="budget-amount budget-total">Q${formatCurrency(presupuesto)}</span>
         </div>
         <div class="budget-row">
           <span class="budget-label">Total gastado</span>
-          <span class="budget-amount budget-spent">Q${formatCurrency(ticket.gastado)}</span>
+          <span class="budget-amount budget-spent">Q${formatCurrency(gastado)}</span>
         </div>
         <div class="budget-row">
           <span class="budget-label">${isUnderBudget ? "Ahorro" : "Exceso"}</span>
@@ -632,10 +662,19 @@ function createHistorialCard(ticket) {
           </span>
         </div>
 
-        <div class="budget-progress">
-          <div class="budget-fill" style="width: ${Math.min(budgetUsed, 100)}%"></div>
+        <!-- Barra principal (hasta 100%) -->
+        <div class="budget-progress" title="Uso del presupuesto">
+          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}%"></div>
         </div>
-        <p class="budget-percentage">${isFinite(budgetUsed) ? budgetUsed.toFixed(1) : "0.0"}% del presupuesto</p>
+        <p class="budget-percentage">${Math.min(usedPct, 100).toFixed(1)}% del presupuesto</p>
+
+        <!-- Barra de exceso -->
+        ${excess > 0 ? `
+          <div class="excess-progress" title="Exceso sobre el presupuesto">
+            <div class="excess-fill" style="width: ${Math.min(excessPct, 100)}%"></div>
+          </div>
+          <p class="excess-text">Exceso: Q${formatCurrency(excess)} (${excessPct.toFixed(1)}%)</p>
+        ` : ``}
       </div>
 
       <div class="historical-dates">

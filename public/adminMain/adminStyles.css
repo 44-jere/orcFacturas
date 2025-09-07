@@ -1476,3 +1476,32 @@ textarea:focus-visible {
 @media (max-width: 520px) {
   .btn-label { display: none; }
 }
+
+/* ===== Barras de EXCESO (sobre el 100%) ===== */
+.excess-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--input-bg);
+  overflow: hidden;
+  margin-top: 6px;
+  border: 1px dashed rgba(239, 68, 68, 0.35);
+}
+
+.excess-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb7185, #ef4444);
+  /* No forzar color por tema; usa tonos rojos */
+  animation: growExcess 0.5s ease;
+}
+
+@keyframes growExcess {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.excess-text {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #fca5a5; /* rojo suave legible en oscuro; en claro también contrasta */
+}
