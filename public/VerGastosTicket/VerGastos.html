@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ver Gastos - Automatix Solutions</title>
+  <link rel="stylesheet" href="verGastos.css"/>
+</head>
+<body class="dark-theme">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="header-content">
+
+        <!-- === Botón Regresar === -->
+        <button id="backBtn" class="back-btn" title="Volver">
+          <svg viewBox="0 0 24 24" class="back-icon" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <!-- ====================== -->
+
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="m9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">Ver Gastos</h1>
+            <p class="brand-subtitle">Facturas por ticket</p>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <!-- Botón modo día/noche -->
+          <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
+            <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+            <svg id="sunIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707
+                   M6.343 6.343l-.707-.707m12.728 0l-.707.707
+                   M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="main-panel">
+      <h2 class="panel-title">Facturas del Ticket <span id="ticketIdLabel">#ID</span></h2>
+
+      <!-- Botón descargar CSV -->
+      <div class="panel-actions">
+        <button id="downloadCsvBtn" class="action-btn primary">Descargar CSV</button>
+      </div>
+
+      <!-- Tabla de facturas -->
+      <div class="table-container">
+        <table class="vg-table" id="facturasTable">
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>Serie</th>
+              <th>No. Factura</th>
+              <th>Fecha</th>
+              <th>Moneda</th>
+              <th>NIT Emisor</th>
+              <th>NIT Receptor</th>
+              <th>Total</th>
+              <th>Tipo de Gasto</th>
+              <th>Descripción</th>
+              <th>Comida</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== Drawer de edición ===== -->
+    <div id="drawerOverlay" class="vg-overlay hidden"></div>
+
+    <aside id="drawer" class="vg-drawer hidden" aria-hidden="true">
+      <div class="vg-drawer__header">
+        <div>
+          <h3 class="vg-drawer__title">Editar factura</h3>
+          <span id="drawerChip" class="vg-chip">ID: —</span>
+        </div>
+        <button id="drawerCloseBtn" class="theme-toggle" title="Cerrar">&times;</button>
+      </div>
+
+      <form id="editForm" class="vg-form">
+        <div class="vg-grid-2">
+          <div class="vg-field">
+            <label class="vg-label">Proveedor *</label>
+            <input id="f_proveedor" class="vg-input" type="text" required />
+          </div>
+          <div class="vg-field">
+            <label class="vg-label">Fecha *</label>
+            <input id="f_fecha" class="vg-input" type="date" required />
+          </div>
+        </div>
+
+        <div class="vg-grid-2">
+          <div class="vg-field">
+            <label class="vg-label">Serie</label>
+            <input id="f_serie" class="vg-input" type="text" />
+          </div>
+          <div class="vg-field">
+            <label class="vg-label">No. factura</label>
+            <input id="f_numero" class="vg-input" type="text" />
+          </div>
+        </div>
+
+        <div class="vg-grid-2">
+          <div class="vg-field">
+            <label class="vg-label">Moneda</label>
+            <select id="f_moneda" class="vg-input">
+              <option value="Q">Q</option>
+              <option value="$">$</option>
+            </select>
+          </div>
+          <div class="vg-field">
+            <label class="vg-label">Total *</label>
+            <input id="f_total" class="vg-input" type="number" step="0.01" min="0" required />
+          </div>
+        </div>
+
+        <div class="vg-grid-2">
+          <div class="vg-field">
+            <label class="vg-label">NIT Emisor</label>
+            <input id="f_nitEmisor" class="vg-input" type="text" />
+          </div>
+          <div class="vg-field">
+            <label class="vg-label">NIT Receptor</label>
+            <input id="f_nitReceptor" class="vg-input" type="text" />
+          </div>
+        </div>
+
+        <div class="vg-field">
+          <label class="vg-label">Tipo de gasto</label>
+          <select id="f_tipoGasto" class="vg-input">
+            <option>Hospedaje</option>
+            <option>Alimentación</option>
+            <option>Transporte</option>
+            <option>Combustible</option>
+            <option>Peajes</option>
+            <option>Estacionamiento</option>
+            <option>Hotel</option>
+            <option>Otros</option>
+          </select>
+        </div>
+
+        <div class="vg-field">
+          <label class="vg-label">Comidas (opcional)</label>
+          <select id="f_comida" class="vg-input">
+            <option value="">Ninguno</option>
+            <option value="Desayuno">Desayuno</option>
+            <option value="Almuerzo">Almuerzo</option>
+            <option value="Cena">Cena</option>
+          </select>
+          <p class="vg-help">Opcional. El subordinado puede marcar comidas; aquí solo se visualiza/edita.</p>
+        </div>
+
+        <div class="vg-field">
+          <label class="vg-label">Descripción</label>
+          <textarea id="f_descripcion" class="vg-input" rows="3" placeholder="Detalle breve..."></textarea>
+        </div>
+
+        <div class="vg-form__actions">
+          <button type="button" id="editCancelBtn" class="vg-btn">Cancelar</button>
+          <button type="submit" class="vg-btn vg-btn--primary">Guardar cambios</button>
+        </div>
+      </form>
+    </aside>
+    <!-- ===== Fin Drawer ===== -->
+
+  </main>
+
+  <script src="verGastos.js"></script>
+</body>
+</html>

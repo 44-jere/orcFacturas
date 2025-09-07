@@ -16,7 +16,7 @@ const FIELD_DEF = [
 ];
 
 const CSV_KEYS = [
-    "proveedor","serie","numero_factura","fecha_emision","moneda","nit_emisor","nit_receptor","total","tipo_gasto","extras"
+    "proveedor","serie","numero_factura","fecha_emision","moneda","nit_emisor","nit_receptor","total","tipo_gasto","comida","extras"
 ];
 
 const TIPO_GASTO_OPTIONS = [
@@ -29,6 +29,14 @@ const TIPO_GASTO_OPTIONS = [
     { value: "peajes", label: "Peajes" },
     { value: "estacionamiento", label: "Estacionamiento" },
     { value: "otros", label: "Otros" },
+];
+
+// NUEVO: opciones de tiempo de comida
+const COMIDA_OPTIONS = [
+  { value: "", label: "Ninguno" },
+  { value: "desayuno", label: "Desayuno" },
+  { value: "almuerzo", label: "Almuerzo" },
+  { value: "cena", label: "Cena" },
 ];
 
 // Estado global
@@ -105,6 +113,7 @@ async function extractWithGemini(imageBase64) {
             nit_receptor: "CF",
             total: "130.00",
             tipo_gasto: "",
+            // comida la define el usuario en el editor (opcional)
             extras: "",
         };
     }
@@ -156,6 +165,7 @@ async function extractWithGemini(imageBase64) {
         nit_receptor: parsed.nit_receptor || "",
         total: parsed.total || "",
         tipo_gasto: "",
+        // comida la define el usuario en el editor (opcional)
         extras: "",
     };
 }
@@ -386,14 +396,27 @@ function updateEditor() {
                         ).join('')}
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Descripción</label>
-                    <input
-                        class="form-input"
-                        placeholder="Ej. Taxi aeropuerto a hotel"
-                        value="${selected.extras || ''}"
-                        onchange="updateField('${selected.id}', 'extras', this.value)"
-                    />
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Tiempo de comida</label>
+                        <select
+                            class="form-select"
+                            onchange="updateField('${selected.id}', 'comida', this.value)"
+                        >
+                            ${COMIDA_OPTIONS.map(option => 
+                                `<option value="${option.value}" ${selected.comida === option.value ? 'selected' : ''}>${option.label}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <input
+                            class="form-input"
+                            placeholder="Ej. Taxi aeropuerto a hotel"
+                            value="${selected.extras || ''}"
+                            onchange="updateField('${selected.id}', 'extras', this.value)"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

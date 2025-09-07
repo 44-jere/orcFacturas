@@ -155,9 +155,13 @@ const generateSampleTransactions = () => {
       ministry: 'Ministerio', ministryCode: 'MIN',
       type,
       amount: Math.floor(Math.random()*45000)+5000,
+      // priority y status quedan en los datos de demo pero NO se usan en UI
       priority: ['high','medium','low'][Math.floor(Math.random()*3)],
       status: ['completed','pending','approved','in_progress','rejected'][Math.floor(Math.random()*5)],
-      date, description: `Gasto de ${type.toLowerCase()} para operaciones`, approver: 'Director', budgetCode: `MIN-${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`
+      date,
+      description: `Gasto de ${type.toLowerCase()} para operaciones`,
+      approver: 'Director',
+      budgetCode: `MIN-${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`
     });
   }
   return tx.sort((a,b)=>b.date-a.date);
@@ -336,7 +340,6 @@ async function generateSampleDataset() {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = d.toLocaleDateString('es-GT', { month: 'short' });
     const year = d.getFullYear();
-    // suma de spent de ese mes (a partir de trendData)
     const monthSpent = trendData
       .filter(t => {
         const td = toDate(t.date);
@@ -356,7 +359,7 @@ async function generateSampleDataset() {
     alerts: [
       { type: 'warning', title: 'Presupuesto Alto', message: `${users.filter(u => (u.spent/u.budget)>0.9).length} usuarios superan 90%.` },
       { type: 'info', title: 'Mantenimiento', message: 'Domingo 2:00–6:00 AM.' },
-      { type: 'error', title: 'Tickets Pendientes', message: `${transactions.filter(t => t.status==='pending').length} por aprobar.` }
+      { type: 'error', title: 'Tickets Pendientes', message: `Varios tickets requieren aprobación.` }
     ]
   };
 }
@@ -377,7 +380,7 @@ function renderAll() {
   renderBudgetStatusChart();
   populateExpenseByTypeUserFilter();
   renderExpenseByTypeChart();
-  renderTransactionsTable();
+  renderTransactionsTable();       // ← filas con Fecha y Hora (sin prioridad/estado)
   renderUserPerformance();
   renderFooterStats();
   renderSystemAlerts();
@@ -503,15 +506,12 @@ function renderMonthlySpendChart() {
         const label = `Q${center.value.toLocaleString()}`;
         const title = center.title;
 
-        // Tamaño máximo basado en el radio interior (cutout)
         const arc = meta.data[0];
         const innerRadius = arc.innerRadius || (arc.circumference ? arc.circumference : 0) || 0;
 
-        // Ajuste dinámico de fuente para que el número no se desborde
-        let fontPx = Math.max(12, Math.floor(innerRadius * 0.35)); // número grande
+        let fontPx = Math.max(12, Math.floor(innerRadius * 0.35));
         ctx.font = `600 ${fontPx}px sans-serif`;
 
-        // Reduce hasta que quepa dentro del diámetro interno * 0.9
         const maxWidth = innerRadius * 1.8 * 0.9;
         while (ctx.measureText(label).width > maxWidth && fontPx > 12) {
           fontPx -= 2;
@@ -521,7 +521,6 @@ function renderMonthlySpendChart() {
         ctx.fillStyle = dashboardState.isDark ? '#E2E8F0' : '#374151';
         ctx.fillText(label, cx, cy - fontPx * 0.2);
 
-        // Título (mes o "Total")
         ctx.font = `400 ${Math.max(10, Math.floor(fontPx * 0.5))}px sans-serif`;
         ctx.fillStyle = dashboardState.isDark ? '#94A3B8' : '#6B7280';
         ctx.fillText(title, cx, cy + fontPx * 0.65);
@@ -650,28 +649,24 @@ function populateExpenseByTypeUserFilter() {
 function renderTransactionsTable() {
   if (!elements.transactionsTable) return;
   const tx = (dashboardState.data.transactions || []).slice(0,10);
-  elements.transactionsTable.innerHTML = `
-    <table class="data-table">
-      <thead><tr>
-        <th>ID</th><th>Usuario</th><th>Ministerio</th><th>Tipo</th>
-        <th>Monto</th><th>Prioridad</th><th>Estado</th><th>Fecha</th>
-      </tr></thead>
-      <tbody>
-        ${tx.map(t=>`
-          <tr onclick="showTransactionDetail('${esc(t.id)}')">
-            <td class="font-mono text-xs">${esc(t.id)}</td>
-            <td class="font-medium">${esc(t.user)}</td>
-            <td class="text-sm">${esc(t.ministryCode)}</td>
-            <td class="text-sm">${esc(t.type)}</td>
-            <td class="font-mono font-semibold">Q${Number(t.amount).toLocaleString()}</td>
-            <td><span class="status-icon status-${esc(t.priority)}"></span>${t.priority==='high'?'Alta':t.priority==='medium'?'Media':'Baja'}</td>
-            <td><span class="status-icon status-${esc(t.status)}"></span>${getStatusText(t.status)}</td>
-            <td class="text-xs opacity-70">${toDate(t.date).toLocaleDateString('es-GT',{month:'short',day:'numeric',year:'2-digit'})}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
+
+  // Rellena solo <tbody id="transactionsTable">, las columnas están en el HTML
+  elements.transactionsTable.innerHTML = tx.map(t => {
+    const d = toDate(t.date);
+    const fecha = d.toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'2-digit' });
+    const hora  = d.toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' });
+    return `
+      <tr onclick="showTransactionDetail('${esc(t.id)}')">
+        <td class="font-mono text-xs">${esc(t.id)}</td>
+        <td class="font-medium">${esc(t.user)}</td>
+        <td class="text-sm">${esc(t.ministryCode)}</td>
+        <td class="text-sm">${esc(t.type)}</td>
+        <td class="font-mono font-semibold">Q${Number(t.amount).toLocaleString()}</td>
+        <td class="text-xs opacity-70">${fecha}</td>
+        <td class="text-xs opacity-70">${hora}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderUserPerformance() {
@@ -727,14 +722,10 @@ function renderSystemAlerts() {
    OTROS HELPERS
 ================================ */
 
-function getStatusText(s) {
-  const map = { completed:'Completado', pending:'Pendiente', approved:'Aprobado', in_progress:'En Proceso', rejected:'Rechazado' };
-  return map[s] || s;
-}
 function showTransactionDetail(id) {
   const t = (dashboardState.data.transactions||[]).find(x=>x.id===id);
   if (!t) return;
-  alert(`Detalles de ${id}:\n\nUsuario: ${t.user}\nTipo: ${t.type}\nMonto: Q${Number(t.amount).toLocaleString()}\nDescripción: ${t.description}\nFecha: ${toDate(t.date).toLocaleDateString('es-GT')}\nAprobador: ${t.approver}`);
+  alert(`Detalles de ${id}:\n\nUsuario: ${t.user}\nTipo: ${t.type}\nMonto: Q${Number(t.amount).toLocaleString()}\nDescripción: ${t.description}\nFecha: ${toDate(t.date).toLocaleDateString('es-GT')} ${toDate(t.date).toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'})}\nAprobador: ${t.approver}`);
 }
 function setTrendPeriod(p) {
   dashboardState.trendPeriod = p;
@@ -751,8 +742,14 @@ function updateChartTheme(chart){
 
 function exportTransactionsToCSV() {
   const tx = dashboardState.data.transactions || [];
-  const headers = ['ID','Usuario','Ministerio','Tipo','Monto','Prioridad','Estado','Fecha','Descripcion','Codigo_Presupuesto'];
-  const rows = tx.map(t=>[ t.id, t.user, t.ministry, t.type, Number(t.amount), t.priority, t.status, toDate(t.date).toISOString().split('T')[0], t.description, t.budgetCode ].map(csvSafe).join(','));
+  const headers = ['ID','Usuario','Ministerio','Tipo','Monto','Fecha','Hora','Descripcion','Codigo_Presupuesto'];
+  const rows = tx.map(t=>{
+    const d = toDate(t.date);
+    const fecha = d.toISOString().split('T')[0];
+    const hora  = d.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'});
+    return [ t.id, t.user, t.ministry, t.type, Number(t.amount), fecha, hora, t.description, t.budgetCode ]
+      .map(csvSafe).join(',');
+  });
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
