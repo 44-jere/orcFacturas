@@ -37,7 +37,7 @@
                             <svg id="sunIcon" class="theme-icon sun-icon hidden" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 0 018 0z" />
                             </svg>
                         </div>
                     </button>
@@ -97,7 +97,7 @@
 
             <!-- Panel principal de datos -->
             <div class="data-section">
-                <!-- Editor de factura -->
+                <!-- Editor de factura (restaurado) -->
                 <div class="panel" id="editorPanel">
                     <div class="panel-header">
                         <h2 class="panel-title">Editor de Factura</h2>
@@ -152,6 +152,12 @@
                     </div>
                 </div>
 
+                <!-- ÚNICO CAMBIO: Botón "Enviar" entre Exportar Datos y Facturas Procesadas -->
+                <div class="export-buttons">
+                    <button id="sendBtn" class="btn btn-primary">Enviar</button>
+                </div>
+                <!-- FIN DEL CAMBIO -->
+
                 <!-- Lista de facturas -->
                 <div class="panel" id="facturasList">
                     <div class="panel-header">
@@ -180,7 +186,7 @@
                         <div class="error-icon">
                             <svg class="error-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 0 0118 0z" />
                             </svg>
                         </div>
                         <p class="error-message" id="errorMessage"></p>
@@ -193,7 +199,7 @@
                         <div class="info-icon">
                             <svg class="info-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div>
