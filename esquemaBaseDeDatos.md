@@ -1,52 +1,57 @@
-```mermaid
 erDiagram
-  SUPERVISORES ||--o{ ADMINISTRADORES : dirige
-  ADMINISTRADORES ||--o{ EMPLEADOS : supervisa
-  ADMINISTRADORES ||--o{ TICKETS : crea
-  EMPLEADOS ||--o{ TICKETS : asignado
-  TICKETS ||--o{ GASTOS : cubre
+  %% Roles y organización
+  ROLES ||--o{ USUARIOS : asigna
+  MINISTERIOS ||--o{ USUARIOS : agrupa
 
-  EMPRESAS ||--o{ EMPRESA_NOMBRES : tiene
-  EMPRESAS ||--o{ GASTOS : proveedor
-  EMPLEADOS ||--o{ GASTOS : realiza
-  GASTOS ||--|| FACTURAS : factura
-  FACTURAS ||--o{ FACTURA_ADJUNTOS : adjunta
+  %% Tickets / Presupuesto
+  USUARIOS ||--o{ TICKETS : crea_o_beneficia
   TICKETS ||--o{ TICKET_HISTORIAL : registra
+  TICKETS ||--o{ SOLICITUD_AUMENTO : solicitudes
+  TICKETS ||--o{ COMPROBANTES : cubre
 
-  SUPERVISORES {
-    int id_supervisor PK
+  %% Comprobantes
+  USUARIOS ||--o{ COMPROBANTES : registra
+  COMPROBANTES ||--o{ SOLICITUD_ACTUALIZACION : revisiones
+
+  %% Tablas
+  USUARIOS {
+    int id_usuario PK
+    int id_rol FK
+    int id_ministerio FK
     string nombre
     string correo
-    datetime creado_en
-    datetime actualizado_en
-  }
-
-  ADMINISTRADORES {
-    int id_admin PK
-    int id_supervisor FK
-    string nombre
-    string correo
-    datetime creado_en
-    datetime actualizado_en
-  }
-
-  EMPLEADOS {
-    int id_empleado PK
-    int id_admin FK
-    string nombre
+    string usuario
+    string password_hash
     string nit_persona
+    datetime creado_en
+    datetime actualizado_en
+  }
+
+  ROLES {
+    int id_rol PK
+    string nombre "supervisor|admin|empleado"
+    string descripcion
+  }
+
+  MINISTERIOS {
+    int id_ministerio PK
+    string nombre
+    string activo
+    string usuario
+    string password_hash
     datetime creado_en
     datetime actualizado_en
   }
 
   TICKETS {
     int id_ticket PK
-    int id_empleado FK
-    int id_admin_creador FK
+    int id_usuario_creador FK "admin"
+    int id_usuario_beneficiario FK "empleado"
     date fecha_inicio
     date fecha_fin
     string moneda
     float monto_presupuestado
+    float total_gastado
     string estado
     datetime creado_en
     datetime actualizado_en
@@ -55,7 +60,7 @@ erDiagram
   TICKET_HISTORIAL {
     int id_historial PK
     int id_ticket FK
-    int id_admin FK
+    int id_usuario_actor FK "admin"
     string accion
     float monto_anterior
     float monto_nuevo
@@ -66,66 +71,47 @@ erDiagram
     datetime creado_en
   }
 
-  EMPRESAS {
-    string nit_empresa PK
-    string activo
+  COMPROBANTES {
+    int id_comprobante PK
+    int id_usuario FK "empleado que registra"
+    int id_ticket FK "nullable"
+    string proveedor
+    string serie
+    string numero_factura
+    date fecha_emision
+    string moneda
+    string nit_emisor
+    string nit_receptor
+    float total
+    string descripcion_sugerida
+    string tipo_gasto
+    string imagen_factura_url
+    string imagen_hash "opcional"
     datetime creado_en
     datetime actualizado_en
   }
 
-  EMPRESA_NOMBRES {
-    int id_nombre PK
-    string nit_empresa FK
-    string tipo
-    string nombre
-    date vigente_desde
-    date vigente_hasta
-    string es_actual
-    datetime creado_en
-    datetime actualizado_en
-  }
-
-  GASTOS {
-    int id_gasto PK
+  SOLICITUD_AUMENTO {
+    int id_solicitud PK
     int id_ticket FK
-    int id_empleado FK
-    string nit_empresa FK
-    json fecha_consumo_arr
-    json moneda_arr
-    json monto_total_arr
-    json descripcion_sug_arr
-    json descripcion_pago_arr
-    json estado_arr
+    int id_usuario_solicitante FK "empleado"
+    string descripcion
+    float monto_solicitado
+    string estado "pendiente|aceptado|declinado"
+    int id_usuario_resolutor FK "admin, nullable"
     datetime creado_en
-    datetime actualizado_en
+    datetime resuelto_en
   }
 
-  FACTURAS {
-    int id_factura PK
-    int id_gasto FK
-    json serie_arr
-    json numero_arr
-    json fecha_emision_arr
-    json nit_emisor_arr
-    json nombre_emisor_doc_arr
-    json nit_receptor_arr
-    json moneda_arr
-    json total_arr
+  SOLICITUD_ACTUALIZACION {
+    int id_solicitud PK
+    int id_comprobante FK
+    int id_usuario_solicitante FK "empleado"
+    string datos_propuestos_json
+    string comentario_empleado
+    string estado "pendiente|aceptado|declinado"
+    int id_usuario_resolutor FK "admin, nullable"
+    string comentario_admin
     datetime creado_en
-    datetime actualizado_en
+    datetime resuelto_en
   }
-
-  FACTURA_ADJUNTOS {
-    int id_adjunto PK
-    int id_factura FK
-    string tipo
-    string url
-    string mime_type
-    int tamano_bytes
-    string hash_contenido
-    datetime creado_en
-    datetime actualizado_en
-  }
-
-
-```
