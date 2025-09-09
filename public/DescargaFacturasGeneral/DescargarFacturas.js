@@ -1,6 +1,6 @@
 /* =========================================================================
    descargarFacturas.js
-   - Filtros por fecha (inicio/fin) y por ID de factura
+   - Filtros por fecha (inicio/fin), por ID de factura y por USUARIO (nuevo)
    - Render tabla y resumen (conteo + total)
    - Descargar CSV de resultados filtrados
    - Toggle tema + botón regresar
@@ -21,7 +21,8 @@ let FACTURAS_ALL = [
     total: 850.0,
     tipoGasto: "Hospedaje",
     descripcion: "Noche de hotel para inspección regional",
-    comida: { desayuno: true, almuerzo: false, cena: false }
+    comida: { desayuno: true, almuerzo: false, cena: false },
+    usuario: "maria.perez"              // NUEVO (solo demo)
   },
   {
     id: "fac-002",
@@ -35,7 +36,8 @@ let FACTURAS_ALL = [
     total: 130.0,
     tipoGasto: "Alimentación",
     descripcion: "Almuerzo equipo",
-    comida: { desayuno: false, almuerzo: true, cena: false }
+    comida: { desayuno: false, almuerzo: true, cena: false },
+    usuario: "juan.garcia"              // NUEVO (solo demo)
   }
 ];
 
@@ -106,12 +108,16 @@ function applyFilters() {
   const from = $("#dateFrom").value;   // yyyy-mm-dd
   const to   = $("#dateTo").value;     // yyyy-mm-dd
   const qId  = $("#idSearch").value.trim().toLowerCase();
+  const user = $("#userFilter") ? $("#userFilter").value : "";
 
   FACTURAS_VIEW = FACTURAS_ALL.filter(f => {
+    // Usuario (nuevo)
+    if (user && (String(f.usuario || "") !== user)) return false;
+
     // ID
     if (qId && !(f.id || "").toLowerCase().includes(qId)) return false;
 
-    // Fechas
+    // Fechas (comparación ISO yyyy-mm-dd)
     if (from && f.fecha < from) return false;
     if (to && f.fecha > to) return false;
 
@@ -193,25 +199,47 @@ function setupBackBtn() {
   });
 }
 
+/* ======= NUEVO: poblar el select de usuarios ======= */
+function setupUserFilter() {
+  const sel = $("#userFilter");
+  if (!sel) return;
+
+  // Obtiene usuarios únicos si existen en los datos
+  const set = new Set(FACTURAS_ALL.map(x => x.usuario).filter(Boolean));
+  // Limpia y agrega "Todos"
+  sel.innerHTML = `<option value="">Todos</option>`;
+  // Agrega opciones únicas
+  Array.from(set).sort().forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u;
+    opt.textContent = u;
+    sel.appendChild(opt);
+  });
+
+  // Refiltra al cambiar
+  sel.addEventListener("change", applyFilters);
+}
+/* ======= /NUEVO ======= */
+
 /* ============== Carga desde API (Postgres) ============== */
 /**
  * Deja la integración lista:
- * - GET /api/facturas?from=YYYY-MM-DD&to=YYYY-MM-DD&id=fac-123
+ * - GET /api/facturas?from=YYYY-MM-DD&to=YYYY-MM-DD&id=fac-123&usuario=john
  * Respuesta esperada: array de facturas con el mismo shape que FACTURAS_ALL.
  */
-async function fetchFacturas(from, to, idLike) {
+async function fetchFacturas(from, to, idLike, usuario) {
   // Descomenta y ajusta a tu backend cuando esté listo
   /*
   const u = new URL('/api/facturas', window.location.origin);
   if (from) u.searchParams.set('from', from);
   if (to)   u.searchParams.set('to', to);
   if (idLike) u.searchParams.set('id', idLike);
+  if (usuario) u.searchParams.set('usuario', usuario);
 
   const res = await fetch(u.toString(), { headers: { 'Accept': 'application/json' }});
   if (!res.ok) throw new Error('Error al consultar facturas');
   const data = await res.json();
 
-  // Mapea si tu API usa nombres distintos
   FACTURAS_ALL = data.map(x => ({
     id: x.id,
     proveedor: x.proveedor,
@@ -224,10 +252,8 @@ async function fetchFacturas(from, to, idLike) {
     total: Number(x.total),
     tipoGasto: x.tipo_gasto,
     descripcion: x.descripcion,
-    desayuno: !!x.desayuno,
-    almuerzo: !!x.almuerzo,
-    cena: !!x.cena,
-    comida: { desayuno: !!x.desayuno, almuerzo: !!x.almuerzo, cena: !!x.cena }
+    comida: { desayuno: !!x.desayuno, almuerzo: !!x.almuerzo, cena: !!x.cena },
+    usuario: x.usuario || ""    // NUEVO
   }));
   */
 }
@@ -243,15 +269,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#dateFrom").value = from.toISOString().slice(0,10);
   $("#dateTo").value = today.toISOString().slice(0,10);
 
+  // Llenar select de usuarios (nuevo)
+  setupUserFilter();
+
   // Buscar (submit)
   $("#filtersForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = $("#dateFrom").value;
     const t = $("#dateTo").value;
     const idq = $("#idSearch").value.trim();
+    const usuario = $("#userFilter").value;
 
     try {
-      // await fetchFacturas(f, t, idq);
+      // await fetchFacturas(f, t, idq, usuario);
       applyFilters(); // con demo
     } catch (err) {
       console.error(err);

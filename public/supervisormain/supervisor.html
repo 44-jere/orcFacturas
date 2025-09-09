@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supervisor - Automatix Solutions</title>
+  <link rel="stylesheet" href="supervisorStyles.css"/>
+</head>
+<body class="dark-theme" id="body">
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="header-container">
+      <div class="header-content">
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">Panel Supervisor</h1>
+            <p class="brand-subtitle">Gestión de administradores y usuarios</p>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <!-- Atajos -->
+          <div class="quick-links">
+            <a class="quick-btn" href="#"
+               onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
+               title="Ir al Dashboard general" role="button">
+              <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+              </svg>
+              <span class="btn-label">Dashboard general</span>
+            </a>
+
+            <!-- Descargar facturas -->
+            <a class="quick-btn" href="#"
+               onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
+               title="Descargar facturas" role="button">
+              <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+              </svg>
+              <span class="btn-label">Descargar facturas</span>
+            </a>
+          </div>
+
+          <!-- Toggle de tema -->
+          <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
+            <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+            <svg id="sunIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </button>
+
+          <!-- Perfil -->
+          <div class="profile-container">
+            <button id="profileToggle" class="profile-btn" title="Ver perfil">
+              <svg class="profile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+            </button>
+
+            <div id="profileDropdown" class="profile-dropdown hidden">
+              <div class="profile-info">
+                <p class="profile-name">Supervisor</p>
+                <p class="profile-email">supervisor@gobierno.gob.gt</p>
+                <span class="profile-role">Supervisor</span>
+              </div>
+              <button class="dropdown-item" type="button"
+                      onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
+                Ver perfil
+              </button>
+              <button class="dropdown-item">Configuración</button>
+              <hr class="dropdown-divider">
+              <button id="logoutBtn" class="dropdown-item logout">Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido -->
+  <main class="main-content">
+    <!-- KPIs (2 tarjetas) -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-content">
+          <div class="stat-icon purple">
+            <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <p id="kpiAdmins" class="stat-number">0</p>
+            <p class="stat-label">Administradores</p>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-content">
+          <div class="stat-icon indigo">
+            <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 7h18M3 12h18M3 17h18"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <p id="kpiUsers" class="stat-number">0</p>
+            <p class="stat-label">Usuarios</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel con tabs -->
+    <div class="main-panel">
+      <div class="tabs-container">
+        <div class="tabs-nav">
+          <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+          <button class="tab-btn" data-tab="tickets">Tickets activos</button>
+          <button class="tab-btn" data-tab="historial">Historial de tickets</button>
+          <button class="tab-btn" data-tab="administradores">Administradores</button>
+          <button class="tab-btn" data-tab="usuarios">Usuarios</button>
+          <button class="tab-btn" data-tab="sinadmin">Usuarios sin administrador</button>
+          <button class="tab-btn" data-tab="creacion">Creación</button>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard-tab" class="tab-content active">
+          <h2 class="tab-title">Dashboard del Supervisor</h2>
+          <div class="activity-panel">
+            <h3 class="activity-title">Resumen</h3>
+            <div class="activity-grid">
+              <div class="activity-section">
+                <h4 class="activity-subtitle">Distribución por Ministerio</h4>
+                <div id="ministerioStats" class="ministerio-stats"></div>
+              </div>
+              <div class="activity-section">
+                <h4 class="activity-subtitle">Actividad</h4>
+                <div class="status-stats">
+                  <div class="status-item">
+                    <div class="status-indicator">
+                      <div class="status-dot green"></div>
+                      <span class="status-label">Altas recientes</span>
+                    </div>
+                    <span id="statusAltas" class="status-count">0</span>
+                  </div>
+                  <div class="status-item">
+                    <div class="status-indicator">
+                      <div class="status-dot blue"></div>
+                      <span class="status-label">Ediciones</span>
+                    </div>
+                    <span id="statusEdits" class="status-count">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-banner">
+              <p class="info-text">
+                💡 <strong>Tip:</strong> usa la pestaña <em>Creación</em> para dar de alta administradores o usuarios.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TICKETS ACTIVOS -->
+        <div id="tickets-tab" class="tab-content">
+          <h2 class="tab-title">Tickets activos</h2>
+
+          <div class="filters-row">
+            <select id="ticketsMinisterioFilter" class="filter-select">
+              <option value="">Todos los ministerios</option>
+              <option value="ME">Ministerio de Educación</option>
+              <option value="MS">Ministerio de Salud</option>
+              <option value="MA">Ministerio de Agricultura</option>
+              <option value="EC">Ministerio de Economía</option>
+            </select>
+
+            <select id="ticketsAdminFilter" class="filter-select">
+              <option value="">Todos los administradores</option>
+            </select>
+
+            <input id="ticketsSearchInput" class="filter-input" type="search" placeholder="Buscar por ID o descripción"/>
+          </div>
+
+          <div id="ticketsEmpty" class="no-data hidden">
+            <div class="no-data-icon">
+              <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="no-data-text">No hay tickets activos</p>
+            <p class="no-data-subtext">Cuando se creen, aparecerán aquí.</p>
+          </div>
+
+          <div id="ticketsContainer" class="tickets-grid"></div>
+        </div>
+
+        <!-- HISTORIAL DE TICKETS -->
+        <div id="historial-tab" class="tab-content">
+          <h2 class="tab-title">Historial de tickets</h2>
+
+          <div class="filters-row">
+            <select id="historyMinisterioFilter" class="filter-select">
+              <option value="">Todos los ministerios</option>
+              <option value="ME">Ministerio de Educación</option>
+              <option value="MS">Ministerio de Salud</option>
+              <option value="MA">Ministerio de Agricultura</option>
+              <option value="EC">Ministerio de Economía</option>
+            </select>
+
+            <select id="historyAdminFilter" class="filter-select">
+              <option value="">Todos los administradores</option>
+            </select>
+
+            <input id="historySearchInput" class="filter-input" type="search" placeholder="Buscar por ID o descripción"/>
+          </div>
+
+          <div id="historyEmpty" class="no-data hidden">
+            <div class="no-data-icon">
+              <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="no-data-text">Sin tickets en historial</p>
+            <p class="no-data-subtext">Aquí verás los tickets cerrados.</p>
+          </div>
+
+          <div id="historyContainer" class="tickets-grid"></div>
+        </div>
+
+        <!-- ADMINISTRADORES -->
+        <div id="administradores-tab" class="tab-content">
+          <h2 class="tab-title">Administradores</h2>
+          <div id="adminsContainer" class="people-grid"></div>
+          <div id="noAdmins" class="no-data hidden">
+            <div class="no-data-icon">
+              <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <p class="no-data-text">Sin administradores</p>
+            <p class="no-data-subtext">Crea el primero en “Creación”.</p>
+          </div>
+        </div>
+
+        <!-- USUARIOS -->
+        <div id="usuarios-tab" class="tab-content">
+          <h2 class="tab-title">Usuarios</h2>
+          <div class="filters-row">
+            <select id="ministerioFilter" class="filter-select">
+              <option value="">Todos los ministerios</option>
+              <option value="ME">Ministerio de Educación</option>
+              <option value="MS">Ministerio de Salud</option>
+              <option value="MA">Ministerio de Agricultura</option>
+              <option value="EC">Ministerio de Economía</option>
+            </select>
+
+            <!-- Buscar por administrador asignado -->
+            <select id="usersAdminFilter" class="filter-select" title="Administrador asignado">
+              <option value="">Todos los administradores</option>
+              <option value="__none__">Sin administrador</option>
+            </select>
+
+            <input id="searchInput" class="filter-input" type="search" placeholder="Buscar por nombre o correo"/>
+          </div>
+          <div id="usersContainer" class="people-grid"></div>
+          <div id="noUsers" class="no-data hidden">
+            <div class="no-data-icon">
+              <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="no-data-text">Sin usuarios</p>
+            <p class="no-data-subtext">Crea el primero en “Creación”.</p>
+          </div>
+        </div>
+
+        <!-- USUARIOS SIN ADMIN -->
+        <div id="sinadmin-tab" class="tab-content">
+          <h2 class="tab-title">Usuarios sin administrador</h2>
+          <div class="filters-row">
+            <select id="sinAdminMinisterioFilter" class="filter-select">
+              <option value="">Todos los ministerios</option>
+              <option value="ME">Ministerio de Educación</option>
+              <option value="MS">Ministerio de Salud</option>
+              <option value="MA">Ministerio de Agricultura</option>
+              <option value="EC">Ministerio de Economía</option>
+            </select>
+            <input id="sinAdminSearchInput" class="filter-input" type="search" placeholder="Buscar por nombre o correo"/>
+          </div>
+          <div id="sinAdminUsersContainer" class="people-grid"></div>
+          <div id="noSinAdminUsers" class="no-data hidden">
+            <div class="no-data-icon">
+              <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="no-data-text">Todos los usuarios tienen administrador asignado</p>
+            <p class="no-data-subtext">Cuando haya usuarios sin admin, aparecerán aquí.</p>
+          </div>
+        </div>
+
+        <!-- CREACIÓN -->
+        <div id="creacion-tab" class="tab-content">
+          <h2 class="tab-title">Creación de Administradores / Usuarios</h2>
+          <form id="createPersonForm" class="ticket-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Rol *</label>
+                <select id="roleSelect" class="form-select" required>
+                  <option value="">Seleccionar…</option>
+                  <option value="admin">Administrador</option>
+                  <option value="user">Usuario</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nombre completo *</label>
+                <input id="fullNameInput" class="form-input" placeholder="Nombre y apellido" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Correo *</label>
+                <input id="emailInput" type="email" class="form-input" placeholder="correo@dominio.com" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cargo</label>
+                <input id="titleInput" class="form-input" placeholder="Puesto o cargo" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Ministerio principal *</label>
+                <select id="ministerioSelect" class="form-select" required>
+                  <option value="">Seleccionar ministerio…</option>
+                  <option value="ME">Ministerio de Educación (ME)</option>
+                  <option value="MS">Ministerio de Salud (MS)</option>
+                  <option value="MA">Ministerio de Agricultura (MA)</option>
+                  <option value="EC">Ministerio de Economía (EC)</option>
+                </select>
+              </div>
+
+              <!-- Asignar admin (solo si Rol = Usuario) -->
+              <div class="form-group" id="assignAdminGroup" style="display:none;">
+                <label class="form-label">Asignar administrador</label>
+                <select id="assignAdminSelect" class="form-select">
+                  <option value="">(Opcional) Seleccionar administrador…</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input id="phoneInput" class="form-input" placeholder="+502 ..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">CUI</label>
+                <input id="cuiInput" class="form-input" placeholder="0000 00000 0000" />
+              </div>
+            </div>
+
+            <p class="csv-hint">
+              Formato CSV: <code>role,nombre,email,titulo,ministerio,telefono,cui</code> · <em>role</em>=<code>admin|user</code> ·
+              <em>ministerio</em>=<code>ME|MS|MA|EC</code> · <em>cui</em> (opcional)
+            </p>
+
+            <div class="form-actions" style="gap:12px;">
+              <button type="button" id="bulkCsvBtn" class="action-btn primary" title="Crear varios por CSV">
+                Crear varios por CSV
+              </button>
+              <input type="file" id="csvInput" accept=".csv" class="hidden" />
+
+              <button type="button" id="downloadCsvTemplateBtn" class="action-btn secondary" title="Descargar plantilla CSV">
+                Descargar plantilla CSV
+              </button>
+
+              <button type="submit" id="createBtn" class="create-btn" style="margin-left:auto;">
+                <svg id="createIcon" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <svg id="createLoadingIcon" class="btn-icon hidden" fill="none" viewBox="0 0 24 24">
+                  <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="spinner-path" fill="currentColor"
+                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="createBtnText">Crear</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Usuarios asignados a Admin -->
+  <div id="assignedModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Usuarios asignados a <span id="assignedAdminName"></span></h3>
+        <button class="modal-close" id="assignedCloseBtn" title="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="assignedList" class="people-grid"></div>
+        <div id="assignedEmpty" class="no-data hidden">
+          <div class="no-data-icon">
+            <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <p class="no-data-text">Este administrador aún no tiene usuarios asignados.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" id="assignedCancelBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reabrir ticket -->
+  <div id="reopenModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Reabrir ticket <span id="reopenTicketIdLabel"></span></h3>
+        <button class="modal-close" id="reopenCloseBtn" title="Cerrar">&times;</button>
+      </div>
+      <form id="reopenForm" class="modal-body">
+        <p class="form-hint">El ticket volverá al estado <strong>abierto</strong>. Indica la nueva fecha límite y la razón.</p>
+        <div class="form-group">
+          <label class="form-label">Nueva fecha de vencimiento *</label>
+          <input type="date" id="reopenDueDate" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Razón de reapertura *</label>
+          <textarea id="reopenReason" class="form-textarea" rows="3" placeholder="Describe por qué se reabre..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="action-btn secondary" id="reopenCancelBtn">Cancelar</button>
+          <button type="submit" class="action-btn primary">Reabrir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Overlay de carga -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-spinner">
+      <svg class="spinner" fill="none" viewBox="0 0 24 24">
+        <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="spinner-path" fill="currentColor"
+          d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+      </svg>
+      <p class="loading-text">Cargando...</p>
+    </div>
+  </div>
+
+  <script src="supervisorScript.js"></script>
+</body>
+</html>
