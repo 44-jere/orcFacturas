@@ -5,6 +5,7 @@ import { baseDeDatos } from "./models/posgres/baseDeDatos.js";
 import { loginRouter } from "./controlador/logicaFacturas/login/login.js";
 import { perfilRouter } from "./controlador/logicaFacturas/perfil/perfil.js";
 import cookieParser from "cookie-parser";
+import cors from "cors"; // 👈 agregado
 
 // recrear __filename y __dirname en ESM
 export const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +13,13 @@ export const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT ?? 8080;
 const db = baseDeDatos;
+
+// 🔹 Habilitar CORS con credenciales
+app.use(cors({
+  origin: "http://localhost:3000", // 👈 cambia si tu front no corre en 3000
+  credentials: true
+}));
+
 app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(express.json());
