@@ -36,14 +36,14 @@ async function login({ validador, res, req } = {}) {
         secure: process.env.NODE_ENV === "produccion", // solo se puede usar en el dominio
         maxAge: 1000 * 60 * 60, // 1h
       })
-      .send({ isValid, token });
+      .send({ isValid });
   } catch (e) {
     res.status(500).send("no encontrado");
   }
 }
 
 loginRouter.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "/public/login/login.html"))
+  res.sendFile(path.join(__dirname, "../../../public/login/login.html"))
 );
 
 loginRouter.post("/ministerios", async (req, res) => {

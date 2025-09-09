@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { baseDeDatos } from "./models/posgres/baseDeDatos.js";
 import { loginRouter } from "./controlador/logicaFacturas/login/login.js";
+import { perfilRouter } from "./controlador/logicaFacturas/perfil/perfil.js";
 import cookieParser from "cookie-parser";
 
 // recrear __filename y __dirname en ESM
@@ -38,9 +39,7 @@ app.get("/dashboard", (req, res) =>
   res.sendFile(path.join(__dirname, "/public/dashboard/dashboard.html"))
 );
 
-app.get("/perfil", (req, res) =>
-  res.sendFile(path.join(__dirname, "/public/perfil/PerfilIndex.html"))
-);
+app.use("/perfil", perfilRouter);
 
 app.listen(port);
 console.log("Server started at http://localhost:" + port);

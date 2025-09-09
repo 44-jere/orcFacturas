@@ -1,3 +1,4 @@
+```mermaid
 erDiagram
   %% Roles y organización
   ROLES ||--o{ USUARIOS : asigna
@@ -115,3 +116,5 @@ erDiagram
     datetime creado_en
     datetime resuelto_en
   }
+
+```

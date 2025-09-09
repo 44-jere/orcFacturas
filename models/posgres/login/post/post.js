@@ -7,21 +7,20 @@ async function validarLogin({ usuario, password, tabla }) {
 
   try {
     // ✅ validación del nombre de tabla para evitar SQL Injection
-    const tablasPermitidas = ["ministerios", "empleados", "admins"];
+    const tablasPermitidas = ["ministerios", "usuarios"];
     if (!tablasPermitidas.includes(tabla)) {
       throw new Error(`Tabla no permitida: ${tabla}`);
     }
 
     // ✅ obtener registro por usuario
     const query = `
-      SELECT id_ministerio, usuario, password_hash
+      SELECT id_usuario, usuario, password_hash
       FROM ${tabla}
       WHERE usuario = $1
       LIMIT 1
     `;
     const values = [usuario];
     const { rows } = await client.query(query, values);
-
     if (rows.length === 0) {
       console.log("⚠️ Usuario no encontrado");
       return false;
@@ -34,9 +33,9 @@ async function validarLogin({ usuario, password, tabla }) {
 
     if (esValido) {
       console.log("✅ Usuario y contraseña correctos");
-      return { id: fila.id_ministerio, usuario: fila.usuario };
+      return { id: fila.id_usuario, usuario: fila.usuario };
     } else {
-      console.log("❌ Contraseña incorrecta");
+      console.log("❌ Usuario y contraseña incorrectos");
       return false;
     }
   } catch (err) {
