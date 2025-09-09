@@ -342,6 +342,16 @@
 
                 <div id="gestionar-tab" class="tab-content">
                     <h2 class="tab-title">Gestionar Tickets</h2>
+
+                    <!-- NUEVOS: Filtros para gestionar (usuario + búsqueda) -->
+                    <div class="filters-row">
+                        <select id="gestUserFilter" class="filter-select" title="Filtrar por usuario">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                        <input id="gestSearchInput" class="filter-input" type="text" placeholder="Buscar por ID o descripción">
+                        <button id="gestSearchBtn" class="pagination-btn" type="button">Buscar</button>
+                        <button id="gestClearBtn" class="pagination-btn" type="button">Borrar</button>
+                    </div>
                     
                     <div id="noTickets" class="no-data">
                         <div class="no-data-icon">
@@ -358,6 +368,12 @@
 
                 <div id="historial-tab" class="tab-content">
                     <h2 class="tab-title">Historial de Tickets</h2>
+
+                    <!-- Rango de fechas (de / a) -->
+                    <div class="filters-row">
+                        <input type="date" id="histFromDate" class="filter-input" title="Desde (completado)">
+                        <input type="date" id="histToDate" class="filter-input" title="Hasta (completado)">
+                    </div>
                     
                     <div class="filters-row">
                         <select id="ministerioFilter" class="filter-select">
@@ -367,8 +383,15 @@
                             <option value="MA">Ministerio de Agricultura</option>
                             <option value="EC">Ministerio de Economía</option>
                         </select>
-                        
-                        <input type="month" id="monthFilter" class="filter-input" title="Filtrar por mes">
+
+                        <!-- NUEVO: filtro por usuario en historial -->
+                        <select id="histUserFilter" class="filter-select" title="Filtrar por usuario">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+
+                        <!-- NUEVOS botones: Buscar y Borrar -->
+                        <button id="histSearchBtn" class="pagination-btn" type="button">Buscar</button>
+                        <button id="histClearBtn" class="pagination-btn" type="button">Borrar</button>
                     </div>
 
                     <div id="noHistorial" class="no-data">
@@ -407,38 +430,66 @@
     </div>
 
     <script src="adminScript.js"></script>
+
     <!-- ===== Modal Editar Ticket ===== -->
-<div id="editModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 class="modal-title">Editar ticket <span id="editTicketId"></span></h3>
-      <button class="modal-close" id="editCloseBtn" title="Cerrar">&times;</button>
+    <div id="editModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Editar ticket <span id="editTicketId"></span></h3>
+          <button class="modal-close" id="editCloseBtn" title="Cerrar">&times;</button>
+        </div>
+
+        <form id="editForm" class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Presupuesto (Q) *</label>
+            <input type="number" id="editPresupuesto" class="form-input" step="0.01" min="0" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Fecha creado *</label>
+              <input type="date" id="editFechaCreacion" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha vence *</label>
+              <input type="date" id="editFechaVencimiento" class="form-input" required />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="action-btn secondary" id="editCancelBtn">Cancelar</button>
+            <button type="submit" class="action-btn primary" id="editSaveBtn">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <form id="editForm" class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Presupuesto (Q) *</label>
-        <input type="number" id="editPresupuesto" class="form-input" step="0.01" min="0" required />
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Fecha creado *</label>
-          <input type="date" id="editFechaCreacion" class="form-input" required />
+    <!-- ===== Modal Reabrir Ticket (Historial) ===== -->
+    <div id="reopenModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Reabrir ticket <span id="reopenTicketId"></span></h3>
+          <button class="modal-close" id="reopenCloseBtn" title="Cerrar">&times;</button>
         </div>
-        <div class="form-group">
-          <label class="form-label">Fecha vence *</label>
-          <input type="date" id="editFechaVencimiento" class="form-input" required />
-        </div>
-      </div>
 
-      <div class="modal-footer">
-        <button type="button" class="action-btn secondary" id="editCancelBtn">Cancelar</button>
-        <button type="submit" class="action-btn primary" id="editSaveBtn">Guardar cambios</button>
+        <form id="reopenForm" class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nueva fecha de vencimiento *</label>
+            <input type="date" id="reopenFechaVenc" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Razón de reapertura *</label>
+            <textarea id="reopenReason" class="form-textarea" rows="4" placeholder="Describe por qué se reabre..." required></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="action-btn secondary" id="reopenCancelBtn">Cancelar</button>
+            <button type="submit" class="action-btn primary" id="reopenSubmitBtn">Reabrir</button>
+          </div>
+        </form>
       </div>
-    </form>
-  </div>
-</div>
+    </div>
 
 </body>
 </html>

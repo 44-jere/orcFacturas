@@ -1,15 +1,22 @@
 /* =========================================================================
    descargarFacturas.js
-   - Filtros por fecha (inicio/fin), por ID de factura y por USUARIO (nuevo)
-   - Render tabla y resumen (conteo + total)
-   - Descargar CSV de resultados filtrados
+   - Filtros por fecha, ID factura, usuario, tipo gasto, comida, NIT emisor
+   - Filtro por ID de ticket
+   - Filtro por ID Administrador
+   - NUEVO: Filtro por Entidad
+   - Render tabla y resumen
+   - Descargar CSV
    - Toggle tema + botón regresar
-   - Listo para conectar a backend Postgres (fetch() comentado)
+   - Habilitar 'Comida' solo si tipo = Alimentacion
    ========================================================================= */
 
 let FACTURAS_ALL = [
   // DEMO: reemplaza con datos de tu API
   {
+    entidad: "Automatix Solutions",
+    idTicket: "TCK-1001",
+    idAdministrador: "ADM-001",
+    idUsuario: "USR-001",
     id: "fac-001",
     proveedor: "Hotel Quetzal",
     serie: "A",
@@ -19,12 +26,16 @@ let FACTURAS_ALL = [
     nitEmisor: "1234567-8",
     nitReceptor: "CF",
     total: 850.0,
-    tipoGasto: "Hospedaje",
+    tipoGasto: "Hotel",
     descripcion: "Noche de hotel para inspección regional",
     comida: { desayuno: true, almuerzo: false, cena: false },
-    usuario: "maria.perez"              // NUEVO (solo demo)
+    usuario: "maria.perez"
   },
   {
+    entidad: "Automatix Solutions",
+    idTicket: "TCK-1002",
+    idAdministrador: "ADM-002",
+    idUsuario: "USR-002",
     id: "fac-002",
     proveedor: "Subway de Guatemala",
     serie: "B",
@@ -34,10 +45,10 @@ let FACTURAS_ALL = [
     nitEmisor: "799376-5",
     nitReceptor: "CF",
     total: 130.0,
-    tipoGasto: "Alimentación",
+    tipoGasto: "Alimentacion",
     descripcion: "Almuerzo equipo",
     comida: { desayuno: false, almuerzo: true, cena: false },
-    usuario: "juan.garcia"              // NUEVO (solo demo)
+    usuario: "juan.garcia"
   }
 ];
 
@@ -72,7 +83,7 @@ function renderTabla() {
   if (!FACTURAS_VIEW.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="12" style="text-align:center; padding:16px; color: var(--text-secondary);">
+        <td colspan="16" style="text-align:center; padding:16px; color: var(--text-secondary);">
           No hay resultados para los filtros aplicados.
         </td>
       </tr>
@@ -80,7 +91,11 @@ function renderTabla() {
   } else {
     tbody.innerHTML = FACTURAS_VIEW.map(f => `
       <tr>
-        <td>${f.id}</td>
+        <td>${f.entidad || ""}</td>
+        <td>${f.idTicket || ""}</td>
+        <td>${f.idAdministrador || ""}</td>
+        <td>${f.id || ""}</td>
+        <td>${f.idUsuario || ""}</td>
         <td>${f.proveedor || ""}</td>
         <td>${f.serie || ""}</td>
         <td>${f.numero || ""}</td>
@@ -107,17 +122,50 @@ function renderTabla() {
 function applyFilters() {
   const from = $("#dateFrom").value;   // yyyy-mm-dd
   const to   = $("#dateTo").value;     // yyyy-mm-dd
-  const qId  = $("#idSearch").value.trim().toLowerCase();
+  const qId  = $("#idSearch").value.trim().toLowerCase(); // ID Factura
+  const qTicket = $("#ticketIdSearch") ? $("#ticketIdSearch").value.trim().toLowerCase() : "";
+  const qAdmin  = $("#adminIdSearch") ? $("#adminIdSearch").value.trim().toLowerCase() : "";
+  const qEntidad = $("#entidadSearch") ? $("#entidadSearch").value.trim().toLowerCase() : "";
   const user = $("#userFilter") ? $("#userFilter").value : "";
 
+  const tipo = $("#tipoGastoFilter") ? $("#tipoGastoFilter").value.trim() : "";
+  const comidaSel = $("#comidaFilter") ? $("#comidaFilter").value : "";
+  const nitQ = $("#nitEmisorSearch") ? $("#nitEmisorSearch").value.trim().toLowerCase() : "";
+
   FACTURAS_VIEW = FACTURAS_ALL.filter(f => {
-    // Usuario (nuevo)
+    // Usuario
     if (user && (String(f.usuario || "") !== user)) return false;
 
-    // ID
-    if (qId && !(f.id || "").toLowerCase().includes(qId)) return false;
+    // Tipo de gasto
+    if (tipo) {
+      const tg = String(f.tipoGasto || "");
+      if (tg.toLowerCase() !== tipo.toLowerCase()) return false;
+    }
 
-    // Fechas (comparación ISO yyyy-mm-dd)
+    // Comida (si hay filtro seleccionado)
+    if (comidaSel) {
+      const c = f.comida || {};
+      if (comidaSel === "desayuno" && !c.desayuno) return false;
+      if (comidaSel === "almuerzo" && !c.almuerzo) return false;
+      if (comidaSel === "cena" && !c.cena) return false;
+    }
+
+    // NIT Emisor (contiene)
+    if (nitQ && !String(f.nitEmisor || "").toLowerCase().includes(nitQ)) return false;
+
+    // ID Ticket (contiene)
+    if (qTicket && !String(f.idTicket || "").toLowerCase().includes(qTicket)) return false;
+
+    // ID Administrador (contiene)
+    if (qAdmin && !String(f.idAdministrador || "").toLowerCase().includes(qAdmin)) return false;
+
+    // NUEVO: Entidad (contiene)
+    if (qEntidad && !String(f.entidad || "").toLowerCase().includes(qEntidad)) return false;
+
+    // ID Factura (contiene)
+    if (qId && !String(f.id || "").toLowerCase().includes(qId)) return false;
+
+    // Rango de fechas (ISO)
     if (from && f.fecha < from) return false;
     if (to && f.fecha > to) return false;
 
@@ -132,13 +180,18 @@ function descargarCSV() {
   if (!FACTURAS_VIEW.length) return;
 
   const headers = [
-    "ID","Proveedor","Serie","No. Factura","Fecha","Moneda",
+    "Entidad","ID Ticket","ID Administrador","ID Factura","ID Usuario",
+    "Proveedor","Serie","No. Factura","Fecha Emisión","Moneda",
     "NIT Emisor","NIT Receptor","Total","Tipo de Gasto","Descripción","Comida"
   ];
 
   const lines = FACTURAS_VIEW.map(f => {
     const row = [
+      f.entidad || "",
+      f.idTicket || "",
+      f.idAdministrador || "",
       f.id || "",
+      f.idUsuario || "",
       f.proveedor || "",
       f.serie || "",
       f.numero || "",
@@ -199,16 +252,13 @@ function setupBackBtn() {
   });
 }
 
-/* ======= NUEVO: poblar el select de usuarios ======= */
+/* ======= Poblar select de usuarios ======= */
 function setupUserFilter() {
   const sel = $("#userFilter");
   if (!sel) return;
 
-  // Obtiene usuarios únicos si existen en los datos
   const set = new Set(FACTURAS_ALL.map(x => x.usuario).filter(Boolean));
-  // Limpia y agrega "Todos"
   sel.innerHTML = `<option value="">Todos</option>`;
-  // Agrega opciones únicas
   Array.from(set).sort().forEach(u => {
     const opt = document.createElement("option");
     opt.value = u;
@@ -216,46 +266,24 @@ function setupUserFilter() {
     sel.appendChild(opt);
   });
 
-  // Refiltra al cambiar
   sel.addEventListener("change", applyFilters);
 }
-/* ======= /NUEVO ======= */
 
-/* ============== Carga desde API (Postgres) ============== */
-/**
- * Deja la integración lista:
- * - GET /api/facturas?from=YYYY-MM-DD&to=YYYY-MM-DD&id=fac-123&usuario=john
- * Respuesta esperada: array de facturas con el mismo shape que FACTURAS_ALL.
- */
-async function fetchFacturas(from, to, idLike, usuario) {
-  // Descomenta y ajusta a tu backend cuando esté listo
-  /*
-  const u = new URL('/api/facturas', window.location.origin);
-  if (from) u.searchParams.set('from', from);
-  if (to)   u.searchParams.set('to', to);
-  if (idLike) u.searchParams.set('id', idLike);
-  if (usuario) u.searchParams.set('usuario', usuario);
+/* ======= Habilitar 'Comida' solo si tipo=Alimentacion ======= */
+function setupComidaToggleByTipo() {
+  const tipoSel = $("#tipoGastoFilter");
+  const comidaSel = $("#comidaFilter");
+  if (!tipoSel || !comidaSel) return;
 
-  const res = await fetch(u.toString(), { headers: { 'Accept': 'application/json' }});
-  if (!res.ok) throw new Error('Error al consultar facturas');
-  const data = await res.json();
+  const update = () => {
+    const val = (tipoSel.value || "").trim().toLowerCase();
+    const isAlim = (val === "alimentacion");
+    comidaSel.disabled = !isAlim;
+    if (!isAlim) comidaSel.value = ""; // reset si no aplica
+  };
 
-  FACTURAS_ALL = data.map(x => ({
-    id: x.id,
-    proveedor: x.proveedor,
-    serie: x.serie,
-    numero: x.numero,
-    fecha: x.fecha,             // "YYYY-MM-DD"
-    moneda: x.moneda || 'Q',
-    nitEmisor: x.nit_emisor,
-    nitReceptor: x.nit_receptor,
-    total: Number(x.total),
-    tipoGasto: x.tipo_gasto,
-    descripcion: x.descripcion,
-    comida: { desayuno: !!x.desayuno, almuerzo: !!x.almuerzo, cena: !!x.cena },
-    usuario: x.usuario || ""    // NUEVO
-  }));
-  */
+  tipoSel.addEventListener("change", update);
+  update(); // inicial
 }
 
 /* ============== Init ============== */
@@ -269,24 +297,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#dateFrom").value = from.toISOString().slice(0,10);
   $("#dateTo").value = today.toISOString().slice(0,10);
 
-  // Llenar select de usuarios (nuevo)
+  // Llenar select de usuarios
   setupUserFilter();
+
+  // Habilitar/deshabilitar selector Comida según Tipo de gasto
+  setupComidaToggleByTipo();
 
   // Buscar (submit)
   $("#filtersForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const f = $("#dateFrom").value;
-    const t = $("#dateTo").value;
-    const idq = $("#idSearch").value.trim();
-    const usuario = $("#userFilter").value;
-
-    try {
-      // await fetchFacturas(f, t, idq, usuario);
-      applyFilters(); // con demo
-    } catch (err) {
-      console.error(err);
-      alert("No se pudieron cargar facturas.");
-    }
+    applyFilters(); // demo local
   });
 
   // Descargar CSV

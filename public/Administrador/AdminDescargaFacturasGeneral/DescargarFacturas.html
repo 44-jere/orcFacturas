@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Descargar Facturas - Automatix Solutions</title>
+  <link rel="stylesheet" href="DescargarFacturas.css"/>
+</head>
+<body class="dark-theme">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="header-content">
+
+        <!-- Botón Regresar -->
+        <button id="backBtn" class="back-btn" title="Volver">
+          <svg viewBox="0 0 24 24" class="back-icon" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="m9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">Descargar Facturas</h1>
+            <p class="brand-subtitle">Búsqueda por rango de fechas o ID</p>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
+            <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+            <svg id="sunIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707
+                   M6.343 6.343l-.707-.707m12.728 0l-.707.707
+                   M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="main-panel">
+      <h2 class="panel-title">Filtrar facturas</h2>
+
+      <!-- Filtros -->
+      <form id="filtersForm" class="filters-row" autocomplete="off">
+        <div class="filter-item">
+          <label class="vg-label">Fecha inicio</label>
+          <input id="dateFrom" type="date" class="vg-input" />
+        </div>
+        <div class="filter-item">
+          <label class="vg-label">Fecha final</label>
+          <input id="dateTo" type="date" class="vg-input" />
+        </div>
+
+        <!-- Buscar por usuario -->
+        <div class="filter-item">
+          <label class="vg-label">Buscar por usuario</label>
+          <select id="userFilter" class="vg-input">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <!-- Buscar por tipo de gasto -->
+        <div class="filter-item">
+          <label class="vg-label">Tipo de gasto</label>
+          <select id="tipoGastoFilter" class="vg-input">
+            <option value="">Todos</option>
+            <option>Hotel</option>
+            <option>Alimentacion</option>
+            <option>Transporte</option>
+            <option>Combustible</option>
+            <option>Peajes</option>
+            <option>Estacionamiento</option>
+            <option>Otros</option>
+          </select>
+        </div>
+
+        <!-- Buscar por comida (habilita solo si tipo=Alimentacion) -->
+        <div class="filter-item">
+          <label class="vg-label">Comida</label>
+          <select id="comidaFilter" class="vg-input">
+            <option value="">Ninguna</option>
+            <option value="desayuno">Desayuno</option>
+            <option value="almuerzo">Almuerzo</option>
+            <option value="cena">Cena</option>
+          </select>
+        </div>
+
+        <!-- Buscar por NIT Emisor -->
+        <div class="filter-item">
+          <label class="vg-label">NIT Emisor</label>
+          <input id="nitEmisorSearch" type="text" class="vg-input" placeholder="Ej.: 1234567-8" />
+        </div>
+
+        <!-- NUEVO: Buscar por ID de ticket -->
+        <div class="filter-item">
+          <label class="vg-label">Buscar por ID de ticket</label>
+          <input id="ticketIdSearch" type="text" class="vg-input" placeholder="ME-2025-..." />
+        </div>
+
+        <div class="filter-item grow">
+          <label class="vg-label">Buscar por ID de factura</label>
+          <input id="idSearch" type="text" class="vg-input" placeholder="fac-000123..." />
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="action-btn">Buscar</button>
+          <button type="button" id="downloadCsvBtn" class="action-btn primary">Descargar CSV</button>
+        </div>
+      </form>
+
+      <!-- Resumen -->
+      <div class="summary-bar" id="summaryBar">
+        <span id="countLabel">0 resultados</span>
+        <span id="totalLabel">Total: Q0.00</span>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-container">
+        <table class="vg-table" id="facturasTable">
+          <thead>
+            <tr>
+              <th>ID Ticket</th>
+              <th>ID Administrador</th>
+              <th>ID Factura</th>
+              <th>ID Usuario</th>
+              <th>Proveedor</th>
+              <th>Serie</th>
+              <th>No. Factura</th>
+              <th>Fecha Emisión</th>
+              <th>Moneda</th>
+              <th>NIT Emisor</th>
+              <th>NIT Receptor</th>
+              <th>Total</th>
+              <th>Tipo de Gasto</th>
+              <th>Descripción</th>
+              <th>Comida</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="DescargarFacturas.js"></script>
+</body>
+</html>

@@ -37,7 +37,6 @@
               <span class="btn-label">Dashboard general</span>
             </a>
 
-            <!-- Descargar facturas -->
             <a class="quick-btn" href="#"
                onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
                title="Descargar facturas" role="button">
@@ -51,11 +50,11 @@
 
           <!-- Toggle de tema -->
           <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
-            <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg id="moonIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
             </svg>
-            <svg id="sunIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg id="sunIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
             </svg>
@@ -92,7 +91,7 @@
 
   <!-- Contenido -->
   <main class="main-content">
-    <!-- KPIs (2 tarjetas) -->
+    <!-- KPIs -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-content">
@@ -247,6 +246,12 @@
         <!-- ADMINISTRADORES -->
         <div id="administradores-tab" class="tab-content">
           <h2 class="tab-title">Administradores</h2>
+
+          <!-- NUEVO: buscador por nombre -->
+          <div class="filters-row">
+            <input id="adminsSearchInput" class="filter-input" type="search" placeholder="Buscar administrador por nombre"/>
+          </div>
+
           <div id="adminsContainer" class="people-grid"></div>
           <div id="noAdmins" class="no-data hidden">
             <div class="no-data-icon">
@@ -372,17 +377,13 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Teléfono</label>
-                <input id="phoneInput" class="form-input" placeholder="+502 ..." />
-              </div>
-              <div class="form-group">
                 <label class="form-label">CUI</label>
                 <input id="cuiInput" class="form-input" placeholder="0000 00000 0000" />
               </div>
             </div>
 
             <p class="csv-hint">
-              Formato CSV: <code>role,nombre,email,titulo,ministerio,telefono,cui</code> · <em>role</em>=<code>admin|user</code> ·
+              Formato CSV: <code>role,nombre,email,titulo,ministerio,cui</code> · <em>role</em>=<code>admin|user</code> ·
               <em>ministerio</em>=<code>ME|MS|MA|EC</code> · <em>cui</em> (opcional)
             </p>
 
@@ -420,7 +421,7 @@
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">Usuarios asignados a <span id="assignedAdminName"></span></h3>
-        <button class="modal-close" id="assignedCloseBtn" title="Cerrar">&times;</button>
+        <button class="modal-close" id="assignedCloseBtn" title="Cerrar" type="button">&times;</button>
       </div>
       <div class="modal-body">
         <div id="assignedList" class="people-grid"></div>
@@ -435,7 +436,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="action-btn secondary" id="assignedCancelBtn">Cerrar</button>
+        <button class="action-btn secondary" id="assignedCancelBtn" type="button">Cerrar</button>
       </div>
     </div>
   </div>
@@ -445,7 +446,7 @@
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">Reabrir ticket <span id="reopenTicketIdLabel"></span></h3>
-        <button class="modal-close" id="reopenCloseBtn" title="Cerrar">&times;</button>
+        <button class="modal-close" id="reopenCloseBtn" title="Cerrar" type="button">&times;</button>
       </div>
       <form id="reopenForm" class="modal-body">
         <p class="form-hint">El ticket volverá al estado <strong>abierto</strong>. Indica la nueva fecha límite y la razón.</p>

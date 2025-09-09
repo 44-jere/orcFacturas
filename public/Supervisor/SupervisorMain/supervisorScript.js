@@ -1,52 +1,49 @@
 /* =========================================================================
    Panel Supervisor – Automatix Solutions
-   Cambios:
-   - Reabrir ticket: modal con fecha y razón
-   - Creación: campo CUI
-   - CSV soporta columna opcional 'cui'
+   Cambios solicitados:
+   - Fix cierre del modal "Usuarios asignados" (X, botón Cerrar, clic fuera, tecla Esc)
+   - Agregar buscador por nombre en "Administradores" (inserción dinámica por JS)
    ========================================================================= */
 
 /* ====================== Mock data ====================== */
 const SAMPLE_ADMINS = [
-  { id: "adm_001", nombre: "Ana Morales", email: "ana.morales@gobierno.gob.gt", titulo: "Admin Regional", ministerio: "ME", telefono: "+502 5555-1234", cui: "1234 56789 0101" },
-  { id: "adm_002", nombre: "Luis Herrera", email: "luis.herrera@gobierno.gob.gt", titulo: "Admin Central", ministerio: "MS", telefono: "+502 5555-9876", cui: "9876 54321 0202" },
+  { id: "adm_001", nombre: "Ana Morales", email: "ana.morales@gobierno.gob.gt", titulo: "Admin Regional", ministerio: "ME", cui: "1234 56789 0101" },
+  { id: "adm_002", nombre: "Luis Herrera", email: "luis.herrera@gobierno.gob.gt", titulo: "Admin Central", ministerio: "MS", cui: "9876 54321 0202" },
 ];
 
 const SAMPLE_USERS = [
-  { id: "usr_001", nombre: "Carlos López", email: "carlos.lopez@gobierno.gob.gt", titulo: "Técnico", ministerio: "MA", telefono: "+502 5555-0001", cui: "1111 22222 3333", adminId: "adm_001" },
-  { id: "usr_002", nombre: "María González", email: "maria.gonzalez@gobierno.gob.gt", titulo: "Supervisora médica", ministerio: "MS", telefono: "+502 5555-0002", cui: "4444 55555 6666", adminId: "adm_002" },
-  { id: "usr_003", nombre: "Juan Pérez", email: "juan.perez@gobierno.gob.gt", titulo: "Director", ministerio: "ME", telefono: "+502 5555-0003", cui: "7777 88888 9999" }, // sin admin
+  { id: "usr_001", nombre: "Carlos López", email: "carlos.lopez@gobierno.gob.gt", titulo: "Técnico", ministerio: "MA", cui: "1111 22222 3333", adminId: "adm_001" },
+  { id: "usr_002", nombre: "María González", email: "maria.gonzalez@gobierno.gob.gt", titulo: "Supervisora médica", ministerio: "MS", cui: "4444 55555 6666", adminId: "adm_002" },
+  { id: "usr_003", nombre: "Juan Pérez", email: "juan.perez@gobierno.gob.gt", titulo: "Director", ministerio: "ME", cui: "7777 88888 9999" },
 ];
 
-/* Tickets activos (mock) */
 const SAMPLE_TICKETS = [
   {
     id: "ME-2025-010",
     ministerio: "ME",
     descripcion: "Capacitación TIC en Quetzaltenango",
     presupuesto: 2500.00,
-    gastado: 2850.00, // > presupuesto para demostrar EXCESO
+    gastado: 850.00,
     fecha_creacion: "28/08/2025",
     fecha_vencimiento: "20/09/2025",
     estado: "abierto",
     adminId: "adm_001",
-    userIds: ["usr_003", "usr_001"]
+    userId: "usr_003"
   },
   {
     id: "MS-2025-012",
     ministerio: "MS",
     descripcion: "Supervisión de clínicas rurales",
     presupuesto: 3200.00,
-    gastado: 1200.00,
+    gastado: 4200.00,
     fecha_creacion: "25/08/2025",
     fecha_vencimiento: "18/09/2025",
     estado: "abierto",
     adminId: "adm_002",
-    userIds: ["usr_002"]
+    userId: "usr_002"
   }
 ];
 
-/* Historial (mock) */
 const SAMPLE_HISTORY_TICKETS = [
   {
     id: "EC-2024-032",
@@ -58,19 +55,19 @@ const SAMPLE_HISTORY_TICKETS = [
     fecha_vencimiento: "22/11/2024",
     estado: "cerrado",
     adminId: "adm_001",
-    userIds: ["usr_001"]
+    userId: "usr_001"
   },
   {
     id: "ME-2025-004",
     ministerio: "ME",
     descripcion: "Evaluación de centros educativos",
     presupuesto: 2000.00,
-    gastado: 2300.00, // cerró con exceso para demostrar barra
+    gastado: 2300.00,
     fecha_creacion: "10/01/2025",
     fecha_vencimiento: "20/01/2025",
     estado: "cerrado",
     adminId: "adm_002",
-    userIds: ["usr_003"]
+    userId: "usr_003"
   }
 ];
 
@@ -80,8 +77,8 @@ let appState = {
   activeTab: "dashboard",
   admins: [...SAMPLE_ADMINS],
   users: [...SAMPLE_USERS],
-  tickets: [...SAMPLE_TICKETS],         // abiertos
-  history: [...SAMPLE_HISTORY_TICKETS], // cerrados
+  tickets: [...SAMPLE_TICKETS],
+  history: [...SAMPLE_HISTORY_TICKETS],
   loading: false,
   creating: false,
   createForm: {
@@ -90,7 +87,6 @@ let appState = {
     email: "",
     titulo: "",
     ministerio: "",
-    telefono: "",
     cui: "",
     adminAsignadoId: "",
   },
@@ -99,7 +95,7 @@ let appState = {
   reopenModal: { ticketId: null }
 };
 
-/* ====================== Utilidades ====================== */
+/* ====================== Utils ====================== */
 function showNotification(message, type = "success") {
   const notification = document.createElement("div");
   notification.className = "notification";
@@ -141,7 +137,6 @@ function ministerioName(code) {
   }
 }
 
-// fechas utilitarias
 function iso_to_ddmmyyyy(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
@@ -182,7 +177,7 @@ function updateActivity() {
   document.getElementById("statusEdits").textContent = appState.activity.edits;
 }
 
-/* ====================== Render personas ====================== */
+/* ====================== Personas ====================== */
 function personCard(p, type) {
   const actions = type === "admin"
     ? `
@@ -205,7 +200,6 @@ function personCard(p, type) {
         <span class="person-tag">${p.ministerio}</span>
       </div>
       <p class="person-detail"><strong>Correo:</strong> ${p.email}</p>
-      <p class="person-detail"><strong>Tel.:</strong> ${p.telefono || "—"}</p>
       <p class="person-detail"><strong>CUI:</strong> ${p.cui || "—"}</p>
       <p class="person-detail"><strong>Ministerio:</strong> ${ministerioName(p.ministerio)}</p>
       ${type !== "admin" ? `<p class="person-detail"><strong>Admin asignado:</strong> ${p.adminId ? (appState.admins.find(a=>a.id===p.adminId)?.nombre || p.adminId) : "—"}</p>` : ""}
@@ -216,20 +210,27 @@ function personCard(p, type) {
   `;
 }
 
+/* === Cambio: renderAdmins ahora soporta filtro por nombre si existe #adminsSearchInput === */
 function renderAdmins() {
   const box = document.getElementById("adminsContainer");
   const empty = document.getElementById("noAdmins");
   if (!box) return;
-  if (appState.admins.length === 0) {
+
+  // Filtro por nombre (input inyectado dinámicamente)
+  const q = (document.getElementById("adminsSearchInput")?.value || "").toLowerCase().trim();
+
+  let list = [...appState.admins];
+  if (q) list = list.filter(a => a.nombre.toLowerCase().includes(q));
+
+  if (list.length === 0) {
     box.innerHTML = "";
     empty?.classList.remove("hidden");
     return;
   }
   empty?.classList.add("hidden");
-  box.innerHTML = appState.admins.map(a => personCard(a, "admin")).join("");
+  box.innerHTML = list.map(a => personCard(a, "admin")).join("");
 }
 
-/* ===== Usuarios (con filtro por admin asignado) ===== */
 function renderUsers() {
   const box = document.getElementById("usersContainer");
   const empty = document.getElementById("noUsers");
@@ -262,7 +263,6 @@ function renderUsers() {
   box.innerHTML = list.map(u => personCard(u, "user")).join("");
 }
 
-/* ===== Usuarios sin admin ===== */
 function renderUsersWithoutAdmin() {
   const box = document.getElementById("sinAdminUsersContainer");
   const empty = document.getElementById("noSinAdminUsers");
@@ -316,26 +316,28 @@ function viewAssignedUsers(adminId) {
 
 function closeAssignedModal() {
   const modal = document.getElementById("assignedModalBackdrop");
+  if (!modal) return;
   modal.classList.add("hidden");
   document.body.style.overflow = "";
   appState.assignedModal.adminId = null;
 }
 
-/* ====================== Tickets activos (con barra de EXCESO) ====================== */
-function ticketCard(t) {
+/* ====================== Tickets (barra = % UTILIZADO + EXCESO) ====================== */
+function ticketCard(t, isHistory = false) {
   const admin = appState.admins.find(a => a.id === t.adminId);
-  const users = (t.userIds || [])
-    .map(uid => appState.users.find(u => u.id === uid))
-    .filter(Boolean);
+  const user = appState.users.find(u => u.id === t.userId);
 
   const presupuesto = Number(t.presupuesto || 0);
   const gastado = Number(t.gastado || 0);
 
-  const usedPctRaw = presupuesto > 0 ? (gastado / presupuesto) * 100 : 0;
-  const usedPct = Math.min(100, usedPctRaw);
+  const disponible = Math.max(0, presupuesto - gastado);
+  const exceso = Math.max(0, gastado - presupuesto);
 
-  const excess = Math.max(0, gastado - presupuesto);
-  const excessPct = presupuesto > 0 ? Math.min(100, (excess / presupuesto) * 100) : 0;
+  const usedPct = presupuesto > 0 ? Math.min(100, (gastado / presupuesto) * 100) : 0;
+  const excesoPct = presupuesto > 0 ? Math.min(100, (exceso / presupuesto) * 100) : 0;
+
+  const statusClass = isHistory ? "status-completed" : "status-active";
+  const statusText = isHistory ? "Cerrado" : "Abierto";
 
   return `
     <div class="ticket-card">
@@ -344,18 +346,12 @@ function ticketCard(t) {
           <h3 class="ticket-title">${t.id}</h3>
           <p class="ticket-ministry">${ministerioName(t.ministerio)}</p>
           <p class="ticket-assigned"><strong>Administrador:</strong> ${admin ? admin.nombre : "—"}</p>
+          <p class="ticket-assigned"><strong>Usuario asignado:</strong> ${user ? `<code>${user.id}</code> — ${user.nombre}` : "—"}</p>
         </div>
-        <span class="ticket-status status-active">Abierto</span>
+        <span class="ticket-status ${statusClass}">${statusText}</span>
       </div>
 
       <p class="ticket-description">${t.descripcion}</p>
-
-      <div class="ticket-people">
-        <p class="ticket-users-title">Usuarios asignados:</p>
-        <ul class="ticket-users">
-          ${users.length ? users.map(u => `<li><code>${u.id}</code> — ${u.nombre}</li>`).join("") : "<li>—</li>"}
-        </ul>
-      </div>
 
       <div class="ticket-budget">
         <div class="budget-row">
@@ -366,21 +362,24 @@ function ticketCard(t) {
           <span class="budget-label">Gastado</span>
           <span class="budget-amount budget-spent">Q${gastado.toFixed(2)}</span>
         </div>
-
-        <div class="budget-progress" title="Uso del presupuesto">
-          <div class="budget-fill" style="width:${usedPct}%;"></div>
+        <div class="budget-row">
+          <span class="budget-label">${exceso > 0 ? "Exceso" : "Disponible"}</span>
+          <span class="budget-amount ${exceso > 0 ? "savings-negative" : "budget-available"}">
+            ${exceso > 0 ? `Q${exceso.toFixed(2)}` : `Q${disponible.toFixed(2)}`}
+          </span>
         </div>
-        <p class="budget-percentage">${Math.min(usedPctRaw, 100).toFixed(1)}% utilizado</p>
 
-        ${excess > 0
-          ? `
-            <div class="excess-progress" title="Exceso sobre el presupuesto">
-              <div class="excess-fill" style="width:${excessPct}%;"></div>
-            </div>
-            <p class="excess-text">Exceso: Q${excess.toFixed(2)} (${excessPct.toFixed(1)}%)</p>
-          `
-          : ""
-        }
+        <div class="available-progress" title="Porcentaje utilizado">
+          <div class="available-fill" style="width:${usedPct}%;"></div>
+        </div>
+        <p class="budget-percentage">${usedPct.toFixed(1)}% utilizado</p>
+
+        ${exceso > 0 ? `
+          <div class="excess-progress" title="Exceso sobre el presupuesto">
+            <div class="excess-fill" style="width:${excesoPct}%;"></div>
+          </div>
+          <p class="excess-text">Exceso: Q${exceso.toFixed(2)} (${excesoPct.toFixed(1)}%)</p>
+        ` : ``}
       </div>
 
       <div class="ticket-dates">
@@ -389,8 +388,11 @@ function ticketCard(t) {
       </div>
 
       <div class="ticket-actions">
-        <button class="action-btn secondary" onclick="showNotification('Detalle próximamente','info')">Detalle</button>
-        <button class="action-btn danger" onclick="showNotification('Cerrar ticket próximamente','info')">Cerrar</button>
+        <button class="action-btn secondary" onclick="showNotification('Detalle próximamente','info')">Ver Detalles</button>
+        ${isHistory
+          ? `<button class="action-btn primary" onclick="openReopenModal('${t.id}')">Reabrir</button>`
+          : `<button class="action-btn danger" onclick="showNotification('Cerrar ticket próximamente','info')">Cerrar</button>`
+        }
       </div>
     </div>
   `;
@@ -419,84 +421,10 @@ function renderTickets() {
     return;
   }
   empty?.classList.add("hidden");
-  box.innerHTML = list.map(ticketCard).join("");
+  box.innerHTML = list.map(t => ticketCard(t, false)).join("");
 }
 
-/* ====================== Historial de tickets ====================== */
-function historyTicketCard(t) {
-  const admin = appState.admins.find(a => a.id === t.adminId);
-  const users = (t.userIds || [])
-    .map(uid => appState.users.find(u => u.id === uid))
-    .filter(Boolean);
-
-  const presupuesto = Number(t.presupuesto || 0);
-  const gastado = Number(t.gastado || 0);
-
-  const usedPctRaw = presupuesto > 0 ? (gastado / presupuesto) * 100 : 0;
-  const usedPct = Math.min(100, usedPctRaw);
-
-  const excess = Math.max(0, gastado - presupuesto);
-  const excessPct = presupuesto > 0 ? Math.min(100, (excess / presupuesto) * 100) : 0;
-
-  return `
-    <div class="ticket-card">
-      <div class="ticket-header">
-        <div>
-          <h3 class="ticket-title">${t.id}</h3>
-          <p class="ticket-ministry">${ministerioName(t.ministerio)}</p>
-          <p class="ticket-assigned"><strong>Administrador:</strong> ${admin ? admin.nombre : "—"}</p>
-        </div>
-        <span class="ticket-status status-completed">Cerrado</span>
-      </div>
-
-      <p class="ticket-description">${t.descripcion}</p>
-
-      <div class="ticket-people">
-        <p class="ticket-users-title">Usuarios asignados:</p>
-        <ul class="ticket-users">
-          ${users.length ? users.map(u => `<li><code>${u.id}</code> — ${u.nombre}</li>`).join("") : "<li>—</li>"}
-        </ul>
-      </div>
-
-      <div class="ticket-budget">
-        <div class="budget-row">
-          <span class="budget-label">Presupuesto</span>
-          <span class="budget-amount budget-total">Q${presupuesto.toFixed(2)}</span>
-        </div>
-        <div class="budget-row">
-          <span class="budget-label">Gastado</span>
-          <span class="budget-amount budget-spent">Q${gastado.toFixed(2)}</span>
-        </div>
-
-        <div class="budget-progress" title="Uso del presupuesto">
-          <div class="budget-fill" style="width:${usedPct}%;"></div>
-        </div>
-        <p class="budget-percentage">${Math.min(usedPctRaw, 100).toFixed(1)}% utilizado</p>
-
-        ${excess > 0
-          ? `
-            <div class="excess-progress" title="Exceso sobre el presupuesto">
-              <div class="excess-fill" style="width:${excessPct}%;"></div>
-            </div>
-            <p class="excess-text">Exceso: Q${excess.toFixed(2)} (${excessPct.toFixed(1)}%)</p>
-          `
-          : ""
-        }
-      </div>
-
-      <div class="ticket-dates">
-        <span>Creado: ${t.fecha_creacion}</span>
-        <span>Vencía: ${t.fecha_vencimiento}</span>
-      </div>
-
-      <div class="ticket-actions">
-        <button class="action-btn secondary" onclick="showNotification('Detalle próximamente','info')">Detalle</button>
-        <button class="action-btn primary" onclick="openReopenModal('${t.id}')">Reabrir</button>
-      </div>
-    </div>
-  `;
-}
-
+/* ====================== Historial ====================== */
 function renderHistory() {
   const box = document.getElementById("historyContainer");
   const empty = document.getElementById("historyEmpty");
@@ -520,10 +448,10 @@ function renderHistory() {
     return;
   }
   empty?.classList.add("hidden");
-  box.innerHTML = list.map(historyTicketCard).join("");
+  box.innerHTML = list.map(t => ticketCard(t, true)).join("");
 }
 
-/* ===== Reabrir: modal y acciones ===== */
+/* ===== Reabrir ===== */
 function openReopenModal(ticketId) {
   const t = appState.history.find(x => x.id === ticketId);
   if (!t) {
@@ -535,7 +463,6 @@ function openReopenModal(ticketId) {
   const label = document.getElementById("reopenTicketIdLabel");
   label.textContent = ticketId;
 
-  // fecha por defecto: hoy + 7 días
   const d = new Date();
   d.setDate(d.getDate() + 7);
   document.getElementById("reopenDueDate").value = d.toISOString().slice(0,10);
@@ -591,7 +518,7 @@ function saveReopenModal(e) {
   renderTickets();
 }
 
-/* ====================== Creación (individual) ====================== */
+/* ====================== Creación ====================== */
 function updateCreateButton() {
   const { role, nombre, email, ministerio } = appState.createForm;
   const btn = document.getElementById("createBtn");
@@ -614,21 +541,20 @@ function updateCreateButton() {
 }
 
 function toggleAssignAdminByRole() {
-  const group = document.getElementById("assignAdminGroup");
+  const assignGroup = document.getElementById("assignAdminGroup");
   const role = appState.createForm.role;
-  if (!group) return;
+
   if (role === "user") {
-    group.style.display = "";
+    assignGroup.style.display = "";
   } else {
-    group.style.display = "none";
+    assignGroup.style.display = "none";
     appState.createForm.adminAsignadoId = "";
-    document.getElementById("assignAdminSelect").value = "";
+    const sel = document.getElementById("assignAdminSelect");
+    if (sel) sel.value = "";
   }
 }
 
-/* Rellena selects dependientes de admins (incluye filtros) */
 function populateAdminSelects() {
-  // Creación -> Asignar administrador
   const assignSelect = document.getElementById("assignAdminSelect");
   if (assignSelect) {
     const current = assignSelect.value;
@@ -637,7 +563,6 @@ function populateAdminSelects() {
     if (current && appState.admins.some(a=>a.id===current)) assignSelect.value = current;
   }
 
-  // Tickets -> filtro por administrador
   const ticketsAdminFilter = document.getElementById("ticketsAdminFilter");
   if (ticketsAdminFilter) {
     const cur = ticketsAdminFilter.value;
@@ -646,7 +571,6 @@ function populateAdminSelects() {
     if (cur && appState.admins.some(a=>a.id===cur)) ticketsAdminFilter.value = cur;
   }
 
-  // Historial -> filtro por administrador
   const historyAdminFilter = document.getElementById("historyAdminFilter");
   if (historyAdminFilter) {
     const curH = historyAdminFilter.value;
@@ -655,7 +579,6 @@ function populateAdminSelects() {
     if (curH && appState.admins.some(a=>a.id===curH)) historyAdminFilter.value = curH;
   }
 
-  // USUARIOS -> filtro por administrador asignado
   const usersAdminFilter = document.getElementById("usersAdminFilter");
   if (usersAdminFilter) {
     const cur2 = usersAdminFilter.value;
@@ -668,7 +591,7 @@ function populateAdminSelects() {
 
 async function handleCreate(e) {
   e.preventDefault();
-  const { role, nombre, email, titulo, ministerio, telefono, cui, adminAsignadoId } = appState.createForm;
+  const { role, nombre, email, titulo, ministerio, cui, adminAsignadoId } = appState.createForm;
   if (!role || !nombre || !email || !ministerio) {
     showNotification("Completa los campos obligatorios (*)", "error");
     return;
@@ -681,17 +604,18 @@ async function handleCreate(e) {
     await new Promise(r => setTimeout(r, 700));
     const id = (role === "admin" ? "adm_" : "usr_") + Math.random().toString(36).slice(2, 7);
 
-    const nuevo = { id, nombre, email, titulo, ministerio, telefono, cui };
+    const base = { id, nombre, email, titulo, ministerio, cui };
+
     if (role === "admin") {
-      appState.admins.push(nuevo);
+      appState.admins.push(base);
     } else {
-      if (adminAsignadoId) nuevo.adminId = adminAsignadoId;
-      appState.users.push(nuevo);
+      if (adminAsignadoId) base.adminId = adminAsignadoId;
+      appState.users.push(base);
     }
 
     appState.activity.altas += 1;
 
-    appState.createForm = { role: "", nombre: "", email: "", titulo: "", ministerio: "", telefono: "", cui: "", adminAsignadoId: "" };
+    appState.createForm = { role: "", nombre: "", email: "", titulo: "", ministerio: "", cui: "", adminAsignadoId: "" };
     document.getElementById("createPersonForm")?.reset();
     toggleAssignAdminByRole();
 
@@ -715,7 +639,7 @@ async function handleCreate(e) {
   }
 }
 
-/* ====================== Creación masiva por CSV ====================== */
+/* ====================== CSV ====================== */
 function pickCsv() { document.getElementById("csvInput")?.click(); }
 
 function parseCsvText(text) {
@@ -726,7 +650,7 @@ function parseCsvText(text) {
   const ix = (name) => header.indexOf(name);
 
   const iRole = ix("role"), iNombre = ix("nombre"), iEmail = ix("email"), iTitulo = ix("titulo"),
-        iMinisterio = ix("ministerio"), iTelefono = ix("telefono"), iCui = ix("cui");
+        iMinisterio = ix("ministerio"), iCui = ix("cui");
 
   const data = [];
   for (let r = 1; r < rows.length; r++) {
@@ -738,7 +662,6 @@ function parseCsvText(text) {
       email: iEmail >= 0 ? cols[iEmail] : "",
       titulo: iTitulo >= 0 ? cols[iTitulo] : "",
       ministerio: iMinisterio >= 0 ? cols[iMinisterio] : "",
-      telefono: iTelefono >= 0 ? cols[iTelefono] : "",
       cui: iCui >= 0 ? cols[iCui] : "",
     });
   }
@@ -762,7 +685,7 @@ function handleCsvFile(file) {
         const role = (r.role === "admin" ? "admin" : "user");
         if (!r.nombre || !r.email || !r.ministerio || !validMinisterio(r.ministerio)) { err++; return; }
         const id = (role === "admin" ? "adm_" : "usr_") + Math.random().toString(36).slice(2, 7);
-        const nuevo = { id, nombre: r.nombre, email: r.email, titulo: r.titulo || "", ministerio: r.ministerio, telefono: r.telefono || "", cui: r.cui || "" };
+        const nuevo = { id, nombre: r.nombre, email: r.email, titulo: r.titulo || "", ministerio: r.ministerio, cui: r.cui || "" };
 
         if (role === "admin") {
           appState.admins.push(nuevo);
@@ -791,11 +714,10 @@ function handleCsvFile(file) {
   reader.readAsText(file);
 }
 
-/* Descargar plantilla CSV */
 function downloadCsvTemplate() {
-  const header = "role,nombre,email,titulo,ministerio,telefono,cui\n";
-  const example1 = "admin,Ana Morales,ana.morales@gobierno.gob.gt,Admin Regional,ME,+502 5555-0000,1234 56789 0101\n";
-  const example2 = "user,Carlos López,carlos.lopez@gobierno.gob.gt,Técnico,MA,+502 5555-1111,7777 88888 9999\n";
+  const header = "role,nombre,email,titulo,ministerio,cui\n";
+  const example1 = "admin,Ana Morales,ana.morales@gobierno.gob.gt,Admin Regional,ME,1234 56789 0101\n";
+  const example2 = "user,Carlos López,carlos.lopez@gobierno.gob.gt,Técnico,MA,7777 88888 9999\n";
   const blob = new Blob([header, example1, example2], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -881,50 +803,43 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("historyAdminFilter")?.addEventListener("change", renderHistory);
   document.getElementById("historySearchInput")?.addEventListener("input", renderHistory);
 
-  // Form creación
-  const form = document.getElementById("createPersonForm");
-  if (form) {
-    form.addEventListener("submit", handleCreate);
-
-    const roleSelect = document.getElementById("roleSelect");
-    roleSelect?.addEventListener("change", () => {
-      appState.createForm.role = roleSelect.value || "";
-      toggleAssignAdminByRole();
-      updateCreateButton();
-    });
-
-    ["fullNameInput","emailInput","titleInput","ministerioSelect","phoneInput","cuiInput","assignAdminSelect"].forEach(id => {
-      const el = document.getElementById(id);
-      el?.addEventListener("input", () => {
-        appState.createForm.nombre = document.getElementById("fullNameInput")?.value?.trim() || "";
-        appState.createForm.email = document.getElementById("emailInput")?.value?.trim() || "";
-        appState.createForm.titulo = document.getElementById("titleInput")?.value?.trim() || "";
-        appState.createForm.ministerio = document.getElementById("ministerioSelect")?.value || "";
-        appState.createForm.telefono = document.getElementById("phoneInput")?.value?.trim() || "";
-        appState.createForm.cui = document.getElementById("cuiInput")?.value?.trim() || "";
-        appState.createForm.adminAsignadoId = document.getElementById("assignAdminSelect")?.value || "";
-        updateCreateButton();
-      });
-    });
+  // === Cambio: insertar dinámicamente buscador en "Administradores" ===
+  const adminsTab = document.getElementById("administradores-tab");
+  if (adminsTab && !document.getElementById("adminsSearchInput")) {
+    const row = document.createElement("div");
+    row.className = "filters-row";
+    const input = document.createElement("input");
+    input.id = "adminsSearchInput";
+    input.className = "filter-input";
+    input.type = "search";
+    input.placeholder = "Buscar administrador por nombre";
+    input.addEventListener("input", renderAdmins);
+    row.appendChild(input);
+    adminsTab.insertBefore(row, adminsTab.firstElementChild?.nextSibling || adminsTab.firstChild);
   }
 
-  // CSV
-  document.getElementById("bulkCsvBtn")?.addEventListener("click", pickCsv);
-  document.getElementById("csvInput")?.addEventListener("change", (e) => {
-    const f = e.target.files?.[0];
-    if (f) handleCsvFile(f);
-    e.target.value = ""; // reset input
-  });
-
-  // Descargar plantilla CSV
-  document.getElementById("downloadCsvTemplateBtn")?.addEventListener("click", downloadCsvTemplate);
-
-  // Modal asignados
-  document.getElementById("assignedCloseBtn")?.addEventListener("click", closeAssignedModal);
-  document.getElementById("assignedCancelBtn")?.addEventListener("click", closeAssignedModal);
+  // Modal asignados (Usuarios asignados) — Fix cierre
   const assignedBackdrop = document.getElementById("assignedModalBackdrop");
+  const assignedCloseBtn = document.getElementById("assignedCloseBtn");
+  const assignedCancelBtn = document.getElementById("assignedCancelBtn");
+  const assignedModalBox = assignedBackdrop?.querySelector(".modal");
+
+  assignedCloseBtn?.addEventListener("click", (e) => { e.preventDefault(); closeAssignedModal(); });
+  assignedCancelBtn?.addEventListener("click", (e) => { e.preventDefault(); closeAssignedModal(); });
+
+  // Clic fuera del modal cierra (solo si el target es el backdrop)
   assignedBackdrop?.addEventListener("click", (e) => {
     if (e.target === assignedBackdrop) closeAssignedModal();
+  });
+
+  // Evitar que clics dentro del cuadro propaguen al backdrop
+  assignedModalBox?.addEventListener("click", (e) => e.stopPropagation());
+
+  // Tecla Esc cierra
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !assignedBackdrop.classList.contains("hidden")) {
+      closeAssignedModal();
+    }
   });
 
   // Modal reabrir
@@ -950,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* Exponer funciones usadas en HTML dinámico */
 window.viewAssignedUsers = viewAssignedUsers;
-window.deletePerson = deletePerson;
+window.deletePerson = (type,id)=>showNotification(`Eliminar ${type} ${id} próximamente`,"info");
 window.editPerson = () => showNotification("Edición rápida próximamente","info");
 window.switchTab = switchTab;
 window.openReopenModal = openReopenModal;

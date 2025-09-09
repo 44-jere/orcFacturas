@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Descargar Facturas - Automatix Solutions</title>
-  <link rel="stylesheet" href="DescargarFacturas.css"/>
+  <link rel="stylesheet" href="DescargaFacturasSupervisor.css"/>
 </head>
 <body class="dark-theme">
   <!-- Header -->
@@ -68,14 +68,63 @@
           <input id="dateTo" type="date" class="vg-input" />
         </div>
 
-        <!-- NUEVO: Buscar por usuario -->
+        <!-- Buscar por usuario -->
         <div class="filter-item">
           <label class="vg-label">Buscar por usuario</label>
           <select id="userFilter" class="vg-input">
             <option value="">Todos</option>
           </select>
         </div>
-        <!-- /NUEVO -->
+
+        <!-- Buscar por tipo de gasto -->
+        <div class="filter-item">
+          <label class="vg-label">Tipo de gasto</label>
+          <select id="tipoGastoFilter" class="vg-input">
+            <option value="">Todos</option>
+            <option>Hotel</option>
+            <option>Alimentacion</option>
+            <option>Transporte</option>
+            <option>Combustible</option>
+            <option>Peajes</option>
+            <option>Estacionamiento</option>
+            <option>Otros</option>
+          </select>
+        </div>
+
+        <!-- Buscar por comida (habilita solo si tipo=Alimentacion) -->
+        <div class="filter-item">
+          <label class="vg-label">Comida</label>
+          <select id="comidaFilter" class="vg-input">
+            <option value="">Ninguna</option>
+            <option value="desayuno">Desayuno</option>
+            <option value="almuerzo">Almuerzo</option>
+            <option value="cena">Cena</option>
+          </select>
+        </div>
+
+        <!-- Buscar por NIT Emisor -->
+        <div class="filter-item">
+          <label class="vg-label">NIT Emisor</label>
+          <input id="nitEmisorSearch" type="text" class="vg-input" placeholder="Ej.: 1234567-8" />
+        </div>
+
+        <!-- Buscar por ID de ticket -->
+        <div class="filter-item">
+          <label class="vg-label">Buscar por ID de ticket</label>
+          <input id="ticketIdSearch" type="text" class="vg-input" placeholder="TCK-0001..." />
+        </div>
+
+        <!-- Buscar por ID Administrador -->
+        <div class="filter-item">
+          <label class="vg-label">Buscar por ID Administrador</label>
+          <input id="adminIdSearch" type="text" class="vg-input" placeholder="ADM-0001..." />
+        </div>
+
+        <!-- NUEVO: Buscar por Entidad -->
+        <div class="filter-item">
+          <label class="vg-label">Buscar por Entidad</label>
+          <input id="entidadSearch" type="text" class="vg-input" placeholder="Ej.: Automatix, Banco..." />
+        </div>
 
         <div class="filter-item grow">
           <label class="vg-label">Buscar por ID de factura</label>
@@ -99,11 +148,15 @@
         <table class="vg-table" id="facturasTable">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Entidad</th>
+              <th>ID Ticket</th>
+              <th>ID Administrador</th>
+              <th>ID Factura</th>
+              <th>ID Usuario</th>
               <th>Proveedor</th>
               <th>Serie</th>
               <th>No. Factura</th>
-              <th>Fecha</th>
+              <th>Fecha Emisión</th>
               <th>Moneda</th>
               <th>NIT Emisor</th>
               <th>NIT Receptor</th>
@@ -119,6 +172,6 @@
     </div>
   </main>
 
-  <script src="DescargarFacturas.js"></script>
+  <script src="DescargaFacturasSupervisor.js"></script>
 </body>
 </html>

@@ -2,7 +2,6 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 
 :root{
-  /* Oscuro */
   --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
   --bg-secondary: rgba(30,41,59,.8);
   --bg-tertiary: rgba(51,65,85,.5);
@@ -42,10 +41,7 @@ body{
 
 /* =================== Animations =================== */
 @keyframes fadeIn{ from{opacity:.0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-@keyframes slideInRight{ from{transform:translateX(100%);} to{transform:translateX(0);} }
-@keyframes slideOutRight{ from{transform:translateX(0);} to{transform:translateX(100%);} }
 @keyframes spin{ from{transform:rotate(0);} to{transform:rotate(360deg);} }
-/* notificaciones */
 @keyframes slideIn{ from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
 @keyframes slideOut{ from{opacity:1; transform:translateY(0);} to{opacity:0; transform:translateY(-8px);} }
 
@@ -79,7 +75,6 @@ body{
   width:40px; height:40px; background:var(--bg-tertiary); border:1px solid var(--border-secondary);
   border-radius:12px; cursor:pointer; transition:all .3s ease; display:flex; align-items:center; justify-content:center;
 }
-.theme-toggle:hover{ background:var(--input-bg); }
 .theme-icon{ width:20px; height:20px; color:var(--text-tertiary); }
 
 /* profile */
@@ -105,7 +100,6 @@ body{
 }
 .dropdown-item:hover{ background:var(--input-bg); }
 .dropdown-item.logout{ color:var(--danger); }
-.dropdown-item.logout:hover{ background:rgba(239,68,68,.1); }
 .dropdown-divider{ margin:8px 0; border:none; border-top:1px solid var(--border-secondary); }
 
 /* =================== Main =================== */
@@ -207,23 +201,22 @@ body{
 .status-completed{ background:rgba(59,130,246,.2); color:var(--info); border-color:rgba(59,130,246,.3); }
 
 .ticket-description{ color:var(--text-tertiary); margin-bottom:16px; line-height:1.5; }
-.ticket-people{ margin-bottom:16px; }
-.ticket-users-title{ font-size:14px; color:var(--text-secondary); margin-bottom:6px; }
-.ticket-users{ padding-left:18px; }
-.ticket-users li{ margin:2px 0; }
 
+/* Presupuesto */
 .ticket-budget{ margin-bottom:16px; }
 .budget-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
 .budget-label{ font-size:14px; color:var(--text-secondary); }
 .budget-amount{ font-weight:600; font-size:14px; }
 .budget-total{ color:var(--text-primary); }
 .budget-spent{ color:var(--danger); }
+.budget-available{ color:var(--success); }
 
-.budget-progress{ width:100%; height:8px; border-radius:4px; background:var(--input-bg); overflow:hidden; margin-bottom:4px; }
-.budget-fill{ height:100%; background: linear-gradient(90deg, var(--danger), #dc2626); transition:width .5s ease; }
+/* Barra principal (se reutiliza el nombre pero ahora representa % UTILIZADO) */
+.available-progress{ width:100%; height:8px; border-radius:4px; background:var(--input-bg); overflow:hidden; margin-bottom:4px; }
+.available-fill{ height:100%; background: var(--accent-primary); transition:width .5s ease; }
 .budget-percentage{ font-size:12px; color:var(--text-secondary); }
 
-/* EXCESO (barra adicional) */
+/* EXCESO (barra adicional en rojo) */
 .excess-progress{
   width:100%; height:8px; border-radius:4px; background:var(--input-bg);
   overflow:hidden; margin-top:6px; border:1px dashed rgba(239,68,68,.35);
@@ -231,6 +224,7 @@ body{
 .excess-fill{ height:100%; background:linear-gradient(90deg,#fb7185,#ef4444); }
 .excess-text{ font-size:12px; margin-top:4px; color:#fca5a5; }
 
+/* Dates & actions */
 .ticket-dates{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:16px; }
 .ticket-actions{ display:flex; gap:12px; }
 
@@ -263,7 +257,6 @@ body{
 .form-textarea{ resize:vertical; min-height:96px; }
 
 .csv-hint{ font-size:13px; color:var(--text-secondary); background:rgba(59,130,246,.08); border:1px dashed rgba(59,130,246,.25); padding:10px 12px; border-radius:10px; }
-.csv-hint code{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
 .form-hint{ font-size:12px; color:var(--text-secondary); }
 
 /* Buttons */
@@ -307,24 +300,5 @@ body{
 .spinner{ width:48px; height:48px; animation:spin 1s linear infinite; }
 .loading-text{ color:#fff; font-size:16px; font-weight:500; }
 
-/* Notification (toast) */
+/* Notification */
 .notification{ border-radius:12px; }
-
-/* Responsive */
-@media (max-width:1024px){
-  .activity-grid{ grid-template-columns:1fr; }
-  .tickets-grid{ grid-template-columns:1fr; }
-}
-@media (max-width:768px){
-  .main-content{ padding:16px; }
-  .stats-grid{ grid-template-columns:1fr; }
-  .form-row{ grid-template-columns:1fr; }
-  .tabs-nav{ flex-direction:column; }
-  .tab-btn{ width:100%; text-align:center; }
-  .ticket-actions{ flex-direction:column; }
-}
-@media (max-width:480px){
-  .header-content{ flex-direction:column; gap:12px; text-align:center; }
-  .header-controls{ width:100%; justify-content:center; }
-  .stat-content{ flex-direction:column; text-align:center; gap:8px; }
-}

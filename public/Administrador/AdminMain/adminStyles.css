@@ -1026,6 +1026,7 @@ body {
 .budget-spent { color: var(--danger); }
 .budget-available { color: var(--success); }
 
+/* ====== Barras de presupuesto ====== */
 .budget-progress {
     width: 100%;
     height: 8px;
@@ -1033,12 +1034,19 @@ body {
     background: var(--input-bg);
     overflow: hidden;
     margin-bottom: 4px;
+    position: relative;
 }
 
+/* FIX: el ancho real lo impone el style="width:X%" desde HTML */
 .budget-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--danger), #dc2626);
+    width: 0;
+    background: linear-gradient(90deg, #8b5cf6, #6366f1);
     transition: width 0.5s ease;
+    display: block;
 }
 
 .budget-percentage {
@@ -1145,7 +1153,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 
 .filter-select, .filter-input {
@@ -1161,6 +1169,67 @@ body {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ====== NUEVO: acciones de filtros (Buscar / Borrar) ====== */
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.filter-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color .2s ease, border-color .2s ease, transform .06s ease, opacity .2s ease;
+}
+
+.filter-btn:hover {
+    background: var(--input-bg);
+    border-color: var(--border-primary);
+}
+
+.filter-btn:active { transform: translateY(1px); }
+
+.filter-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.filter-btn.primary {
+    border-color: rgba(59, 130, 246, 0.3);
+    color: var(--info);
+}
+
+.filter-btn.primary:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.filter-btn.secondary {
+    border-color: var(--border-primary);
+    color: var(--text-tertiary);
+}
+
+.filter-btn.secondary:hover {
+    background: var(--input-bg);
+}
+
+/* ====== NUEVO: Rango de fechas en Historial (De / A) ====== */
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.range-sep {
+    font-size: 13px;
+    color: var(--text-secondary);
+    user-select: none;
 }
 
 /* No Data States */
@@ -1335,6 +1404,34 @@ body {
     border-top: 1px solid var(--border-secondary);
 }
 
+/* ===== Barras de EXCESO (sobre el 100%) ===== */
+.excess-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--input-bg);
+  overflow: hidden;
+  margin-top: 6px;
+  border: 1px dashed rgba(239, 68, 68, 0.35);
+}
+
+.excess-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb7185, #ef4444);
+  animation: growExcess 0.5s ease;
+}
+
+@keyframes growExcess {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.excess-text {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #fca5a5;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .activity-grid {
@@ -1434,6 +1531,7 @@ textarea:focus-visible {
 * {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
+
 /* ===== Quick links (atajos en header) ===== */
 .quick-links {
   display: flex;
@@ -1475,33 +1573,4 @@ textarea:focus-visible {
 /* Opcional: en móviles muestra solo ícono */
 @media (max-width: 520px) {
   .btn-label { display: none; }
-}
-
-/* ===== Barras de EXCESO (sobre el 100%) ===== */
-.excess-progress {
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--input-bg);
-  overflow: hidden;
-  margin-top: 6px;
-  border: 1px dashed rgba(239, 68, 68, 0.35);
-}
-
-.excess-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #fb7185, #ef4444);
-  /* No forzar color por tema; usa tonos rojos */
-  animation: growExcess 0.5s ease;
-}
-
-@keyframes growExcess {
-  from { width: 0; }
-  to   { width: 100%; }
-}
-
-.excess-text {
-  font-size: 12px;
-  margin-top: 4px;
-  color: #fca5a5; /* rojo suave legible en oscuro; en claro también contrasta */
 }
