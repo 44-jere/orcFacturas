@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carga el .env que está JUNTO a baseDeDatos.js
 dotenv.config({ path: path.join(__dirname, "../.env.login") });
 
 export const loginRouter = Router();
