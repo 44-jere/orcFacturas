@@ -15,7 +15,7 @@ perfilRouter.get("/", (req, res) => {
   );
 });
 
-perfilRouter.post("/", async (req, res) => {
+perfilRouter.get("/userData", async (req, res) => {
   const { id } = protegerRuta({ req, res });
 
   try {

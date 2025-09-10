@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,15 +11,20 @@
         tailwind.config = { darkMode: 'class' }
     </script>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" id="body">
-    
+
     <!-- Loading State -->
-    <div id="loadingState" class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center hidden">
+    <div id="loadingState"
+        class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center hidden">
         <div class="text-center">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 flex items-center justify-center">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 flex items-center justify-center">
                 <svg class="animate-spin w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path class="opacity-75" fill="currentColor"
+                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
                 </svg>
             </div>
             <p class="text-slate-400">Cargando perfil...</p>
@@ -28,28 +34,39 @@
     <!-- Main Content -->
     <div id="mainContent">
         <!-- Header -->
-        <header id="header" class="header sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
+        <header id="header"
+            class="header sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0">
-                        <button id="backButton" class="shrink-0 w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-center" title="Volver atrás">
+                        <button id="backButton"
+                            class="shrink-0 w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-center"
+                            title="Volver atrás">
                             <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
                         <div class="min-w-0">
                             <h1 id="headerTitle" class="text-lg sm:text-xl font-bold text-white truncate">Mi Perfil</h1>
-                            <p id="headerSubtitle" class="text-xs sm:text-sm text-slate-400 truncate">Gestión de información personal</p>
+                            <p id="headerSubtitle" class="text-xs sm:text-sm text-slate-400 truncate">Gestión de
+                                información personal</p>
                         </div>
                     </div>
-                    
+
                     <!-- Toggle de tema -->
-                    <button id="themeToggle" class="w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0" title="Cambiar a modo claro">
-                        <svg id="moonIcon" class="w-5 h-5 mx-auto text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    <button id="themeToggle"
+                        class="w-10 h-10 bg-slate-700/50 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0"
+                        title="Cambiar a modo claro">
+                        <svg id="moonIcon" class="w-5 h-5 mx-auto text-slate-300" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                         </svg>
-                        <svg id="sunIcon" class="w-5 h-5 mx-auto text-yellow-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        <svg id="sunIcon" class="w-5 h-5 mx-auto text-yellow-500 hidden" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </button>
                 </div>
@@ -59,24 +76,30 @@
         <!-- Main Content -->
         <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
             <!-- Profile Card -->
-            <div id="profileCard" class="profile-card bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 sm:p-8 mb-8 shadow-2xl">
-                
+            <div id="profileCard"
+                class="profile-card bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 sm:p-8 mb-8 shadow-2xl">
+
                 <!-- Profile Header -->
                 <div class="profile-header flex items-start gap-4 sm:gap-6 mb-8">
                     <!-- Profile Photo -->
                     <div class="relative shrink-0">
-                        <div id="profilePhoto" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
+                        <div id="profilePhoto"
+                            class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
                             <!-- Profile initials will be set by JS -->
                         </div>
-                        
+
                         <!-- Change Photo Button -->
-                        <button id="changePhotoBtn" class="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors" title="Cambiar foto">
+                        <button id="changePhotoBtn"
+                            class="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors"
+                            title="Cambiar foto">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </button>
-                        
+
                         <input id="photoUpload" type="file" accept="image/*" class="hidden">
                     </div>
 
@@ -86,21 +109,23 @@
                             <h2 id="userName" class="text-xl sm:text-2xl font-bold text-white truncate">
                                 <!-- Name will be set by JS -->
                             </h2>
-                            <span id="userRoleBadge" class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
+                            <span id="userRoleBadge"
+                                class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
                                 <!-- Role badge will be set by JS -->
                             </span>
-                            <span id="userStatusBadge" class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
+                            <span id="userStatusBadge"
+                                class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap">
                                 <!-- Status badge will be set by JS -->
                             </span>
                         </div>
-                        
+
                         <p id="userPosition" class="text-base sm:text-lg text-slate-300 mb-1 sm:mb-2 truncate">
                             <!-- Position will be set by JS -->
                         </p>
                         <p id="userDepartment" class="text-sm sm:text-base text-slate-400 mb-4 truncate">
                             <!-- Department will be set by JS -->
                         </p>
-                        
+
                         <!-- Assigned Ministries -->
                         <div id="ministriesSection" class="mb-4 hidden">
                             <p class="text-sm text-slate-400 mb-2">Ministerios asignados:</p>
@@ -130,13 +155,16 @@
                 <!-- Navigation Tabs -->
                 <div class="nav-tabs -mx-1 overflow-x-auto pb-2 sm:pb-0">
                     <div class="flex gap-2 sm:gap-3 px-1">
-                        <button id="tabPerfil" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-blue-500 text-white whitespace-nowrap">
+                        <button id="tabPerfil"
+                            class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-blue-500 text-white whitespace-nowrap">
                             Información Personal
                         </button>
-                        <button id="tabConfiguracion" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
+                        <button id="tabConfiguracion"
+                            class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
                             Configuración
                         </button>
-                        <button id="tabEstadisticas" class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
+                        <button id="tabEstadisticas"
+                            class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
                             Estadísticas
                         </button>
                     </div>
@@ -173,7 +201,8 @@
                         </div>
                         <div class="space-y-1">
                             <label class="text-sm text-slate-400">Estado</label>
-                            <span id="viewEstado" class="inline-block px-3 py-1 rounded-full text-sm font-medium"></span>
+                            <span id="viewEstado"
+                                class="inline-block px-3 py-1 rounded-full text-sm font-medium"></span>
                         </div>
                     </div>
                 </div>
@@ -181,20 +210,24 @@
                 <!-- Configuration Tab -->
                 <div id="contentConfiguracion" class="space-y-6 hidden">
                     <h3 class="text-base sm:text-lg font-semibold text-white">Configuración</h3>
-                    
+
                     <div class="space-y-6">
                         <!-- Notifications -->
                         <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Notificaciones</h4>
-                            
+
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="font-medium text-white">Notificaciones push</p>
-                                        <p class="text-sm text-slate-400">Notificaciones en tiempo real en el navegador</p>
+                                        <p class="text-sm text-slate-400">Notificaciones en tiempo real en el navegador
+                                        </p>
                                     </div>
-                                    <button id="pushNotificationToggle" class="relative w-14 h-8 rounded-full p-1 transition-colors bg-slate-600 shrink-0">
-                                        <div id="pushNotificationSlider" class="w-6 h-6 rounded-full bg-white transition-transform translate-x-0"></div>
+                                    <button id="pushNotificationToggle"
+                                        class="relative w-14 h-8 rounded-full p-1 transition-colors bg-slate-600 shrink-0">
+                                        <div id="pushNotificationSlider"
+                                            class="w-6 h-6 rounded-full bg-white transition-transform translate-x-0">
+                                        </div>
                                     </button>
                                 </div>
                             </div>
@@ -203,22 +236,27 @@
                         <!-- Regional Preferences -->
                         <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Preferencias Regionales</h4>
-                            
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-sm font-medium text-slate-300">Idioma</label>
-                                    <div class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white opacity-60">
+                                    <div
+                                        class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white opacity-60">
                                         <span>Español (Fijo)</span>
                                     </div>
-                                    <p class="text-xs text-slate-500">El idioma está configurado permanentemente en español</p>
+                                    <p class="text-xs text-slate-500">El idioma está configurado permanentemente en
+                                        español</p>
                                 </div>
 
                                 <div class="space-y-2">
                                     <label class="text-sm font-medium text-slate-300">Zona horaria</label>
-                                    <select id="timezoneSelect" class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                                        <option value="America/Guatemala" class="bg-slate-800">Guatemala (GMT-6)</option>
+                                    <select id="timezoneSelect"
+                                        class="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                        <option value="America/Guatemala" class="bg-slate-800">Guatemala (GMT-6)
+                                        </option>
                                         <option value="America/Mexico_City" class="bg-slate-800">México (GMT-6)</option>
-                                        <option value="America/New_York" class="bg-slate-800">Nueva York (GMT-5)</option>
+                                        <option value="America/New_York" class="bg-slate-800">Nueva York (GMT-5)
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -227,19 +265,23 @@
                         <!-- Security -->
                         <div class="config-card p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                             <h4 class="font-semibold text-white mb-4">Seguridad</h4>
-                            
+
                             <div class="space-y-4">
                                 <div class="flex flex-col sm:flex-row gap-3">
-                                    <button id="changePasswordBtn" class="w-full sm:w-auto px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-xl transition-colors flex items-center gap-2 justify-center">
+                                    <button id="changePasswordBtn"
+                                        class="w-full sm:w-auto px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-xl transition-colors flex items-center gap-2 justify-center">
                                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                         </svg>
                                         <span>Cambiar contraseña</span>
                                     </button>
 
-                                    <button id="logoutBtn" class="w-full sm:w-auto px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors flex items-center gap-2 justify-center">
+                                    <button id="logoutBtn"
+                                        class="w-full sm:w-auto px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors flex items-center gap-2 justify-center">
                                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                         </svg>
                                         <span>Cerrar sesión</span>
                                     </button>
@@ -252,31 +294,34 @@
                 <!-- Statistics Tab -->
                 <div id="contentEstadisticas" class="space-y-6 hidden">
                     <h3 class="text-base sm:text-lg font-semibold text-white">Estadísticas</h3>
-                    
+
                     <!-- User Statistics -->
                     <div id="userStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <!-- Statistics cards will be added by JS -->
                     </div>
 
                     <!-- Admin Statistics -->
-                    <div id="adminStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 hidden">
+                    <div id="adminStatistics"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 hidden">
                         <!-- Admin statistics cards will be added by JS -->
                     </div>
 
                     <!-- Budget Progress (User only) -->
                     <div id="budgetProgress" class="p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
                         <h4 class="font-semibold text-white mb-4">Uso de Presupuesto</h4>
-                        
+
                         <div class="space-y-4">
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-400">Gastado</span>
                                 <span id="budgetText" class="text-white"></span>
                             </div>
-                            
+
                             <div class="w-full h-4 bg-slate-600 rounded-full overflow-hidden">
-                                <div id="budgetBar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000" style="width: 0%"></div>
+                                <div id="budgetBar"
+                                    class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
+                                    style="width: 0%"></div>
                             </div>
-                            
+
                             <p id="budgetPercentage" class="text-sm text-slate-400 text-center"></p>
                         </div>
                     </div>
@@ -285,6 +330,7 @@
         </main>
     </div>
 
-    <script src="PerfilScript.js"></script>
+    <script src="/General/perfil/PerfilScript.js"></script>
 </body>
+
 </html>
