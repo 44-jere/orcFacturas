@@ -9,7 +9,9 @@ const __dirname = path.dirname(__filename);
 export const perfilRouter = Router();
 
 perfilRouter.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "../../../public/perfil/PerfilIndex.html"))
+  res.sendFile(
+    path.join(__dirname, "../../../public/General/perfil/PerfilIndex.html")
+  )
 );
 
 perfilRouter.post("/", async (req, res) => {

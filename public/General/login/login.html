@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Automatix Solutions</title>
-    <link rel="stylesheet" href="loginStyles.css">
+    <link rel="stylesheet" href="/General/login/loginstyles.css">
 </head>
 
 <body class="dark-theme" id="body">
@@ -54,13 +54,13 @@
                 </div>
 
                 <!-- Formulario -->
-                <form id="loginForm" class="login-form">
+                <form action="/usuarios" method="post" id="loginForm" class="login-form">
                     <!-- Campo Usuario -->
                     <div class="form-group">
                         <label class="form-label">Usuario *</label>
                         <div class="input-container">
-                            <input type="text" id="usuario" class="form-input" placeholder="Tu nombre de usuario"
-                                required />
+                            <input type="text" name="usuario" id="usuario" class="form-input"
+                                placeholder="Tu nombre de usuario" required />
                             <div class="input-icon">
                                 <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -75,7 +75,7 @@
                     <div class="form-group">
                         <label class="form-label">Contraseña *</label>
                         <div class="input-container">
-                            <input type="password" id="contraseña" class="form-input password-input"
+                            <input name="password" type="password" id="contraseña" class="form-input password-input"
                                 placeholder="Tu contraseña" required />
                             <div class="input-icon">
                                 <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,7 +155,7 @@
         <div class="bg-blob bg-blob-2"></div>
     </div>
 
-    <script src="loginScript.js"></script>
+    <script src="/login/loginScript.js"></script>
 </body>
 
 </html>
