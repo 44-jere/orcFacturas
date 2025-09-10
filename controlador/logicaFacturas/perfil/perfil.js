@@ -8,11 +8,12 @@ const __dirname = path.dirname(__filename);
 //localhost/perfil/
 export const perfilRouter = Router();
 
-perfilRouter.get("/", (req, res) =>
+perfilRouter.get("/", (req, res) => {
+  const { id } = protegerRuta({ req, res });
   res.sendFile(
     path.join(__dirname, "../../../public/General/perfil/PerfilIndex.html")
-  )
-);
+  );
+});
 
 perfilRouter.post("/", async (req, res) => {
   const { id } = protegerRuta({ req, res });

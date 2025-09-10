@@ -8,6 +8,6 @@ const __dirname = path.dirname(__filename);
 //localhost/perfil/
 export const logoutRouter = Router();
 
-logoutRouter.get("/", (req, res) =>
+logoutRouter.post("/", (req, res) =>
   res.clearCookie("access_token").json("Logged out")
 );
