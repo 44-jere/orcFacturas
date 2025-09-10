@@ -21,9 +21,7 @@ async function validarLogin({ usuario, password, tabla }) {
     `;
     const values = [usuario];
 
-    console.time("⏱ query_usuario");
     const { rows } = await client.query(query, values);
-    console.timeEnd("⏱ query_usuario");
 
     if (rows.length === 0) {
       console.log("⚠️ Usuario no encontrado");
@@ -33,9 +31,7 @@ async function validarLogin({ usuario, password, tabla }) {
     const fila = rows[0];
 
     // ✅ comparar contraseña ingresada con el hash guardado
-    console.time("⏱ bcrypt_compare");
     const esValido = await bcrypt.compare(password, fila.password_hash);
-    console.timeEnd("⏱ bcrypt_compare");
 
     if (esValido) {
       console.log("✅ Usuario y contraseña correctos");
@@ -49,8 +45,6 @@ async function validarLogin({ usuario, password, tabla }) {
     // Mantenemos el contrato devolviendo false para no romper nada
     return false;
   } finally {
-    // ✅ MUY IMPORTANTE: liberar la conexión de la pool
-    try { client.release(); } catch {}
   }
 }
 
