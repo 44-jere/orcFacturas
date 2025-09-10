@@ -163,10 +163,7 @@
                             class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
                             Configuración
                         </button>
-                        <button id="tabEstadisticas"
-                            class="tab-btn px-3 sm:px-4 py-2 rounded-xl transition-all bg-slate-700/50 hover:bg-slate-700 text-slate-300 whitespace-nowrap">
-                            Estadísticas
-                        </button>
+                    
                     </div>
                 </div>
 
@@ -188,8 +185,8 @@
                             <p id="viewEmail" class="font-medium text-white"></p>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-sm text-slate-400">Teléfono</label>
-                            <p id="viewTelefono" class="font-medium text-white"></p>
+                            <label class="text-sm text-slate-400">Cui</label>
+                            <p id="viewCui" class="font-medium text-white"></p>
                         </div>
                         <div class="space-y-1">
                             <label class="text-sm text-slate-400">Cargo</label>
@@ -292,37 +289,7 @@
                 </div>
 
                 <!-- Statistics Tab -->
-                <div id="contentEstadisticas" class="space-y-6 hidden">
-                    <h3 class="text-base sm:text-lg font-semibold text-white">Estadísticas</h3>
-
-                    <!-- User Statistics -->
-                    <div id="userStatistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        <!-- Statistics cards will be added by JS -->
-                    </div>
-
-                    <!-- Admin Statistics -->
-                    <div id="adminStatistics"
-                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 hidden">
-                        <!-- Admin statistics cards will be added by JS -->
-                    </div>
-
-                    <!-- Budget Progress (User only) -->
-                    <div id="budgetProgress" class="p-5 sm:p-6 rounded-2xl border border-slate-700/50 bg-slate-700/30">
-                        <h4 class="font-semibold text-white mb-4">Uso de Presupuesto</h4>
-
-                        <div class="space-y-4">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-slate-400">Gastado</span>
-                                <span id="budgetText" class="text-white"></span>
-                            </div>
-
-                            <div class="w-full h-4 bg-slate-600 rounded-full overflow-hidden">
-                                <div id="budgetBar"
-                                    class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
-                                    style="width: 0%"></div>
-                            </div>
-
-                            <p id="budgetPercentage" class="text-sm text-slate-400 text-center"></p>
+               
                         </div>
                     </div>
                 </div>
