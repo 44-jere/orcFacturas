@@ -42,7 +42,18 @@ async function login({ validador, res, req } = {}) {
 }
 
 loginRouter.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "../../../public/General/login/login.html"))
+  res.sendFile(
+    path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "public",
+      "General",
+      "login",
+      "login.html"
+    )
+  )
 );
 
 loginRouter.post("/ministerios", async (req, res) => {

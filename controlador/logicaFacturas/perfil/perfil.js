@@ -11,7 +11,16 @@ export const perfilRouter = Router();
 perfilRouter.get("/", (req, res) => {
   const { id } = protegerRuta({ req, res });
   res.sendFile(
-    path.join(__dirname, "../../../public/General/perfil/PerfilIndex.html")
+    path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "public",
+      "General",
+      "perfil",
+      "PerfilIndex.html"
+    )
   );
 });
 
