@@ -10,7 +10,7 @@ const SAMPLE_USERS = [
     id: "user_001",
     nombre: "Juan Pérez",
     email: "juan.perez@gobierno.gob.gt",
-    cargo: "Director Regional",
+    cargo: "Director Regional", 
     ministerios_asignados: [{ id: "min_001", nombre: "Ministerio de Educación", codigo: "ME" }],
   },
   {
@@ -877,15 +877,24 @@ function exportTicket(ticketId) {
   showNotification("Exportación próximamente", "info");
 }
 
-function handleLogout() {
+async function handleLogout() {
   if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
     showNotification("Cerrando sesión...", "info");
-    setTimeout(() => {
-      console.log("Redirigiendo al login...");
-    }, 1000);
+      const response = await fetch("/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // Si necesitas enviar algo en el body (ej: token, id de usuario)
+      body: JSON.stringify({}),
+      credentials: "include" // incluye cookies (por si usas sesiones)
+    });
+      
   }
 }
 
+
+// Llamada
 /* ====================== Tabs ====================== */
 function switchTab(tabName) {
   appState.activeTab = tabName;
