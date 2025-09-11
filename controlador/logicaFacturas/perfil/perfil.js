@@ -2,6 +2,7 @@ import { Router } from "express";
 import { protegerRuta } from "../protegerRuta.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { loginRedirecter } from "../redirigirAlLogin.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -10,18 +11,22 @@ export const perfilRouter = Router();
 
 perfilRouter.get("/", (req, res) => {
   const { id } = protegerRuta({ req, res });
-  res.sendFile(
-    path.join(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "public",
-      "General",
-      "perfil",
-      "PerfilIndex.html"
-    )
-  );
+  try {
+    res.sendFile(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "public",
+        "General",
+        "perfil",
+        "PerfilIndex.html"
+      )
+    );
+  } catch (e) {
+    loginRedirecter({ req, res });
+  }
 });
 
 perfilRouter.get("/userData", async (req, res) => {

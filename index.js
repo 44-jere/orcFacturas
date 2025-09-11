@@ -5,6 +5,7 @@ import { baseDeDatos } from "./models/posgres/baseDeDatos.js";
 import { loginRouter } from "./controlador/logicaFacturas/login/login.js";
 import { perfilRouter } from "./controlador/logicaFacturas/perfil/perfil.js";
 import { logoutRouter } from "./controlador/logicaFacturas/logout/logout.js";
+import { mainFacturasRouter } from "./controlador/logicaFacturas/mainfacturas/mainFacturas.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors"; // 👈 agregado
@@ -19,8 +20,22 @@ const db = baseDeDatos;
 // 🔹 Habilitar CORS con credenciales
 app.use(
   cors({
-    origin: "http://localhost:8080", // 👈 cambia si tu front no corre en 3000
-    credentials: true,
+    origin: (origin, callback) => {
+      const ACCEPTED_ORIGINS = [
+        "http://localhost:8080",
+        "http://localhost:1234",
+      ];
+
+      if (ACCEPTED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
   })
 );
 
@@ -54,6 +69,8 @@ app.get("/dashboard", (req, res) =>
 app.use("/perfil", perfilRouter);
 
 app.use("/logout", logoutRouter);
+
+app.use("/mainfacturas", mainFacturasRouter);
 
 app.listen(port);
 console.log("Server started at http://localhost:" + port);

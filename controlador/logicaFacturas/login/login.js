@@ -65,7 +65,3 @@ loginRouter.post("/usuarios", async (req, res) => {
   const db = req.db;
   return await login({ req, res, validador: db.loginValidarUsuario });
 });
-
-loginRouter.get("/test", async (req, res) => {
-  res.status(200).send("test verificado");
-});

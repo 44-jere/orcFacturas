@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
+import { loginRedirecter } from "./redirigirAlLogin.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,6 @@ export function protegerRuta({ req, res }) {
     return decoded; // aquí tienes el payload
   } catch (err) {
     console.error("❌ Token inválido:", err.message);
-    res.status(403).send("no logeado");
+    loginRedirecter({ req, res });
   }
 }
