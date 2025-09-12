@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 // --- Cargar el archivo .env.gemini desde la misma carpeta ---
 dotenv.config({ path: path.join(__dirname, ".env.gemini") });
 
-class ModeloIA {
+export class ModeloIA {
   constructor() {
     if (ModeloIA.instance) {
       return ModeloIA.instance; // ← devuelve la misma instancia siempre
