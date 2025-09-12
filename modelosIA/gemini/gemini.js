@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import  {GoogleGenerativeAI}  from "@google/generative-ai";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 // --- Cargar el archivo .env.gemini desde la misma carpeta ---
 dotenv.config({ path: path.join(__dirname, ".env.gemini") });
 
-export class ModeloIA {
+class ModeloIA {
   constructor() {
     if (ModeloIA.instance) {
       return ModeloIA.instance; // ← devuelve la misma instancia siempre
@@ -94,5 +94,4 @@ export class ModeloIA {
 }
 
 // Exporta siempre la misma instancia
-const modeloIA = new ModeloIA();
-export default modeloIA;
+export const modeloIA = new ModeloIA();
