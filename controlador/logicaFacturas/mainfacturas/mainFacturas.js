@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { loginRedirecter } from "../redirigirAlLogin.js";
 import { modeloIA } from "../../../modelosIA/gemini/gemini.js";
-import { upload } from "../../../middlewares/upload.js";
+import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,18 +31,21 @@ mainFacturasRouter.get("/", (req, res) => {
   }
 });
 
-mainFacturasRouter.post("/", upload.array("images", 10), async (req, res) => {
-  try {
-    const { id } = protegerRuta({ req, res });
+mainFacturasRouter.post(
+  "/",
+  handleMulter(uploadImages), // 👈 multer aislado y con errores capturados
+  async (req, res, next) => {
+    try {
+      protegerRuta({ req, res });
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: "No se enviaron imágenes" });
+      if (!req.files?.length) {
+        return res.status(400).json({ error: "No se enviaron imágenes" });
+      }
+
+      const result = await modeloIA.analizarImagenes(req.files);
+      res.json(result);
+    } catch (e) {
+      next(e); // deja que el handler global formatee
     }
-
-    const result = await modeloIA.analizarImagenes(req.files);
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error procesando imágenes" });
   }
-});
+);
