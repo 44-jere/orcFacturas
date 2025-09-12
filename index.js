@@ -72,5 +72,5 @@ app.use("/logout", logoutRouter);
 
 app.use("/mainfacturas", mainFacturasRouter);
 
-app.listen(port);
+app.listen(port,"0.0.0.0");
 console.log("Server started at http://localhost:" + port);

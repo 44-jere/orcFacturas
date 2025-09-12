@@ -32,12 +32,13 @@ mainFacturasRouter.get("/", (req, res) => {
 });
 
 mainFacturasRouter.post("/", upload.array("images", 10), async (req, res) => {
-  const { id } = protegerRuta({ req, res });
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ error: "Faltan imágenes" });
-  }
-
   try {
+    const { id } = protegerRuta({ req, res });
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No se enviaron imágenes" });
+    }
+
     const result = await modeloIA.analizarImagenes(req.files);
     res.json(result);
   } catch (err) {
