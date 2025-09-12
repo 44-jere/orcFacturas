@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const prompt =
-  "Extrae los datos de esta factura y devuelve SOLO un JSON válido con exactamente estas claves: proveedor, numero_factura, fecha_emision (formato DD/MM/AAAA), moneda (Q para quetzales, $ para dólares), nit_emisor, nit_receptor, total (solo números con decimales). No agregues texto adicional, solo el JSON.";
+  "Tienes N imágenes de facturas. Devuelve SOLO un **arreglo JSON** donde cada elemento corresponde a una imagen en el mismo orden de entrada. Cada elemento debe tener exactamente estas claves: proveedor, numero_factura, fecha_emision (DD/MM/AAAA), moneda (Q|$), nit_emisor, nit_receptor, total (número). Sin texto extra, SOLO el JSON del arreglo.";
 
 // --- Reconstruir __dirname en ESM ---
 const __filename = fileURLToPath(import.meta.url);
@@ -65,19 +65,19 @@ class ModeloIA {
   async analizarImagenes(files) {
     const promptSistema = prompt;
 
-    // Genera lista de imágenes como parts
-    const imagesParts = files.map((file) => ({
-      inlineData: {
-        mimeType: file.mimetype,
-        data: file.buffer.toString("base64"),
-      },
-    }));
+    // Combina prompt + todas las imágenes en **una sola** parts[]
+    const parts = [
+      { text: promptSistema },
+      ...files.map((f) => ({
+        inlineData: {
+          mimeType: f.mimetype,
+          data: f.buffer.toString("base64"),
+        },
+      })),
+    ];
 
     const result = await this.model.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: promptSistema }] },
-        { role: "user", parts: imagesParts },
-      ],
+      contents: [{ role: "user", parts }],
       generationConfig: {
         temperature: 0,
         responseMimeType: "application/json",
@@ -86,7 +86,11 @@ class ModeloIA {
 
     const text = result.response.text();
     try {
-      return JSON.parse(text);
+      // Aquí esperamos un **array**
+      const arr = JSON.parse(text);
+      return Array.isArray(arr)
+        ? arr
+        : { error: "No devolvió un arreglo", raw: text };
     } catch {
       return { error: "Modelo no devolvió JSON válido", raw: text };
     }
