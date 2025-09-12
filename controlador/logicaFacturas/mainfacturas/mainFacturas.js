@@ -3,7 +3,8 @@ import { protegerRuta } from "../protegerRuta.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loginRedirecter } from "../redirigirAlLogin.js";
-import { GoogleGenerativeAI } from "../../../modelosIA/gemini/gemini.js";
+import { modeloIA } from "../../../modelosIA/gemini/gemini.js";
+import { upload } from "../../../middlewares/upload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

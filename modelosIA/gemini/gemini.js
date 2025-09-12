@@ -94,5 +94,4 @@ class ModeloIA {
 }
 
 // Exporta siempre la misma instancia
-const modeloIA = new ModeloIA();
-export default modeloIA;
+export const modeloIA = new ModeloIA();
