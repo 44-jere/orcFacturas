@@ -8,9 +8,9 @@ import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mainFacturasRouter = Router();
+export const homeRouter = Router();
 
-mainFacturasRouter.get("/", (req, res) => {
+homeRouter.get("/", (req, res) => {
   try {
     const { id } = protegerRuta({ req, res });
     res.sendFile(
@@ -29,22 +29,3 @@ mainFacturasRouter.get("/", (req, res) => {
     loginRedirecter({ req, res });
   }
 });
-
-mainFacturasRouter.post(
-  "/",
-  handleMulter(uploadImages), // 👈 multer aislado y con errores capturados
-  async (req, res, next) => {
-    try {
-      protegerRuta({ req, res });
-
-      if (!req.files?.length) {
-        return res.status(400).json({ error: "No se enviaron imágenes" });
-      }
-
-      const result = await modeloIA.analizarImagenes(req.files);
-      res.json(result);
-    } catch (e) {
-      next(e); // deja que el handler global formatee
-    }
-  }
-);
