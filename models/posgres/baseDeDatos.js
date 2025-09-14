@@ -37,7 +37,6 @@ class BaseDeDatos {
       try {
         await this.client.connect();
         this.conectado = true;
-        console.log("✅ Conexión única a PostgreSQL establecida");
       } catch (err) {
         console.error("❌ Error al conectar:", err.message);
       }

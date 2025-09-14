@@ -7,8 +7,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const adminRouter = Router();
+
+// roles admitidos para admin
+const allowedRoles = [1, 2];
+//1 = supervisor, 2=administrador
+function allowOrRedirect(decoded, res) {
+  const role = allowedRoles.indexOf(decoded.role);
+  if (role === -1) {
+    res.redirect("/perfil");
+    return false;
+  }
+  return true;
+}
+
 adminRouter.get("/", (req, res) => {
-  const { id } = protegerRuta({ req, res });
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+
   try {
     res.sendFile(
       path.join(
@@ -32,7 +48,9 @@ adminRouter.get("/", (req, res) => {
  */
 adminRouter.get("/subordinados", async (req, res) => {
   try {
-    const decoded = protegerRuta({ req, res }); // 🔑 obtiene { id, usuario, role }
+    const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
     const { page, pageSize } = req.query;
 
     const resultado = await req.db.traerUsuariosPorSuperiorPaginado({
@@ -54,6 +72,9 @@ adminRouter.get("/subordinados", async (req, res) => {
 adminRouter.get("/ticketsAsignados", async (req, res) => {
   try {
     const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
+
     const { page, pageSize } = req.query;
 
     const resultado = await req.db.traerTicketsPorUsuarioPaginado({
@@ -74,7 +95,9 @@ adminRouter.get("/ticketsAsignados", async (req, res) => {
  */
 adminRouter.patch("/actualizarTicket", async (req, res) => {
   try {
-    protegerRuta({ req, res }); // solo validamos el token
+    const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
 
     const { id_ticket, fecha_inicio, fecha_fin, monto_presupuestado } =
       req.body;
@@ -99,6 +122,8 @@ adminRouter.patch("/actualizarTicket", async (req, res) => {
 adminRouter.post("/crearTicket", async (req, res) => {
   try {
     const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
 
     const {
       id_usuario_beneficiario,
@@ -130,6 +155,8 @@ adminRouter.post("/crearTicket", async (req, res) => {
 adminRouter.post("/crearTicketHistorial", async (req, res) => {
   try {
     const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
 
     const {
       id_ticket,

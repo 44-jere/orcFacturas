@@ -35,7 +35,7 @@ async function login({ validador, res, req } = {}) {
         secure: process.env.NODE_ENV === "produccion", // solo se puede usar en el dominio
         maxAge: 1000 * 60 * 60, // 1h
       })
-      .send({ isValid });
+      .redirect("/mainfacturas");
   } catch (e) {
     res.status(500).send("no encontrado");
   }

@@ -9,10 +9,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const mainFacturasRouter = Router();
-
+const allowedRoles = [3];
+//3=empleados
+function denegarNoEmpleados({ res, role }) {
+  if (allowedRoles.indexOf(role) === -1) {
+    res.redirect("/admin");
+    return true;
+  }
+}
 mainFacturasRouter.get("/", (req, res) => {
   try {
-    const { id } = protegerRuta({ req, res });
+    const { id, role } = protegerRuta({ req, res });
+    if (denegarNoEmpleados({ res, role })) return;
     res.sendFile(
       path.join(
         __dirname,
@@ -35,7 +43,8 @@ mainFacturasRouter.post(
   handleMulter(uploadImages), // 👈 multer aislado y con errores capturados
   async (req, res, next) => {
     try {
-      protegerRuta({ req, res });
+      const { id, role } = protegerRuta({ req, res });
+      if (denegarNoEmpleados({ res, role })) return;
 
       if (!req.files?.length) {
         return res.status(400).json({ error: "No se enviaron imágenes" });

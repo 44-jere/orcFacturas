@@ -34,7 +34,6 @@ async function validarLogin({ usuario, password, tabla }) {
     const esValido = await bcrypt.compare(password, fila.password_hash);
 
     if (esValido) {
-      console.log("✅ Usuario y contraseña correctos");
       return { id: fila.id_usuario, usuario: fila.usuario, role: fila.id_rol };
     } else {
       console.log("❌ Usuario y contraseña incorrectos");
