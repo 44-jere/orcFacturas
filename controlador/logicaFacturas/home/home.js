@@ -13,18 +13,7 @@ export const homeRouter = Router();
 homeRouter.get("/", (req, res) => {
   try {
     const { id } = protegerRuta({ req, res });
-    res.sendFile(
-      path.join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "public",
-        "User",
-        "mainfacturas",
-        "index.html"
-      )
-    );
+    res.redirect("/mainfacturas");
   } catch (e) {
     loginRedirecter({ req, res });
   }
