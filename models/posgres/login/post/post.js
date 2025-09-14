@@ -14,7 +14,7 @@ async function validarLogin({ usuario, password, tabla }) {
 
     // ✅ obtener registro por usuario
     const query = `
-      SELECT id_usuario, usuario, password_hash
+      SELECT id_usuario, usuario, password_hash, id_rol
       FROM ${tabla}
       WHERE usuario = $1
       LIMIT 1
@@ -34,8 +34,7 @@ async function validarLogin({ usuario, password, tabla }) {
     const esValido = await bcrypt.compare(password, fila.password_hash);
 
     if (esValido) {
-      console.log("✅ Usuario y contraseña correctos");
-      return { id: fila.id_usuario, usuario: fila.usuario };
+      return { id: fila.id_usuario, usuario: fila.usuario, role: fila.id_rol };
     } else {
       console.log("❌ Usuario y contraseña incorrectos");
       return false;

@@ -6,6 +6,9 @@ import { loginRouter } from "./controlador/logicaFacturas/login/login.js";
 import { perfilRouter } from "./controlador/logicaFacturas/perfil/perfil.js";
 import { logoutRouter } from "./controlador/logicaFacturas/logout/logout.js";
 import { mainFacturasRouter } from "./controlador/logicaFacturas/mainfacturas/mainFacturas.js";
+import { homeRouter } from "./controlador/logicaFacturas/home/home.js";
+import { adminRouter } from "./controlador/logicaFacturas/administrador/administrador.js";
+import { supervisorRouter } from "./controlador/logicaFacturas/supervisor/supervisor.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors"; // 👈 agregado
@@ -24,6 +27,7 @@ app.use(
       const ACCEPTED_ORIGINS = [
         "http://localhost:8080",
         "http://localhost:1234",
+        "http://40.233.21.34:8080",
       ];
 
       if (ACCEPTED_ORIGINS.includes(origin)) {
@@ -52,19 +56,13 @@ app.use((req, _res, next) => {
 });
 
 // sendFile will go here
-app.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "/public/mainfacturas/index.html"))
-);
+app.use("/", homeRouter);
 
 app.use("/login", loginRouter);
 
-app.get("/admin", (req, res) =>
-  res.sendFile(path.join(__dirname, "/public/adminMain/admin.html"))
-);
+app.use("/admin", adminRouter);
 
-app.get("/dashboard", (req, res) =>
-  res.sendFile(path.join(__dirname, "/public/dashboard/dashboard.html"))
-);
+app.use("/supervisor", supervisorRouter);
 
 app.use("/perfil", perfilRouter);
 
@@ -72,5 +70,5 @@ app.use("/logout", logoutRouter);
 
 app.use("/mainfacturas", mainFacturasRouter);
 
-app.listen(port,"0.0.0.0");
+app.listen(port, "0.0.0.0");
 console.log("Server started at http://localhost:" + port);

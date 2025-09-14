@@ -15,7 +15,6 @@ export function protegerRuta({ req, res }) {
   try {
     // decodifica y valida la firma
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    console.log("✅ Token válido:", decoded);
     return decoded; // aquí tienes el payload
   } catch (err) {
     console.error("❌ Token inválido:", err.message);

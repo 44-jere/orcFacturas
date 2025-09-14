@@ -5,7 +5,6 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//localhost/perfil/
 export const logoutRouter = Router();
 
 logoutRouter.post("/", (req, res) =>

@@ -6,9 +6,8 @@ import { loginRedirecter } from "../redirigirAlLogin.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const perfilRouter = Router();
-
-perfilRouter.get("/", (req, res) => {
+export const supervisorRouter = Router();
+supervisorRouter.get("/", (req, res) => {
   const { id } = protegerRuta({ req, res });
   try {
     res.sendFile(
@@ -18,26 +17,12 @@ perfilRouter.get("/", (req, res) => {
         "..",
         "..",
         "public",
-        "General",
-        "perfil",
-        "PerfilIndex.html"
+        "Supervisor",
+        "SupervisorMain",
+        "supervisor.html"
       )
     );
   } catch (e) {
     loginRedirecter({ req, res });
-  }
-});
-
-perfilRouter.get("/userData", async (req, res) => {
-  const { id } = protegerRuta({ req, res });
-
-  try {
-    const db = req.db;
-    const response = await db.perfilGetUsuario({ id });
-    console.log(response);
-    res.status(200).send(response);
-  } catch (e) {
-    console.log(e);
-    res.status(404).send("no encontrado");
   }
 });

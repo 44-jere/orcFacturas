@@ -21,7 +21,7 @@ async function login({ validador, res, req } = {}) {
     });
     if (!isValid) return res.status(401).send("no encontrado");
     const token = jwt.sign(
-      { user: isValid.usuario, id: isValid.id },
+      { user: isValid.usuario, id: isValid.id, role: isValid.role },
       process.env.SECRET_KEY,
       {
         expiresIn: "1h",
@@ -35,7 +35,7 @@ async function login({ validador, res, req } = {}) {
         secure: process.env.NODE_ENV === "produccion", // solo se puede usar en el dominio
         maxAge: 1000 * 60 * 60, // 1h
       })
-      .send({ isValid });
+      .redirect("/mainfacturas");
   } catch (e) {
     res.status(500).send("no encontrado");
   }

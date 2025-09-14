@@ -37,7 +37,6 @@ class BaseDeDatos {
       try {
         await this.client.connect();
         this.conectado = true;
-        console.log("✅ Conexión única a PostgreSQL establecida");
       } catch (err) {
         console.error("❌ Error al conectar:", err.message);
       }
@@ -57,3 +56,7 @@ class BaseDeDatos {
 export const baseDeDatos = new BaseDeDatos();
 import "./login/post/post.js";
 import "./perfil/post/post.js";
+
+import "./administrador/post/post.js";
+import "./administrador/get/get.js";
+import "./administrador/patch/patch.js";
