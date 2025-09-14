@@ -54,7 +54,7 @@ class BaseDeDatos {
 }
 
 export const baseDeDatos = new BaseDeDatos();
-import "./login/post/post.js";
+import "./login/get/get.js";
 import "./perfil/post/post.js";
 
 import "./administrador/post/post.js";

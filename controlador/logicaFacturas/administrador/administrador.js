@@ -53,7 +53,7 @@ adminRouter.get("/subordinados", async (req, res) => {
     if (!allowOrRedirect(decoded, res)) return;
     const { page, pageSize } = req.query;
 
-    const resultado = await req.db.traerUsuariosPorSuperiorPaginado({
+    const resultado = await req.db.administradorTraerUsuariosPorSuperior({
       id_superior: decoded.id,
       page,
       pageSize,
@@ -77,7 +77,7 @@ adminRouter.get("/ticketsAsignados", async (req, res) => {
 
     const { page, pageSize } = req.query;
 
-    const resultado = await req.db.traerTicketsPorUsuarioPaginado({
+    const resultado = await req.db.administradorTraerTicketsPorUsuario({
       id_usuario: decoded.id,
       page,
       pageSize,
@@ -102,7 +102,7 @@ adminRouter.patch("/actualizarTicket", async (req, res) => {
     const { id_ticket, fecha_inicio, fecha_fin, monto_presupuestado } =
       req.body;
 
-    const resultado = await req.db.actualizarTicket({
+    const resultado = await req.db.administradorActualizarTicket({
       id_ticket,
       fecha_inicio,
       fecha_fin,
@@ -133,7 +133,7 @@ adminRouter.post("/crearTicket", async (req, res) => {
       total_gastado,
     } = req.body;
 
-    const resultado = await req.db.crearTicket({
+    const resultado = await req.db.administradorCrearTicket({
       id_usuario_creador: decoded.id,
       id_usuario_beneficiario,
       fecha_inicio,
@@ -167,7 +167,7 @@ adminRouter.post("/crearTicketHistorial", async (req, res) => {
       motivo,
     } = req.body;
 
-    const resultado = await req.db.crearTicketHistorial({
+    const resultado = await req.db.administradorCrearTicketHistorial({
       id_ticket,
       id_usuario_actor: decoded.id,
       accion,
@@ -181,5 +181,35 @@ adminRouter.post("/crearTicketHistorial", async (req, res) => {
   } catch (err) {
     console.error("❌ /crearTicketHistorial:", err);
     res.status(500).json({ error: "Error al crear historial del ticket" });
+  }
+});
+
+adminRouter.get("/subordinados/buscarUsuario", async (req, res) => {
+  try {
+    const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
+
+    const { id, nombre } = req.query;
+
+    if (!id && !nombre) {
+      return res
+        .status(400)
+        .json({ error: "Debe proporcionar 'id' o 'nombre' como parámetro." });
+    }
+
+    const resultado = await req.db.administradorBuscarUsuarios({
+      id: id ? Number(id) : undefined,
+      nombre: nombre || undefined,
+    });
+
+    if (resultado?.error) {
+      return res.status(500).json(resultado);
+    }
+
+    res.json(resultado);
+  } catch (err) {
+    console.error("❌ /buscarUsuarios:", err);
+    res.status(500).json({ error: "Error al buscar usuarios" });
   }
 });

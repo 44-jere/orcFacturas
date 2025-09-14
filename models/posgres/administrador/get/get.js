@@ -64,6 +64,107 @@ export async function traerUsuariosPorSuperiorPaginado({
     return { error: true, message: err.message };
   }
 }
+
+export async function buscarUsuarios({ id, nombre }) {
+  const { baseDeDatos } = await import("../../baseDeDatos.js");
+  const client = await baseDeDatos.conectar();
+
+  // Normalizamos entrada
+  const hasId =
+    id !== undefined &&
+    id !== null &&
+    Number.isInteger(Number(id)) &&
+    Number(id) > 0;
+  const nameTrim = typeof nombre === "string" ? nombre.trim() : "";
+  const hasNombre = nameTrim.length > 0;
+
+  if (!hasId && !hasNombre) {
+    return { error: true, message: "Debe indicar 'id' o 'nombre'." };
+  }
+
+  const LIMIT = 20;
+
+  try {
+    if (hasId) {
+      // Preferencia por ID si vienen ambos
+      const { rows } = await client.query(
+        `
+        SELECT
+          u.id_usuario,
+          u.id_superior,
+          u.nombre,
+          u.correo,
+          u.usuario,
+          u.nit_persona,
+          u.cui,
+          u.creado_en,
+          u.actualizado_en,
+          r.descripcion AS rol,
+          m.nombre      AS ministerio,
+          sup.nombre    AS nombre_superior
+        FROM viaticos.usuarios u
+        JOIN viaticos.roles r
+          ON u.id_rol = r.id_rol
+        JOIN viaticos.ministerios m
+          ON u.id_ministerio = m.id_ministerio
+        LEFT JOIN viaticos.usuarios sup
+          ON u.id_superior = sup.id_usuario
+        WHERE u.id_usuario = $1
+        LIMIT ${LIMIT}
+        `,
+        [Number(id)]
+      );
+
+      // Devolvemos como lista para mantener formato homogéneo
+      return {
+        items: rows,
+        criteria: { by: "id", value: Number(id) },
+        limit: LIMIT,
+      };
+    }
+
+    // Búsqueda por nombre (parcial, case-insensitive)
+    const pattern = `%${nameTrim}%`;
+    const { rows } = await client.query(
+      `
+      SELECT
+        u.id_usuario,
+        u.id_superior,
+        u.nombre,
+        u.correo,
+        u.usuario,
+        u.nit_persona,
+        u.cui,
+        u.creado_en,
+        u.actualizado_en,
+        r.descripcion AS rol,
+        m.nombre      AS ministerio,
+        sup.nombre    AS nombre_superior
+      FROM viaticos.usuarios u
+      JOIN viaticos.roles r
+        ON u.id_rol = r.id_rol
+      JOIN viaticos.ministerios m
+        ON u.id_ministerio = m.id_ministerio
+      LEFT JOIN viaticos.usuarios sup
+        ON u.id_superior = sup.id_usuario
+      WHERE u.nombre ILIKE $1
+      ORDER BY u.nombre ASC, u.id_usuario ASC
+      LIMIT ${LIMIT}
+      `,
+      [pattern]
+    );
+
+    return {
+      items: rows,
+      criteria: { by: "nombre", value: nameTrim },
+      limit: LIMIT,
+    };
+  } catch (err) {
+    console.error("❌ Error en buscarUsuarios:", err.message);
+    return { error: true, message: err.message };
+  }
+}
+
 export async function traerTicketsPorUsuarioPaginado({
   id_usuario,
   page = 1,
@@ -132,5 +233,6 @@ async function asignarMetodos() {
     traerUsuariosPorSuperiorPaginado;
   baseDeDatos.administradorTraerTicketsPorUsuario =
     traerTicketsPorUsuarioPaginado;
+  baseDeDatos.administradorBuscarUsuarios = buscarUsuarios;
 }
 asignarMetodos();
