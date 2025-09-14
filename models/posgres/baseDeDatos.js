@@ -60,3 +60,5 @@ import "./perfil/post/post.js";
 import "./administrador/post/post.js";
 import "./administrador/get/get.js";
 import "./administrador/patch/patch.js";
+
+import "./mainFacturas/post/post.js";
