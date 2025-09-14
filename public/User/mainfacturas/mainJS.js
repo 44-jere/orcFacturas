@@ -1,8 +1,3 @@
-// Configuración global
-const GEMINI_API_KEY = ""; // Pega tu key aquí; vacío = DEMO_MODE
-const MODEL = "gemini-1.5-flash-lite";
-const DEMO_MODE = !GEMINI_API_KEY;
-
 // Definición de campos
 const FIELD_DEF = [
     { key: "proveedor", label: "Proveedor", placeholder: "Nombre del proveedor" },
@@ -31,7 +26,6 @@ const TIPO_GASTO_OPTIONS = [
     { value: "otros", label: "Otros" },
 ];
 
-// NUEVO: opciones de tiempo de comida
 const COMIDA_OPTIONS = [
   { value: "", label: "Ninguno" },
   { value: "desayuno", label: "Desayuno" },
@@ -51,19 +45,6 @@ let appState = {
 // Utilidades básicas
 function uid() {
     return Math.random().toString(36).slice(2);
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = reader.result;
-            const base64 = result.split(",")[1] || "";
-            resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
 }
 
 function downloadCsv(rows) {
@@ -97,77 +78,103 @@ function downloadJson(rows) {
     URL.revokeObjectURL(url);
 }
 
-async function extractWithGemini(imageBase64) {
-    if (DEMO_MODE) {
-        // Simular delay del API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return {
-            id: uid(),
-            proveedor: "SUBWAY DE GUATEMALA, S.A.",
-            serie: "",
-            numero_factura: "3416801579",
-            fecha_emision: "29/08/2025",
-            moneda: "Q",
-            nit_emisor: "799376-5",
-            nit_receptor: "CF",
-            total: "130.00",
-            tipo_gasto: "",
-            // comida la define el usuario en el editor (opcional)
-            extras: "",
-        };
-    }
-
-    const prompt = "Extrae los datos de esta factura y devuelve SOLO un JSON válido con exactamente estas claves: proveedor, numero_factura, fecha_emision (formato DD/MM/AAAA), moneda (Q para quetzales, $ para dólares), nit_emisor, nit_receptor, total (solo números con decimales). No agregues texto adicional, solo el JSON.";
-    
-    const body = {
-        contents: [{
-            parts: [
-                { text: prompt },
-                { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }
-            ]
-        }],
-        generationConfig: {
-            temperature: 0,
-            maxOutputTokens: 512,
-            responseMimeType: "application/json"
-        }
-    };
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-        throw new Error(`Error de Gemini API: ${response.status} - ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    
-    let parsed;
+async function extractWithMVC(files) {
     try {
-        parsed = JSON.parse(text);
-    } catch (e) {
-        throw new Error("Error al procesar la respuesta de Gemini AI");
-    }
+        console.log('🔍 DEBUG: Iniciando extracción con', files.length, 'archivos');
+        
+        // Crear FormData con las imágenes
+        const formData = new FormData();
+        files.forEach((file, index) => {
+            console.log(`📁 DEBUG: Agregando archivo ${index + 1}:`, file.name, file.type, file.size, 'bytes');
+            formData.append('images', file);
+        });
 
-    return {
-        id: uid(),
-        proveedor: parsed.proveedor || "",
-        serie: "",
-        numero_factura: parsed.numero_factura || "",
-        fecha_emision: parsed.fecha_emision || "",
-        moneda: parsed.moneda || "",
-        nit_emisor: parsed.nit_emisor || "",
-        nit_receptor: parsed.nit_receptor || "",
-        total: parsed.total || "",
-        tipo_gasto: "",
-        // comida la define el usuario en el editor (opcional)
-        extras: "",
-    };
+        console.log('📤 DEBUG: Enviando POST a /mainfacturas/');
+        const response = await fetch('/mainfacturas/', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+
+        console.log('📥 DEBUG: Respuesta recibida - Status:', response.status, response.statusText);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ DEBUG: Error del servidor:', errorText);
+            throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('🔍 DEBUG: Datos JSON recibidos:', JSON.stringify(data, null, 2));
+
+        let processedData = null;
+
+        // Si la respuesta tiene un campo 'raw', extraer el JSON de ahí
+        if (data.raw && typeof data.raw === 'string') {
+            console.log('🔧 DEBUG: Extrayendo datos del campo raw');
+            try {
+                // Limpiar el campo raw eliminando los markdown ```json y ```
+                const cleanJson = data.raw.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+                console.log('🔧 DEBUG: JSON limpio:', cleanJson);
+                processedData = JSON.parse(cleanJson);
+                console.log('🔧 DEBUG: Datos parseados del raw:', JSON.stringify(processedData, null, 2));
+            } catch (parseError) {
+                console.error('❌ DEBUG: Error parseando raw JSON:', parseError);
+                throw new Error('No se pudo procesar la respuesta del servidor');
+            }
+        } else {
+            // Si no hay campo raw, usar los datos directamente
+            processedData = data;
+        }
+
+        // Procesar la respuesta y convertir a formato de la aplicación
+        if (Array.isArray(processedData)) {
+            console.log('📋 DEBUG: Procesando respuesta como array con', processedData.length, 'elementos');
+            return processedData.map((item, index) => {
+                console.log(`🔍 DEBUG: Procesando elemento ${index + 1}:`, JSON.stringify(item, null, 2));
+                return {
+                    id: uid(),
+                    proveedor: item.proveedor || "",
+                    serie: item.serie || "",
+                    numero_factura: item.numero_factura || "",
+                    fecha_emision: item.fecha_emision || "",
+                    moneda: item.moneda || "",
+                    nit_emisor: item.nit_emisor || "",
+                    nit_receptor: item.nit_receptor || "",
+                    total: item.total || "",
+                    tipo_gasto: "",
+                    comida: "",
+                    extras: "",
+                    _archivo: item._archivo || ""
+                };
+            });
+        } else if (processedData && typeof processedData === 'object') {
+            console.log('📄 DEBUG: Procesando respuesta como objeto único');
+            // Si es un solo objeto, convertirlo a array
+            return [{
+                id: uid(),
+                proveedor: processedData.proveedor || "",
+                serie: processedData.serie || "",
+                numero_factura: processedData.numero_factura || "",
+                fecha_emision: processedData.fecha_emision || "",
+                moneda: processedData.moneda || "",
+                nit_emisor: processedData.nit_emisor || "",
+                nit_receptor: processedData.nit_receptor || "",
+                total: processedData.total || "",
+                tipo_gasto: "",
+                comida: "",
+                extras: "",
+                _archivo: processedData._archivo || ""
+            }];
+        } else {
+            console.error('❌ DEBUG: Formato de respuesta inválido:', typeof processedData, processedData);
+            throw new Error('Formato de respuesta no válido del servidor');
+        }
+
+    } catch (error) {
+        console.error('❌ DEBUG: Error completo en extractWithMVC:', error);
+        throw error;
+    }
 }
 
 // Funciones de UI
@@ -250,7 +257,7 @@ function updateFileList() {
             <div class="file-info">
                 <div class="file-icon">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
                     </svg>
                 </div>
                 <div>
@@ -501,13 +508,17 @@ async function extractAll() {
     updateButtons();
     
     try {
-        const results = [];
-        for (const file of appState.files) {
-            const b64 = await fileToBase64(file);
-            const factura = await extractWithGemini(b64);
-            factura._archivo = file.name;
-            results.push(factura);
-        }
+        console.log('📤 Enviando archivos al servidor...', appState.files.length);
+        const results = await extractWithMVC(appState.files);
+        
+        console.log('📥 Respuesta procesada:', results);
+        
+        // Agregar nombres de archivo a cada factura
+        results.forEach((factura, index) => {
+            if (index < appState.files.length) {
+                factura._archivo = appState.files[index].name;
+            }
+        });
         
         appState.facturas = [...appState.facturas, ...results];
         appState.files = [];
@@ -523,7 +534,7 @@ async function extractAll() {
         showSuccess(`${results.length} factura(s) procesada(s) exitosamente`);
         
     } catch (error) {
-        console.error('Error al extraer datos:', error);
+        console.error('❌ Error al extraer datos:', error);
         showError(error.message || 'Error al procesar las imágenes');
     } finally {
         appState.busy = false;
@@ -531,9 +542,9 @@ async function extractAll() {
     }
 }
 
-// Inicialización simple
+// Inicialización
 function init() {
-    console.log('🚀 Iniciando Automatix Facturas...');
+    console.log('🚀 Iniciando Automatix Facturas (MVC)...');
     
     // Configuración inicial
     updateTheme();
@@ -541,12 +552,6 @@ function init() {
     updateFacturasList();
     updateEditor();
     updateButtons();
-
-    // Ocultar modo demo si no aplica
-    if (!DEMO_MODE) {
-        const demoMode = document.getElementById('demoMode');
-        if (demoMode) demoMode.classList.add('hidden');
-    }
 
     // Event listeners básicos
     const fileInput = document.getElementById('fileInput');
@@ -659,7 +664,7 @@ function init() {
     }
 
     console.log('✅ Event listeners configurados');
-    console.log('🎉 Aplicación lista para usar');
+    console.log('🎉 Aplicación lista para usar (MVC)');
 }
 
 // Inicializar cuando DOM esté listo
