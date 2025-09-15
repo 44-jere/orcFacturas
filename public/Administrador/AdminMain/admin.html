@@ -25,7 +25,6 @@
                 </div>
                 
                 <div class="header-controls">
-                    <!-- ====== NUEVOS BOTONES (atajos a otras vistas) ====== -->
                     <div class="quick-links">
                         <a id="btnDashGeneral"
                            class="quick-btn"
@@ -51,19 +50,16 @@
                             <span class="btn-label">Descargar facturas</span>
                         </a>
                     </div>
-                    <!-- ====== FIN NUEVOS BOTONES ====== -->
 
-                    <!-- Toggle de tema -->
                     <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
                         <svg id="moonIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                         </svg>
                         <svg id="sunIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 0 018 0z" />
                         </svg>
                     </button>
 
-                    <!-- Botón de perfil -->
                     <div class="profile-container">
                         <button id="profileToggle" class="profile-btn" title="Ver perfil">
                             <svg class="profile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,14 +67,12 @@
                             </svg>
                         </button>
 
-                        <!-- Dropdown de perfil -->
                         <div id="profileDropdown" class="profile-dropdown hidden">
                             <div class="profile-info">
                                 <p class="profile-name">Admin Usuario</p>
                                 <p class="profile-email">admin@gobierno.gob.gt</p>
                                 <span class="profile-role">Administrador</span>
                             </div>
-                            <!-- SOLO esta opción redirige -->
                             <button class="dropdown-item"
                                     id="viewProfileItem"
                                     type="button"
@@ -97,7 +91,6 @@
 
     <!-- Contenido principal -->
     <main class="main-content">
-        <!-- Stats cards -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
                 <div class="stat-content">
@@ -131,7 +124,7 @@
                 <div class="stat-content">
                     <div class="stat-icon purple">
                         <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 0 06 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
                     <div class="stat-info">
@@ -156,129 +149,69 @@
             </div>
         </div>
 
-        <!-- Panel principal con tabs -->
         <div class="main-panel">
-            <!-- Tabs de navegación -->
             <div class="tabs-container">
                 <div class="tabs-nav">
-                    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-                    <button class="tab-btn" data-tab="crear">Crear Ticket</button>
+                    <button class="tab-btn active" data-tab="crear">Crear Ticket</button>
                     <button class="tab-btn" data-tab="gestionar">Gestionar Tickets (<span id="ticketCount">0</span>)</button>
                     <button class="tab-btn" data-tab="historial">Historial (<span id="historialCount">0</span>)</button>
+                    <!-- NUEVO BOTÓN: Usuarios Asignados -->
+                    <button class="tab-btn" data-tab="usuarios-asignados">Usuarios Asignados</button>
                 </div>
 
-                <!-- Contenido de tabs -->
-                <div id="dashboard-tab" class="tab-content active">
-                    <h2 class="tab-title">Dashboard Administrativo</h2>
-                    
-                    <div class="dashboard-grid">
-                        <div class="dashboard-card">
-                            <div class="dashboard-header">
-                                <div class="dashboard-info">
-                                    <p id="dashTotalTickets" class="dashboard-number">0</p>
-                                    <p class="dashboard-label">Total tickets creados</p>
-                                </div>
-                                <div class="dashboard-icon indigo">
-                                    <svg class="dashboard-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="dashboard-card">
-                            <div class="dashboard-header">
-                                <div class="dashboard-info">
-                                    <p id="dashTotalSpent" class="dashboard-number">Q0</p>
-                                    <p class="dashboard-label">Total gastado</p>
-                                </div>
-                                <div class="dashboard-icon red">
-                                    <svg class="dashboard-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="dashboard-card">
-                            <div class="dashboard-header">
-                                <div class="dashboard-info">
-                                    <p id="dashAvgTicket" class="dashboard-number">Q0</p>
-                                    <p class="dashboard-label">Promedio por ticket</p>
-                                </div>
-                                <div class="dashboard-icon cyan">
-                                    <svg class="dashboard-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 0l-3-3m3 3l-3 3M9 17h6m0 0l-3-3m3 3l-3 3" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="activity-panel">
-                        <h3 class="activity-title">Resumen de Actividad</h3>
-                        
-                        <div class="activity-grid">
-                            <div class="activity-section">
-                                <h4 class="activity-subtitle">Tickets por Ministerio</h4>
-                                <div id="ministerioStats" class="ministerio-stats"></div>
-                            </div>
-
-                            <div class="activity-section">
-                                <h4 class="activity-subtitle">Estado de Tickets</h4>
-                                <div class="status-stats">
-                                    <div class="status-item">
-                                        <div class="status-indicator">
-                                            <div class="status-dot green"></div>
-                                            <span class="status-label">Activos</span>
-                                        </div>
-                                        <span id="statusActive" class="status-count">0</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <div class="status-indicator">
-                                            <div class="status-dot blue"></div>
-                                            <span class="status-label">Completados</span>
-                                        </div>
-                                        <span id="statusCompleted" class="status-count">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="info-banner">
-                            <p class="info-text">
-                                💡 <strong>Informacion:</strong> para ver el dashboard mas completo vaya a la seccion dashboard.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="crear-tab" class="tab-content">
+                <div id="crear-tab" class="tab-content active">
                     <h2 class="tab-title">Crear Nuevo Ticket</h2>
                     
                     <form id="ticketForm" class="ticket-form">
                         <div class="form-row">
+                            <!-- ===== Columna: Asignar usuario (buscadores) ===== -->
                             <div class="form-group">
                                 <label class="form-label">Asignar a usuario *</label>
-                                <select id="usuarioSelect" class="form-select" required>
-                                    <option value="">Seleccionar usuario...</option>
+
+                                <!-- Selector de modo de búsqueda (Nombre / ID) -->
+                                <select id="crearUserSearchMode" class="filter-select" title="Buscar por">
+                                  <option value="nombre" selected>Nombre</option>
+                                  <option value="id">ID</option>
                                 </select>
-                                <div id="userInfo" class="user-info hidden">
+
+                                <!-- Contenedor dinámico para el modo seleccionado -->
+                                <div id="crearUserModeFields" class="filters-row" style="margin-top:.5rem;"></div>
+
+                                <!-- Datalist para modo "Nombre" -->
+                                <datalist id="usuarioDatalist"></datalist>
+
+                                <!-- Información del usuario (existente) -->
+                                <div id="userInfo" class="user-info hidden" style="margin-top:.5rem;">
                                     <p class="user-detail"><strong>Email:</strong> <span id="userEmail"></span></p>
                                     <p class="user-detail"><strong>Cargo:</strong> <span id="userCargo"></span></p>
                                     <p class="user-detail"><strong>Ministerios disponibles:</strong> <span id="userMinisterios"></span></p>
                                 </div>
                             </div>
 
+                            <!-- ===== Columna: Recuadro de selección y lista ===== -->
                             <div class="form-group">
-                                <label class="form-label">Ministerio *</label>
-                                <select id="ministerioSelect" class="form-select" required disabled>
-                                    <option value="">Primero selecciona un usuario</option>
-                                </select>
-                                <div id="ministerioInfo" class="ministerio-info hidden">
-                                    <p class="ministerio-detail">
-                                        <strong>ID que se generará:</strong> <span id="generatedId"></span>
-                                    </p>
+                                <!-- Recuadro con datos del usuario seleccionado -->
+                                <div id="selectedUserCard" class="user-selected-card hidden">
+                                    <div class="user-selected-header">
+                                        <h3 class="user-selected-title">Usuario seleccionado</h3>
+                                    </div>
+                                    <div class="user-selected-body">
+                                        <p class="user-detail"><strong>Nombre:</strong> <span id="selectedUserName"></span></p>
+                                        <p class="user-detail"><strong>Cargo:</strong> <span id="selectedUserCargo"></span></p>
+                                        <p class="user-detail"><strong>ID:</strong> <span id="selectedUserId"></span></p>
+                                    </div>
+                                    <div class="user-selected-actions">
+                                        <button id="changeUserBtn" type="button" class="action-btn secondary">Cambiar usuario</button>
+                                        <button id="addUserBtn" type="button" class="action-btn primary">Agregar usuario</button>
+                                    </div>
+                                    <p id="selectedUserHint" class="hint-text">Puedes agregar hasta 5 usuarios.</p>
+                                </div>
+
+                                <!-- Lista de usuarios agregados al ticket -->
+                                <div id="selectedUsersBlock" class="selected-users-block hidden" style="margin-top:.75rem;">
+                                    <h4 class="selected-users-title">Usuarios para este ticket</h4>
+                                    <ul id="selectedUsersList" class="selected-users-list"></ul>
+                                    <p id="selectedUsersLimitMsg" class="hint-text hidden">Has alcanzado el máximo de 5 usuarios.</p>
                                 </div>
                             </div>
                         </div>
@@ -301,6 +234,16 @@
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Fecha de inicio *</label>
+                                <input
+                                    type="date"
+                                    id="fechaInicioInput"
+                                    class="form-input"
+                                    required
+                                />
                             </div>
 
                             <div class="form-group">
@@ -343,14 +286,15 @@
                 <div id="gestionar-tab" class="tab-content">
                     <h2 class="tab-title">Gestionar Tickets</h2>
 
-                    <!-- NUEVOS: Filtros para gestionar (usuario + búsqueda) -->
                     <div class="filters-row">
-                        <select id="gestUserFilter" class="filter-select" title="Filtrar por usuario">
-                            <option value="">Todos los usuarios</option>
+                        <select id="gestUserFilter" class="filter-select" title="Buscar por">
+                            <option value="">Buscar por</option>
+                            <option value="nombre">Nombre</option>
+                            <option value="id">ID</option>
+                            <!-- Opción "fecha" eliminada según solicitud -->
                         </select>
-                        <input id="gestSearchInput" class="filter-input" type="text" placeholder="Buscar por ID o descripción">
-                        <button id="gestSearchBtn" class="pagination-btn" type="button">Buscar</button>
-                        <button id="gestClearBtn" class="pagination-btn" type="button">Borrar</button>
+
+                        <div id="gestModeFields" class="filters-row" style="margin-bottom:0;"></div>
                     </div>
                     
                     <div id="noTickets" class="no-data">
@@ -369,7 +313,6 @@
                 <div id="historial-tab" class="tab-content">
                     <h2 class="tab-title">Historial de Tickets</h2>
 
-                    <!-- Rango de fechas (de / a) -->
                     <div class="filters-row">
                         <input type="date" id="histFromDate" class="filter-input" title="Desde (completado)">
                         <input type="date" id="histToDate" class="filter-input" title="Hasta (completado)">
@@ -384,12 +327,8 @@
                             <option value="EC">Ministerio de Economía</option>
                         </select>
 
-                        <!-- NUEVO: filtro por usuario en historial -->
-                        <select id="histUserFilter" class="filter-select" title="Filtrar por usuario">
-                            <option value="">Todos los usuarios</option>
-                        </select>
+                        <input id="histUserSearch" class="filter-input" type="text" placeholder="Buscar usuario..." title="Usuario (incremental)" />
 
-                        <!-- NUEVOS botones: Buscar y Borrar -->
                         <button id="histSearchBtn" class="pagination-btn" type="button">Buscar</button>
                         <button id="histClearBtn" class="pagination-btn" type="button">Borrar</button>
                     </div>
@@ -414,11 +353,41 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- NUEVA PESTAÑA: Usuarios Asignados -->
+                <div id="usuarios-asignados-tab" class="tab-content">
+                    <h2 class="tab-title">Usuarios Asignados</h2>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="usuariosAsignadosTable">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>ID</th>
+                                    <th>Correo</th>
+                                    <th>Cargo</th>
+                                    <th>DPI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosAsignadosBody">
+                                <!-- Filas pobladas por JS -->
+                            </tbody>
+                        </table>
+                        <div id="noUsuariosAsignados" class="no-data hidden">
+                            <div class="no-data-icon">
+                                <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <p class="no-data-text">No hay usuarios asignados</p>
+                            <p class="no-data-subtext">Los usuarios asignados aparecerán aquí</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- FIN NUEVA PESTAÑA -->
             </div>
         </div>
     </main>
 
-    <!-- Loading overlay -->
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="loading-spinner">
             <svg class="spinner" fill="none" viewBox="0 0 24 24">

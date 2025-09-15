@@ -1,105 +1,18 @@
 /* =========================================================================
    Panel Administrador – Automatix Solutions
-   Archivo: admin-script.js (CON MENÚ LATERAL)
+   Archivo: admin-script.js (SIN MODO DEMO)
    ========================================================================= */
-
-/* ====================== Datos de ejemplo (mock) ====================== */
-// REEMPLAZAR por llamadas a tu API cuando estén listas
-const SAMPLE_USERS = [
-  {
-    id: "user_001",
-    nombre: "Juan Pérez",
-    email: "juan.perez@gobierno.gob.gt",
-    cargo: "Director Regional", 
-    ministerios_asignados: [{ id: "min_001", nombre: "Ministerio de Educación", codigo: "ME" }],
-  },
-  {
-    id: "user_002",
-    nombre: "María González",
-    email: "maria.gonzalez@gobierno.gob.gt",
-    cargo: "Supervisora Médica",
-    ministerios_asignados: [{ id: "min_002", nombre: "Ministerio de Salud", codigo: "MS" }],
-  },
-  {
-    id: "user_003",
-    nombre: "Carlos López",
-    email: "carlos.lopez@gobierno.gob.gt",
-    cargo: "Técnico Agrícola",
-    ministerios_asignados: [{ id: "min_003", nombre: "Ministerio de Agricultura", codigo: "MA" }],
-  },
-  {
-    id: "user_004",
-    nombre: "Ana Rodríguez",
-    email: "ana.rodriguez@gobierno.gob.gt",
-    cargo: "Analista Económico",
-    ministerios_asignados: [
-      { id: "min_004", nombre: "Ministerio de Economía", codigo: "EC" },
-      { id: "min_001", nombre: "Ministerio de Educación", codigo: "ME" },
-    ],
-  },
-];
-
-const SAMPLE_ADMIN_TICKETS = [
-  {
-    id: "ME-2025-001",
-    usuario_asignado: "Juan Pérez",
-    ministerio: "Ministerio de Educación",
-    descripcion: "Capacitación docente en Quetzaltenango",
-    presupuesto: "2500.00",
-    gastado: "850.00",
-    fecha_creacion: "28/08/2025",
-    fecha_vencimiento: "15/09/2025",
-    estado: "activo",
-  },
-  {
-    id: "MS-2025-002",
-    usuario_asignado: "María González",
-    ministerio: "Ministerio de Salud",
-    descripcion: "Supervisión hospitales regionales",
-    presupuesto: "3200.00",
-    gastado: "1200.00",
-    fecha_creacion: "25/08/2025",
-    fecha_vencimiento: "10/09/2025",
-    estado: "activo",
-  },
-];
-
-const SAMPLE_HISTORICAL_TICKETS = [
-  {
-    id: "ME-2024-015",
-    usuario_asignado: "Juan Pérez",
-    ministerio: "Ministerio de Educación",
-    descripcion: "Evaluación centros educativos zona 1",
-    presupuesto: "1800.00",
-    gastado: "1800.00",
-    fecha_creacion: "15/12/2024",
-    fecha_vencimiento: "31/12/2024",
-    fecha_completado: "28/12/2024",
-    estado: "completado",
-  },
-  {
-    id: "MS-2024-028",
-    usuario_asignado: "María González",
-    ministerio: "Ministerio de Salud",
-    descripcion: "Inspección clínicas rurales",
-    presupuesto: "2200.00",
-    gastado: "2150.00",
-    fecha_creacion: "10/11/2024",
-    fecha_vencimiento: "30/11/2024",
-    fecha_completado: "25/11/2024",
-    estado: "completado",
-  },
-];
 
 /* ====================== Estado global ====================== */
 let appState = {
   isDark: true,
   showProfile: false,
   showSidebar: false,
-  activeTab: "dashboard",
-  users: [...SAMPLE_USERS],
-  tickets: [...SAMPLE_ADMIN_TICKETS],
-  historicalTickets: [...SAMPLE_HISTORICAL_TICKETS],
+  // Pestaña inicial (se eliminó "dashboard")
+  activeTab: "crear",
+  users: [],                 // SIN DEMO
+  tickets: [],               // SIN DEMO
+  historicalTickets: [],     // SIN DEMO
   loading: false,
   creating: false,
   ticketForm: {
@@ -107,15 +20,20 @@ let appState = {
     ministerio_id: "",
     descripcion: "",
     presupuesto: "",
+    fecha_inicio: "",
     fecha_vencimiento: "",
     moneda: "Q",
   },
+
+  /* ====== NUEVO: selección múltiple en Crear Ticket ====== */
+  currentUserCandidateId: "",     // id del usuario actualmente “seleccionado” (antes de agregar a lista)
+  selectedUsersIds: [],           // ids confirmados (máx 5)
 };
 
-/* ====== NUEVO: estado de filtros accionados por botón ====== */
-let gestSearchActive = false;
-let gestCriteria = { user: "", query: "" };
+/* ====== Filtros Gestionar ====== */
+let gestCriteria = { mode: "", nameQuery: "", idQuery: "", from: "", to: "" };
 
+/* ====== Filtros Historial (se mantienen) ====== */
 let histSearchActive = false;
 let histCriteria = { ministerio: "", month: "", from: "", to: "", user: "" };
 
@@ -126,8 +44,8 @@ function showNotification(message, type = "success") {
 
   const colors = {
     success: { bg: "rgba(16, 185, 129, 0.2)", border: "rgba(16, 185, 129, 0.3)", text: "#6ee7b7" },
-    error: { bg: "rgba(239, 68, 68, 0.2)", border: "rgba(239, 68, 68, 0.3)", text: "#fca5a5" },
-    info: { bg: "rgba(59, 130, 246, 0.2)", border: "rgba(59, 130, 246, 0.3)", text: "#60a5fa" },
+    error:   { bg: "rgba(239, 68, 68, 0.2)", border: "rgba(239, 68, 68, 0.3)", text: "#fca5a5" },
+    info:    { bg: "rgba(59, 130, 246, 0.2)", border: "rgba(59, 130, 246, 0.3)", text: "#60a5fa" },
   };
 
   const color = colors[type] || colors.success;
@@ -169,9 +87,14 @@ function formatCurrency(amount) {
   });
 }
 
-function generateTicketId(ministerioCode) {
-  const ticketCount = appState.tickets.filter((t) => t.id.startsWith(ministerioCode)).length + 1;
-  return `${ministerioCode}-2025-${String(ticketCount).padStart(3, "0")}`;
+/* === ID ENTERO AUTOINCREMENTAL para tickets === */
+function getNextTicketId() {
+  const all = [...appState.tickets, ...appState.historicalTickets];
+  const maxId = all.reduce((mx, t) => {
+    const n = Number(t?.id);
+    return Number.isFinite(n) ? Math.max(mx, n) : mx;
+  }, 0);
+  return maxId + 1;
 }
 
 /* ====================== Tema ====================== */
@@ -247,7 +170,7 @@ function updateStats() {
     if (totalBudget) totalBudget.textContent = "...";
   } else {
     const activeCount = appState.tickets.filter((t) => t.estado === "activo").length;
-    const budget = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto), 0);
+    const budget = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto || 0), 0);
 
     if (totalTickets) totalTickets.textContent = appState.tickets.length;
     if (activeTickets) activeTickets.textContent = activeCount;
@@ -261,9 +184,9 @@ function updateStats() {
 
 function generateDashboardStats() {
   const totalTicketsCreated = appState.tickets.length + appState.historicalTickets.length;
-  const totalBudgetAssigned = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto), 0);
+  const totalBudgetAssigned = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto || 0), 0);
   const totalSpentAmount = [...appState.tickets, ...appState.historicalTickets].reduce(
-    (sum, t) => sum + parseFloat(t.gastado),
+    (sum, t) => sum + parseFloat(t.gastado || 0),
     0
   );
   const avgTicketBudget = totalBudgetAssigned / (appState.tickets.length || 1);
@@ -288,7 +211,7 @@ function updateMinisterioStats() {
   ministerioStats.innerHTML = ministerios
     .map((codigo) => {
       const count = [...appState.tickets, ...appState.historicalTickets].filter((t) =>
-        t.id.startsWith(codigo)
+        String(t.id).startsWith(codigo)
       ).length;
       const percentage = total > 0 ? (count / total) * 100 : 0;
 
@@ -327,17 +250,32 @@ function updateDashboard() {
 
 /* ====================== Crear Ticket (form) ====================== */
 function updateUserForm() {
-  const usuarioSelect = document.getElementById("usuarioSelect");
-  if (!usuarioSelect) return;
+  // Poblamos el datalist SOLO para el modo "Nombre"
+  const dl = document.getElementById("usuarioDatalist");
+  if (dl) {
+    dl.innerHTML = "";
+    appState.users.forEach((user) => {
+      const opt = document.createElement("option");
+      opt.value = `${user.nombre} - ${user.cargo}`;
+      opt.setAttribute("data-id", user.id);
+      dl.appendChild(opt);
+    });
+  }
 
-  usuarioSelect.innerHTML = '<option value="">Seleccionar usuario...</option>';
+  // reset campos de usuario en crear (solo inputs; la lista confirmada se mantiene)
+  const hiddenId = document.getElementById("usuarioSelect");
+  const inputNombre = document.getElementById("usuarioSearchInput");
+  const inputId = document.getElementById("usuarioIdInput");
 
-  appState.users.forEach((user) => {
-    const option = document.createElement("option");
-    option.value = user.id;
-    option.textContent = `${user.nombre} - ${user.cargo}`;
-    usuarioSelect.appendChild(option);
-  });
+  if (hiddenId) hiddenId.value = "";
+  if (inputNombre) inputNombre.value = "";
+  if (inputId) inputId.value = "";
+
+  const userInfo = document.getElementById("userInfo");
+  if (userInfo) userInfo.classList.add("hidden");
+  appState.ticketForm.usuario_id = "";
+  appState.currentUserCandidateId = "";
+  renderSelectedUsersBox(); // refrescar UI
 }
 
 function hideMinisterioInfo() {
@@ -346,7 +284,7 @@ function hideMinisterioInfo() {
 }
 
 function handleUserSelect(userId) {
-  const user = appState.users.find((u) => u.id === userId);
+  const user = appState.users.find((u) => String(u.id) === String(userId));
   const userInfo = document.getElementById("userInfo");
   const userEmail = document.getElementById("userEmail");
   const userCargo = document.getElementById("userCargo");
@@ -354,7 +292,6 @@ function handleUserSelect(userId) {
   const ministerioSelect = document.getElementById("ministerioSelect");
 
   appState.ticketForm.usuario_id = userId;
-  appState.ticketForm.ministerio_id = "";
 
   if (user && userInfo) {
     userInfo.classList.remove("hidden");
@@ -384,6 +321,250 @@ function handleUserSelect(userId) {
   hideMinisterioInfo();
 }
 
+/* === Buscador por nombre (progresivo) === */
+function resolveUserFromInput(text) {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const matches = appState.users.filter(u =>
+    (u.nombre || "").toLowerCase().includes(lower) ||
+    (u.email || "").toLowerCase().includes(lower) ||
+    (u.cargo || "").toLowerCase().includes(lower)
+  );
+  if (matches.length === 1) return matches[0];
+  const exact = appState.users.find(u => `${u.nombre} - ${u.cargo}`.toLowerCase() === lower);
+  return exact || null;
+}
+
+function onUserSearchInput() {
+  const input = document.getElementById("usuarioSearchInput");
+  const hiddenId = document.getElementById("usuarioSelect");
+  if (!input || !hiddenId) return;
+
+  const selected = resolveUserFromInput(input.value.trim());
+  if (selected) {
+    hiddenId.value = selected.id;
+    handleUserSelect(selected.id);
+  } else {
+    hiddenId.value = "";
+    handleUserSelect("");
+  }
+  updateCreateButton();
+}
+
+/* === NUEVO: Enter en buscador por nombre → mostrar recuadro y bloquear === */
+function onUserSearchEnter(e) {
+  if (e.key !== "Enter") return;
+  const hiddenId = document.getElementById("usuarioSelect");
+  const uid = hiddenId?.value;
+  if (!uid) {
+    showNotification("Selecciona un usuario válido de la lista", "error");
+    return;
+  }
+  showSelectedUserBox(uid);
+}
+
+/* === Buscador por ID (entero) === */
+function onUserIdSearchClick() {
+  const inp = document.getElementById("usuarioIdInput");
+  const hiddenId = document.getElementById("usuarioSelect");
+  if (!inp || !hiddenId) return;
+
+  const raw = inp.value?.trim();
+  const idNum = Number(raw);
+  if (!Number.isInteger(idNum)) {
+    showNotification("El ID debe ser un número entero", "error");
+    return;
+  }
+
+  const user = appState.users.find(u => Number(u.id) === idNum);
+  if (!user) {
+    showNotification("No se encontró un usuario con ese ID", "error");
+    hiddenId.value = "";
+    handleUserSelect("");
+    updateCreateButton();
+    return;
+  }
+
+  hiddenId.value = user.id;
+  handleUserSelect(user.id);
+  updateCreateButton();
+
+  /* Mostrar recuadro y bloquear */
+  showSelectedUserBox(user.id);
+}
+
+/* ====================== NUEVO: Recuadro selección & lista ====================== */
+function lockUserSelectionFields(lock = true) {
+  const modeSel = document.getElementById("crearUserSearchMode");
+  const nameInp = document.getElementById("usuarioSearchInput");
+  const idInp = document.getElementById("usuarioIdInput");
+  const idBtn = document.getElementById("usuarioIdSearchBtn");
+
+  if (modeSel) modeSel.disabled = lock;
+  if (nameInp) nameInp.disabled = lock;
+  if (idInp) idInp.disabled = lock;
+  if (idBtn) idBtn.disabled = lock;
+}
+
+function getUserByIdSafe(id) {
+  return appState.users.find(u => String(u.id) === String(id)) || null;
+}
+
+function showSelectedUserBox(userId) {
+  const user = getUserByIdSafe(userId);
+  if (!user) {
+    showNotification("Usuario no válido", "error");
+    return;
+  }
+  appState.currentUserCandidateId = String(user.id);
+
+  const box = document.getElementById("selectedUsersBox");
+  const boxDetail = document.getElementById("selectedUserDetail");
+  const addBtn = document.getElementById("addUserToListBtn");
+  const addMoreBtn = document.getElementById("addMoreUsersBtn");
+  const changeBtn = document.getElementById("changeUserBtn");
+
+  if (boxDetail) {
+    boxDetail.innerHTML = `
+      <p class="user-detail"><strong>Nombre:</strong> ${user.nombre}</p>
+      <p class="user-detail"><strong>Cargo:</strong> ${user.cargo}</p>
+      <p class="user-detail"><strong>ID:</strong> ${user.id}</p>
+    `;
+  }
+
+  if (box) box.classList.remove("hidden");
+
+  // bloquear campos de asignación
+  lockUserSelectionFields(true);
+
+  // Habilitar botones
+  if (addBtn) addBtn.disabled = false;
+  if (addMoreBtn) addMoreBtn.disabled = appState.selectedUsersIds.length >= 5;
+  if (changeBtn) changeBtn.disabled = false;
+
+  renderSelectedUsersList();
+}
+
+function renderSelectedUsersList() {
+  const listEl = document.getElementById("selectedUsersList");
+  const counterEl = document.getElementById("selectedUsersCounter");
+  if (!listEl || !counterEl) return;
+
+  const items = appState.selectedUsersIds.map((uid, idx) => {
+    const u = getUserByIdSafe(uid);
+    const label = u ? `${u.nombre} (${u.cargo}) - ID ${u.id}` : `Usuario ${uid}`;
+    return `<li class="selected-user-item">${idx + 1}. ${label}</li>`;
+  });
+
+  listEl.innerHTML = items.join("") || `<li class="selected-user-item empty">No hay usuarios en la lista</li>`;
+  counterEl.textContent = `${appState.selectedUsersIds.length}/5 seleccionados`;
+}
+
+function renderSelectedUsersBox() {
+  const box = document.getElementById("selectedUsersBox");
+  if (!box) return;
+
+  if (!appState.currentUserCandidateId && appState.selectedUsersIds.length === 0) {
+    box.classList.add("hidden");
+    // desbloquear campos si no hay nada seleccionado
+    lockUserSelectionFields(false);
+    return;
+  }
+  box.classList.remove("hidden");
+  renderSelectedUsersList();
+}
+
+/* Confirmar candidato → agregar a la lista (máx 5) */
+function addCurrentCandidateToList() {
+  const uid = appState.currentUserCandidateId;
+  if (!uid) {
+    showNotification("No hay usuario seleccionado para agregar", "error");
+    return;
+  }
+  if (appState.selectedUsersIds.includes(uid)) {
+    showNotification("Ese usuario ya está en la lista", "info");
+    return;
+  }
+  if (appState.selectedUsersIds.length >= 5) {
+    showNotification("Máximo 5 usuarios", "error");
+    return;
+  }
+  appState.selectedUsersIds.push(uid);
+  renderSelectedUsersList();
+
+  // Permitir agregar más
+  const addMoreBtn = document.getElementById("addMoreUsersBtn");
+  if (addMoreBtn) addMoreBtn.disabled = appState.selectedUsersIds.length >= 5;
+}
+
+/* Cambiar usuario actual (solo desbloquea para seleccionar a otro, conserva lista) */
+function changeUserSelection() {
+  appState.currentUserCandidateId = "";
+  const detail = document.getElementById("selectedUserDetail");
+  if (detail) detail.innerHTML = `<p class="user-detail">Selecciona un usuario por nombre o ID.</p>`;
+  lockUserSelectionFields(false);
+
+  // limpiar inputs de búsqueda para evitar confusión
+  const hiddenId = document.getElementById("usuarioSelect");
+  const inputNombre = document.getElementById("usuarioSearchInput");
+  const inputId = document.getElementById("usuarioIdInput");
+  if (hiddenId) hiddenId.value = "";
+  if (inputNombre) inputNombre.value = "";
+  if (inputId) inputId.value = "";
+}
+
+/* Agregar otro usuario: habilita campos para seleccionar otro, sin borrar la lista */
+function addAnotherUser() {
+  if (appState.selectedUsersIds.length >= 5) {
+    showNotification("Límite alcanzado (máx 5)", "error");
+    return;
+  }
+  changeUserSelection();
+}
+
+/* ====================== Gestión de selección de modo (Crear) ====================== */
+function renderCrearUserFields() {
+  const modeSelect = document.getElementById("crearUserSearchMode");
+  const fieldsBox = document.getElementById("crearUserModeFields");
+  if (!modeSelect || !fieldsBox) return;
+
+  const mode = modeSelect.value || "nombre";
+
+  if (mode === "nombre") {
+    fieldsBox.innerHTML = `
+      <input
+        id="usuarioSearchInput"
+        class="form-input"
+        type="text"
+        placeholder="Buscar usuario por nombre, email o cargo..."
+        list="usuarioDatalist"
+        autocomplete="off"
+        required
+      />
+      <input type="hidden" id="usuarioSelect" value="" />
+    `;
+    const userSearch = document.getElementById("usuarioSearchInput");
+    if (userSearch) {
+      userSearch.addEventListener("input", onUserSearchInput);
+      userSearch.addEventListener("keydown", onUserSearchEnter); // NUEVO: Enter → recuadro
+    }
+  } else if (mode === "id") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="usuarioIdInput" class="form-input" type="number" placeholder="ID (entero)" />
+        <button id="usuarioIdSearchBtn" class="pagination-btn" type="button">Buscar</button>
+      </div>
+      <input type="hidden" id="usuarioSelect" value="" />
+    `;
+    const btn = document.getElementById("usuarioIdSearchBtn");
+    if (btn) btn.addEventListener("click", onUserIdSearchClick);
+  }
+
+  // Si ya hay un candidato o lista, mantener recuadro visible y bloquear si corresponde
+  renderSelectedUsersBox();
+  lockUserSelectionFields(!!appState.currentUserCandidateId);
+}
+
 function handleMinisterioSelect(ministerioId) {
   const user = appState.users.find((u) => u.id === appState.ticketForm.usuario_id);
   const ministerio = user?.ministerios_asignados.find((m) => m.id === ministerioId);
@@ -394,7 +575,7 @@ function handleMinisterioSelect(ministerioId) {
 
   if (ministerio && ministerioInfo) {
     ministerioInfo.classList.remove("hidden");
-    if (generatedId) generatedId.textContent = generateTicketId(ministerio.codigo);
+    if (generatedId) generatedId.textContent = ""; // IDs de tickets ahora son enteros
   } else if (ministerioInfo) {
     ministerioInfo.classList.add("hidden");
   }
@@ -408,11 +589,16 @@ function updateCreateButton() {
 
   if (!createBtn) return;
 
+  const anyUser =
+    appState.selectedUsersIds.length > 0 ||
+    appState.ticketForm.usuario_id ||
+    appState.currentUserCandidateId;
+
   const isValid =
-    appState.ticketForm.usuario_id &&
-    appState.ticketForm.ministerio_id &&
+    anyUser &&
     appState.ticketForm.descripcion &&
     appState.ticketForm.presupuesto &&
+    appState.ticketForm.fecha_inicio &&
     appState.ticketForm.fecha_vencimiento;
 
   createBtn.disabled = !isValid || appState.creating;
@@ -429,11 +615,16 @@ function updateCreateButton() {
 }
 
 async function createTicket() {
+  const anyUser =
+    appState.selectedUsersIds.length > 0
+      ? true
+      : (appState.currentUserCandidateId || appState.ticketForm.usuario_id);
+
   if (
-    !appState.ticketForm.usuario_id ||
-    !appState.ticketForm.ministerio_id ||
+    !anyUser ||
     !appState.ticketForm.descripcion ||
     !appState.ticketForm.presupuesto ||
+    !appState.ticketForm.fecha_inicio ||
     !appState.ticketForm.fecha_vencimiento
   ) {
     showNotification("Por favor completa todos los campos requeridos", "error");
@@ -444,38 +635,49 @@ async function createTicket() {
   updateCreateButton();
 
   try {
-    const selectedUser = appState.users.find((u) => u.id === appState.ticketForm.usuario_id);
-    const selectedMinisterio = selectedUser?.ministerios_asignados.find(
-      (m) => m.id === appState.ticketForm.ministerio_id
-    );
+    // Determinar a quiénes crearles ticket:
+    let targetUserIds = [];
+    if (appState.selectedUsersIds.length > 0) {
+      targetUserIds = [...appState.selectedUsersIds];
+    } else if (appState.currentUserCandidateId) {
+      targetUserIds = [appState.currentUserCandidateId];
+    } else if (appState.ticketForm.usuario_id) {
+      targetUserIds = [appState.ticketForm.usuario_id];
+    }
 
-    if (!selectedUser || !selectedMinisterio) throw new Error("Usuario o ministerio no encontrado");
+    const createdIds = [];
 
-    // Simular delay de API
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    for (const uid of targetUserIds) {
+      const selectedUser = appState.users.find((u) => String(u.id) === String(uid));
+      if (!selectedUser) continue;
 
-    const newTicketId = generateTicketId(selectedMinisterio.codigo);
-
-    const newTicket = {
-      id: newTicketId,
-      usuario_asignado: selectedUser.nombre,
-      ministerio: selectedMinisterio.nombre,
-      descripcion: appState.ticketForm.descripcion,
-      presupuesto: appState.ticketForm.presupuesto,
-      gastado: "0.00",
-      fecha_creacion: new Date().toLocaleDateString("es-GT"),
-      fecha_vencimiento: appState.ticketForm.fecha_vencimiento,
-      estado: "activo",
-    };
-
-    appState.tickets.push(newTicket);
+      const newTicketId = getNextTicketId();
+      const newTicket = {
+        id: newTicketId,
+        usuario_asignado: selectedUser.nombre,
+        ministerio: "",
+        descripcion: appState.ticketForm.descripcion,
+        presupuesto: appState.ticketForm.presupuesto,
+        gastado: "0.00",
+        fecha_creacion: new Date().toLocaleDateString("es-GT"),
+        fecha_inicio: appState.ticketForm.fecha_inicio,
+        fecha_vencimiento: appState.ticketForm.fecha_vencimiento,
+        estado: "activo",
+      };
+      appState.tickets.push(newTicket);
+      createdIds.push(newTicketId);
+    }
 
     clearTicketForm();
     updateStats();
     updateDashboard();
     updateTicketsTab();
 
-    showNotification(`Ticket ${newTicketId} creado exitosamente para ${selectedMinisterio.nombre}!`, "success");
+    if (createdIds.length === 1) {
+      showNotification(`Ticket ${createdIds[0]} creado exitosamente!`, "success");
+    } else {
+      showNotification(`Se crearon ${createdIds.length} tickets: ${createdIds.join(", ")}`, "success");
+    }
   } catch (err) {
     console.error("Error creando ticket:", err);
     showNotification("Error al crear el ticket. Intenta nuevamente.", "error");
@@ -491,18 +693,32 @@ function clearTicketForm() {
     ministerio_id: "",
     descripcion: "",
     presupuesto: "",
+    fecha_inicio: "",
     fecha_vencimiento: "",
     moneda: "Q",
   };
 
+  // limpiar selección múltiple
+  appState.currentUserCandidateId = "";
+  appState.selectedUsersIds = [];
+
   const form = document.getElementById("ticketForm");
   if (form) form.reset();
 
-  const usuarioSelect = document.getElementById("usuarioSelect");
+  // Reinicio de inputs dinámicos
+  const hiddenId = document.getElementById("usuarioSelect");
+  const inputNombre = document.getElementById("usuarioSearchInput");
+  const inputId = document.getElementById("usuarioIdInput");
+  if (hiddenId) hiddenId.value = "";
+  if (inputNombre) inputNombre.value = "";
+  if (inputId) inputId.value = "";
+
+  // Recuadro
+  renderSelectedUsersBox();
+
   const ministerioSelect = document.getElementById("ministerioSelect");
   const monedaSelect = document.getElementById("monedaSelect");
 
-  if (usuarioSelect) usuarioSelect.value = "";
   if (ministerioSelect) {
     ministerioSelect.value = "";
     ministerioSelect.disabled = true;
@@ -513,6 +729,9 @@ function clearTicketForm() {
   hideMinisterioInfo();
   const userInfo = document.getElementById("userInfo");
   if (userInfo) userInfo.classList.add("hidden");
+
+  // desbloquear campos de usuario
+  lockUserSelectionFields(false);
 }
 
 /* ====================== Gestión de Tickets ====================== */
@@ -560,7 +779,7 @@ function createTicketCard(ticket) {
         </div>
 
         <div class="budget-progress" title="Uso del presupuesto">
-          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}"></div>
+          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}%"></div>
         </div>
         <p class="budget-percentage">
           ${isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"}% utilizado
@@ -594,21 +813,66 @@ function updateTicketsTab() {
 
   let list = [...appState.tickets];
 
-  // ===== NUEVO: aplicar filtros sólo si se presionó "Buscar" =====
-  if (gestSearchActive) {
-    const user = (gestCriteria.user || "").trim();
-    const q = (gestCriteria.query || "").trim().toLowerCase();
+  // ===== Lógica de filtro Gestionar =====
+  const mode = (gestCriteria.mode || "").trim();
 
-    if (user) {
-      list = list.filter(t => (t.usuario_asignado || "") === user);
-    }
+  // Rango de fechas (opcional) integrado en modos que lo usan
+  const from = gestCriteria.from ? new Date(gestCriteria.from) : null;
+  const to = gestCriteria.to ? new Date(gestCriteria.to) : null;
+  let end = null;
+  if (to) {
+    end = new Date(to);
+    end.setHours(23,59,59,999);
+  }
+
+  if (mode === "nombre") {
+    const q = (gestCriteria.nameQuery || "").toLowerCase();
     if (q) {
+      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(q));
+    }
+    // aplicar fecha si viene
+    if (from || end) {
       list = list.filter(t => {
-        const id = (t.id || "").toLowerCase();
-        const desc = (t.descripcion || "").toLowerCase();
-        return id.includes(q) || desc.includes(q);
+        const dt = ddmmy_to_Date(t.fecha_creacion);
+        if (!dt) return false;
+        if (from && dt < from) return false;
+        if (end && dt > end) return false;
+        return true;
       });
     }
+  } else if (mode === "id") {
+    const idQ = parseInt(gestCriteria.idQuery, 10);
+    if (!isNaN(idQ)) {
+      list = list.filter(t => {
+        const n = Number(t.id);
+        return Number.isFinite(n) && n === idQ;
+      });
+    } else {
+      list = [];
+    }
+    // aplicar fecha si viene
+    if (from || end) {
+      list = list.filter(t => {
+        const dt = ddmmy_to_Date(t.fecha_creacion);
+        if (!dt) return false;
+        if (from && dt < from) return false;
+        if (end && dt > end) return false;
+        return true;
+      });
+    }
+  } else if (mode === "id-ticket") {
+    const idQ = parseInt(gestCriteria.idQuery, 10);
+    if (!isNaN(idQ)) {
+      list = list.filter(t => {
+        const n = Number(t.id);
+        return Number.isFinite(n) && n === idQ;
+      });
+    } else {
+      list = [];
+    }
+    // IMPORTANTE: En "ID Ticket" NO se aplican filtros de fecha.
+  } else {
+    // modo vacío: sin filtros adicionales
   }
 
   if (list.length === 0) {
@@ -669,8 +933,8 @@ function createHistorialCard(ticket) {
           <span class="budget-amount budget-spent">Q${formatCurrency(gastado)}</span>
         </div>
         <div class="budget-row">
-          <span class="budget-label">${isUnderBudget ? "Ahorro" : "Exceso"}</span>
-          <span class="budget-amount ${isUnderBudget ? "savings-positive" : "savings-negative"}">
+          <span class="budget-label">${difference > 0 ? "Ahorro" : "Exceso"}</span>
+          <span class="budget-amount ${difference > 0 ? "savings-positive" : "savings-negative"}">
             Q${formatCurrency(Math.abs(difference))}
           </span>
         </div>
@@ -680,11 +944,11 @@ function createHistorialCard(ticket) {
         </div>
         <p class="budget-percentage">${Math.min(usedPct, 100).toFixed(1)}% del presupuesto</p>
 
-        ${excess > 0 ? `
+        ${difference < 0 ? `
           <div class="excess-progress" title="Exceso sobre el presupuesto">
-            <div class="excess-fill" style="width: ${Math.min(excessPct, 100)}%"></div>
+            <div class="excess-fill" style="width: ${Math.min((Math.abs(difference)/presupuesto)*100, 100)}%"></div>
           </div>
-          <p class="excess-text">Exceso: Q${formatCurrency(excess)} (${excessPct.toFixed(1)}%)</p>
+          <p class="excess-text">Exceso: Q${formatCurrency(Math.abs(difference))} (${((Math.abs(difference)/presupuesto)*100).toFixed(1)}%)</p>
         ` : ``}
       </div>
 
@@ -704,9 +968,7 @@ function createHistorialCard(ticket) {
       </div>
 
       <div class="ticket-actions">
-        <!-- CAMBIO: Ver Reporte -> Ver Detalles -->
         <button class="action-btn primary" onclick="viewDetails('${ticket.id}')">Ver Detalles</button>
-        <!-- CAMBIO: Exportar -> Reabrir -->
         <button class="action-btn secondary" onclick="openReopenModal('${ticket.id}')">Reabrir</button>
       </div>
     </div>
@@ -719,16 +981,13 @@ function updateHistorialTab() {
 
   let list = [...appState.historicalTickets];
 
-  // ===== NUEVO: aplicar filtros sólo si se presionó "Buscar" =====
   if (histSearchActive) {
     const { ministerio, month, from, to, user } = histCriteria;
 
-    // Filtro por ministerio (por código al inicio del ID)
     if (ministerio) {
-      list = list.filter((t) => t.id.startsWith(ministerio));
+      list = list.filter((t) => String(t.id).startsWith(ministerio));
     }
 
-    // Filtro por mes (YYYY-MM) comparando fecha_completado
     if (month) {
       const [year, mm] = month.split("-");
       list = list.filter((t) => {
@@ -737,7 +996,6 @@ function updateHistorialTab() {
       });
     }
 
-    // Filtro por rango de fechas (fecha_completado)
     if (from || to) {
       const fromDt = from ? new Date(from) : null;
       const toDt = to ? new Date(to) : null;
@@ -754,9 +1012,9 @@ function updateHistorialTab() {
       });
     }
 
-    // Filtro por usuario (exacto por nombre mostrado en tickets)
     if (user) {
-      list = list.filter(t => (t.usuario_asignado || "") === user);
+      const u = user.toLowerCase();
+      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(u));
     }
   }
 
@@ -778,7 +1036,7 @@ async function deleteTicket(ticketId) {
   if (!confirm("¿Estás seguro de eliminar este ticket?")) return;
 
   try {
-    appState.tickets = appState.tickets.filter((t) => t.id !== ticketId);
+    appState.tickets = appState.tickets.filter((t) => String(t.id) !== String(ticketId));
     updateStats();
     updateDashboard();
     updateTicketsTab();
@@ -798,7 +1056,6 @@ function viewExpenses(ticketId) {
   showNotification("Vista de gastos próximamente", "info");
 }
 
-/* CAMBIO: Ver Detalles (historial) */
 function viewDetails(ticketId) {
   console.log(`Ver detalles del ticket: ${ticketId}`);
   showNotification("Vista de detalles próximamente", "info");
@@ -840,8 +1097,7 @@ function reopenTicketSubmit(e) {
     return;
   }
 
-  // Mover de historial a tickets activos
-  const idx = appState.historicalTickets.findIndex(t => t.id === reopeningTicketId);
+  const idx = appState.historicalTickets.findIndex(t => String(t.id) === String(reopeningTicketId));
   if (idx === -1) {
     showNotification("No se encontró el ticket en historial", "error");
     return;
@@ -880,21 +1136,15 @@ function exportTicket(ticketId) {
 async function handleLogout() {
   if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
     showNotification("Cerrando sesión...", "info");
-      const response = await fetch("/logout", {
+    await fetch("/logout", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      // Si necesitas enviar algo en el body (ej: token, id de usuario)
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
-      credentials: "include" // incluye cookies (por si usas sesiones)
+      credentials: "include"
     });
-      
   }
 }
 
-
-// Llamada
 /* ====================== Tabs ====================== */
 function switchTab(tabName) {
   appState.activeTab = tabName;
@@ -915,14 +1165,13 @@ function switchTab(tabName) {
 
   updateSidebarActiveState();
 
-  if (tabName === "dashboard") {
-    updateDashboard();
-  } else if (tabName === "crear") {
+  if (tabName === "crear") {
+    renderCrearUserFields();   // muestra el modo elegido y respeta recuadro si ya existía
     updateUserForm();
     updateCreateButton();
   } else if (tabName === "gestionar") {
-    // asegurar selects de usuario poblados
     populateUserFilters();
+    setupGestionarDynamicFields();
     updateTicketsTab();
   } else if (tabName === "historial") {
     populateUserFilters();
@@ -934,16 +1183,13 @@ function switchTab(tabName) {
   }
 }
 
-/* ====================== Carga Inicial ====================== */
+/* ====================== Carga Inicial (SIN DEMO) ====================== */
 async function loadAdminData() {
   appState.loading = true;
   updateStats();
 
   try {
-    await new Promise((r) => setTimeout(r, 800));
-    appState.users = [...SAMPLE_USERS];
-    appState.tickets = [...SAMPLE_ADMIN_TICKETS];
-    appState.historicalTickets = [...SAMPLE_HISTORICAL_TICKETS];
+    // Carga real de API (opcional)
   } catch (e) {
     console.error("Error cargando datos:", e);
     showNotification("No se pudieron cargar los datos iniciales", "error");
@@ -951,7 +1197,10 @@ async function loadAdminData() {
     appState.loading = false;
     updateStats();
     updateDashboard();
-    populateUserFilters(); // NUEVO: poblar selects de usuario
+    populateUserFilters();
+    setupGestionarDynamicFields();
+    renderCrearUserFields();
+    updateUserForm();
     updateTicketsTab();
     updateHistorialTab();
     updateSidebarActiveState();
@@ -977,7 +1226,7 @@ function iso_to_ddmmyyyy(iso) {
 let editingTicketId = null;
 
 function openEditModal(ticketId) {
-  const t = appState.tickets.find(x => x.id === ticketId);
+  const t = appState.tickets.find(x => String(x.id) === String(ticketId));
   if (!t) {
     showNotification("No se encontró el ticket a editar", "error");
     return;
@@ -1032,7 +1281,7 @@ function saveEditModal(e) {
     return;
   }
 
-  const idx = appState.tickets.findIndex(x => x.id === editingTicketId);
+  const idx = appState.tickets.findIndex(x => String(x.id) === String(editingTicketId));
   if (idx === -1) {
     showNotification("No se pudo actualizar el ticket", "error");
     return;
@@ -1053,39 +1302,151 @@ function saveEditModal(e) {
   showNotification("Cambios guardados correctamente", "success");
 }
 
-/* ====================== NUEVO: helpers filtros por usuario ====================== */
+/* ====================== Filtros/Selects ====================== */
 function populateUserFilters() {
-  // Gestionar
+  // Gestionar → opciones fijas "Buscar por"
   const gestUserFilter = document.getElementById("gestUserFilter");
   if (gestUserFilter) {
     const current = gestUserFilter.value || "";
-    gestUserFilter.innerHTML = '<option value="">Todos los usuarios</option>';
-    appState.users.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.nombre; // se filtra por nombre mostrado en tickets
-      opt.textContent = u.nombre;
-      gestUserFilter.appendChild(opt);
-    });
-    // mantener selección actual si existía
+    // Quitamos la opción "fecha" y solo dejamos Nombre / ID / ID Ticket
+    gestUserFilter.innerHTML = `
+      <option value="">Buscar por</option>
+      <option value="nombre">Nombre</option>
+      <option value="id">ID</option>
+      <option value="id-ticket">ID Ticket</option>
+    `;
     if ([...gestUserFilter.options].some(o => o.value === current)) {
       gestUserFilter.value = current;
     }
   }
+  // Historial → buscador incremental ya usa input
+}
 
-  // Historial
-  const histUserFilter = document.getElementById("histUserFilter");
-  if (histUserFilter) {
-    const currentH = histUserFilter.value || "";
-    histUserFilter.innerHTML = '<option value="">Todos los usuarios</option>';
-    appState.users.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.nombre;
-      opt.textContent = u.nombre;
-      histUserFilter.appendChild(opt);
+function setupGestionarDynamicFields() {
+  const modeSelect = document.getElementById("gestUserFilter");
+  const fieldsBox = document.getElementById("gestModeFields");
+  if (!modeSelect || !fieldsBox) return;
+
+  renderGestionarFields();
+
+  modeSelect.onchange = () => {
+    gestCriteria = { mode: modeSelect.value, nameQuery: "", idQuery: "", from: "", to: "" };
+    renderGestionarFields();
+    updateTicketsTab();
+  };
+}
+
+function renderGestionarFields() {
+  const mode = gestCriteria.mode || "";
+  const fieldsBox = document.getElementById("gestModeFields");
+  if (!fieldsBox) return;
+
+  // ====== INTEGRACIÓN DE FECHA EN NOMBRE / ID ======
+  if (mode === "nombre") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="gestNameInput" class="filter-input" type="text" placeholder="Escribe un nombre..." />
+        <input type="date" id="gestFromDate" class="filter-input" title="Desde">
+        <input type="date" id="gestToDate" class="filter-input" title="Hasta">
+        <button id="gestNameSearchBtn" class="pagination-btn" type="button">Buscar</button>
+        <button id="gestNameClearBtn" class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const inp  = document.getElementById("gestNameInput");
+    const f1   = document.getElementById("gestFromDate");
+    const f2   = document.getElementById("gestToDate");
+    const btnS = document.getElementById("gestNameSearchBtn");
+    const btnC = document.getElementById("gestNameClearBtn");
+
+    if (inp) inp.value = gestCriteria.nameQuery || "";
+    if (f1)  f1.value  = gestCriteria.from || "";
+    if (f2)  f2.value  = gestCriteria.to || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      gestCriteria.nameQuery = inp?.value || "";
+      gestCriteria.from = f1?.value || "";
+      gestCriteria.to   = f2?.value || "";
+      updateTicketsTab();
     });
-    if ([...histUserFilter.options].some(o => o.value === currentH)) {
-      histUserFilter.value = currentH;
-    }
+
+    if (btnC) btnC.addEventListener("click", () => {
+      if (inp) inp.value = "";
+      if (f1) f1.value = "";
+      if (f2) f2.value = "";
+      gestCriteria.nameQuery = "";
+      gestCriteria.from = "";
+      gestCriteria.to   = "";
+      updateTicketsTab();
+    });
+
+  } else if (mode === "id") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0%;">
+        <input id="gestIdInput" class="filter-input" type="number" placeholder="ID (entero)" />
+        <input type="date" id="gestFromDate" class="filter-input" title="Desde">
+        <input type="date" id="gestToDate" class="filter-input" title="Hasta">
+        <button id="gestIdSearchBtn" class="pagination-btn" type="button">Buscar</button>
+        <button id="gestIdClearBtn"  class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const idInp = document.getElementById("gestIdInput");
+    const f1    = document.getElementById("gestFromDate");
+    const f2    = document.getElementById("gestToDate");
+    const btnS  = document.getElementById("gestIdSearchBtn");
+    const btnC  = document.getElementById("gestIdClearBtn");
+
+    if (idInp) idInp.value = gestCriteria.idQuery || "";
+    if (f1)    f1.value   = gestCriteria.from || "";
+    if (f2)    f2.value   = gestCriteria.to || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      gestCriteria.idQuery = idInp?.value || "";
+      gestCriteria.from    = f1?.value    || "";
+      gestCriteria.to      = f2?.value    || "";
+      updateTicketsTab();
+    });
+    if (btnC) btnC.addEventListener("click", () => {
+      if(idInp) idInp.value = "";
+      if(f1) f1.value = "";
+      if(f2) f2.value = "";
+      gestCriteria.idQuery = "";
+      gestCriteria.from    = "";
+      gestCriteria.to      = "";
+      updateTicketsTab();
+    });
+
+  } else if (mode === "id-ticket") {
+    // *** SIN FECHAS: solo campo ID Ticket + botones Buscar y Borrar ***
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="gestIdInput" class="filter-input" type="number" placeholder="ID Ticket (entero)" />
+        <button id="gestIdSearchBtn" class="pagination-btn" type="button">Buscar</button>
+        <button id="gestIdClearBtn"  class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const idInp = document.getElementById("gestIdInput");
+    const btnS  = document.getElementById("gestIdSearchBtn");
+    const btnC  = document.getElementById("gestIdClearBtn");
+
+    if (idInp) idInp.value = gestCriteria.idQuery || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      gestCriteria.idQuery = idInp?.value || "";
+      // limpiar fechas por si quedaron de otro modo
+      gestCriteria.from = "";
+      gestCriteria.to   = "";
+      updateTicketsTab();
+    });
+    if (btnC) btnC.addEventListener("click", () => {
+      if(idInp) idInp.value = "";
+      gestCriteria.idQuery = "";
+      gestCriteria.from = "";
+      gestCriteria.to   = "";
+      updateTicketsTab();
+    });
+
+  } else {
+    fieldsBox.innerHTML = "";
   }
 }
 
@@ -1121,29 +1482,44 @@ document.addEventListener("DOMContentLoaded", () => {
   if (ticketForm) {
     ticketForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      appState.ticketForm.usuario_id = document.getElementById("usuarioSelect")?.value || "";
-      appState.ticketForm.ministerio_id = document.getElementById("ministerioSelect")?.value || "";
-      appState.ticketForm.descripcion = document.getElementById("descripcionInput")?.value?.trim() || "";
-      appState.ticketForm.presupuesto = document.getElementById("presupuestoInput")?.value || "";
+      appState.ticketForm.usuario_id        = document.getElementById("usuarioSelect")?.value || "";
+      appState.ticketForm.ministerio_id     = document.getElementById("ministerioSelect")?.value || "";
+      appState.ticketForm.descripcion       = document.getElementById("descripcionInput")?.value?.trim() || "";
+      appState.ticketForm.presupuesto       = document.getElementById("presupuestoInput")?.value || "";
+      appState.ticketForm.fecha_inicio      = document.getElementById("fechaInicioInput")?.value || "";
       appState.ticketForm.fecha_vencimiento = document.getElementById("fechaVencimientoInput")?.value || "";
-      appState.ticketForm.moneda = document.getElementById("monedaSelect")?.value || "Q";
+      appState.ticketForm.moneda            = document.getElementById("monedaSelect")?.value || "Q";
       createTicket();
     });
   }
 
-  const usuarioSelect = document.getElementById("usuarioSelect");
-  if (usuarioSelect) usuarioSelect.addEventListener("change", (e) => { handleUserSelect(e.target.value); updateCreateButton(); });
+  // Selector de modo (Crear)
+  const crearMode = document.getElementById("crearUserSearchMode");
+  if (crearMode) {
+    crearMode.addEventListener("change", () => {
+      renderCrearUserFields();
+      updateUserForm();
+      updateCreateButton();
+    });
+  }
 
-  const ministerioSelect = document.getElementById("ministerioSelect");
-  if (ministerioSelect) ministerioSelect.addEventListener("change", (e) => { handleMinisterioSelect(e.target.value); updateCreateButton(); });
-
-  ["descripcionInput","presupuestoInput","fechaVencimientoInput"].forEach((id) => {
+  // Listener para inputs que afectan validación
+  ["descripcionInput","presupuestoInput","fechaInicioInput","fechaVencimientoInput"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("input", updateCreateButton);
   });
 
-  /* ====== (CAMBIO) FILTROS HISTORIAL: ahora solo con botones ====== */
-  // Quitamos triggers automáticos por change y usamos botones:
+  /* ===== Botones del recuadro seleccionado ===== */
+  const addBtn = document.getElementById("addUserToListBtn");
+  if (addBtn) addBtn.addEventListener("click", addCurrentCandidateToList);
+
+  const changeBtn = document.getElementById("changeUserBtn");
+  if (changeBtn) changeBtn.addEventListener("click", changeUserSelection);
+
+  const addMoreBtn = document.getElementById("addMoreUsersBtn");
+  if (addMoreBtn) addMoreBtn.addEventListener("click", addAnotherUser);
+
+  /* ===== Historial: Buscar/Borrar ===== */
   const histSearchBtn = document.getElementById("histSearchBtn");
   const histClearBtn  = document.getElementById("histClearBtn");
 
@@ -1153,7 +1529,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const month = document.getElementById("monthFilter")?.value || "";
       const from = document.getElementById("histFromDate")?.value || "";
       const to = document.getElementById("histToDate")?.value || "";
-      const user = document.getElementById("histUserFilter")?.value || "";
+      const user = document.getElementById("histUserSearch")?.value || "";
 
       histCriteria = { ministerio, month, from, to, user };
       histSearchActive = true;
@@ -1167,46 +1543,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const monthFilter = document.getElementById("monthFilter");
       const histFromDate = document.getElementById("histFromDate");
       const histToDate = document.getElementById("histToDate");
-      const histUserFilter = document.getElementById("histUserFilter");
+      const histUserSearch = document.getElementById("histUserSearch");
 
       if (ministerioFilter) ministerioFilter.value = "";
       if (monthFilter) monthFilter.value = "";
       if (histFromDate) histFromDate.value = "";
       if (histToDate) histToDate.value = "";
-      if (histUserFilter) histUserFilter.value = "";
+      if (histUserSearch) histUserSearch.value = "";
 
       histCriteria = { ministerio: "", month: "", from: "", to: "", user: "" };
-      histSearchActive = false; // mostrar todo
+      histSearchActive = false;
       updateHistorialTab();
-    });
-  }
-
-  /* ====== (NUEVO) FILTROS GESTIONAR: buscar y borrar ====== */
-  const gestSearchBtn = document.getElementById("gestSearchBtn");
-  const gestClearBtn  = document.getElementById("gestClearBtn");
-
-  if (gestSearchBtn) {
-    gestSearchBtn.addEventListener("click", () => {
-      const user = document.getElementById("gestUserFilter")?.value || "";
-      const query = document.getElementById("gestSearchInput")?.value || "";
-
-      gestCriteria = { user, query };
-      gestSearchActive = true;
-      updateTicketsTab();
-    });
-  }
-
-  if (gestClearBtn) {
-    gestClearBtn.addEventListener("click", () => {
-      const gestUserFilter = document.getElementById("gestUserFilter");
-      const gestSearchInput = document.getElementById("gestSearchInput");
-
-      if (gestUserFilter) gestUserFilter.value = "";
-      if (gestSearchInput) gestSearchInput.value = "";
-
-      gestCriteria = { user: "", query: "" };
-      gestSearchActive = false; // mostrar todo
-      updateTicketsTab();
     });
   }
 

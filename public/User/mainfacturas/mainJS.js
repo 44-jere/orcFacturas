@@ -18,7 +18,6 @@ const TIPO_GASTO_OPTIONS = [
     { value: "", label: "Seleccionar tipo de gasto" },
     { value: "hotel", label: "Hotel" },
     { value: "alimentacion", label: "Alimentación" },
-    { value: "hospedaje", label: "Hospedaje" },
     { value: "transporte", label: "Transporte" },
     { value: "combustible", label: "Combustible" },
     { value: "peajes", label: "Peajes" },

@@ -1574,3 +1574,52 @@ textarea:focus-visible {
 @media (max-width: 520px) {
   .btn-label { display: none; }
 }
+
+/* ====== Tabla: Usuarios Asignados ====== */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;              /* scroll horizontal si es necesario */
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px var(--card-shadow);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;              /* evita que las columnas se aplasten */
+}
+
+.data-table thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  position: sticky;              /* cabezal fijo si hay scroll */
+  top: 0;
+  z-index: 1;
+}
+
+.data-table tbody td {
+  padding: 16px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-secondary);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* nombres más legibles si son largos (permitir salto de línea) */
+.data-table td:first-child {
+  white-space: normal;
+}
