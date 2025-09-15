@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 // import { protegerRuta } from "../protegerRuta.js";
 // import { loginRedirecter } from "../redirigirAlLogin.js";
 import { handleMulter } from "../../../middlewares/upload.js"; // usa SOLO este
-import { procesarExcelUsuarios } from "./manejoHojasExcel.js";
+import { procesarExcelUsuarios,insertarDatosEnPlantilla } from "./manejoHojasExcel.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +24,16 @@ const upload = multer({
   },
 });
 
+plantillasRouter.get("/descargarPlantilla", (req, res) => {
+  const filePath = path.join(__dirname, "usuarios.xlsx");
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader("Content-Disposition", 'attachment; filename="usuarios.xlsx"');
+  res.sendFile(filePath);
+});
+
 registrarUsuariosRouter.post(
   "/registrarUsuarios",
   handleMulter(upload.single("file")), // tu wrapper reutilizado
@@ -39,23 +49,36 @@ registrarUsuariosRouter.post(
         // sheetName: "Usuarios",
         // range: "A1:F500",
       });
-      
+
       // resultado esperado
       // [
-      //   { Nombre: "Jeremy", Email: "jeremy@test.com", Password: "12345" },
-      //   { Nombre: "María", Email: "maria@test.com", Password: "qwerty" },
-      //   { Nombre: "Carlos", Email: "carlos@test.com", Password: "abcde" }
+      //  {
+      //    nombre: "Jeremy",
+      //    dpi: "1234567890101",       // opcional (null si no viene)
+      //    email: "jeremy@test.com",   // opcional (null si no viene)
+      //    usuario: "jeremy123",       // generado internamente
+      //     password: "a3f91b2c"        // generado internamente
+      //  },
       // ]
 
       // TODO: validar/mapear/insertar en DB
       // const usuarios = datos.map(({ Nombre, Email, Password }) => ({ ... }));
       // await req.db.usuarios.bulkInsert(usuarios);
 
-      res.json({
-        ok: true,
-        registros: datos.length,
-        preview: datos.slice(0, 5),
-      });
+      
+      const plantillaPath = path.join(__dirname, "usuarios.xlsx");
+      const buffer = await insertarDatosEnPlantilla({ plantillaPath, rows:datos });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="usuarios_con_credenciales.xlsx"'
+      );
+      res.send(Buffer.from(buffer));
+
     } catch (err) {
       console.error("❌ /registrar/usuarios:", err);
       res.status(500).json({ error: "No se pudo procesar el Excel" });
