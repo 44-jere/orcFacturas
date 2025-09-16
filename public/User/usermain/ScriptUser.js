@@ -1,43 +1,64 @@
+function normalizeTicket(raw) {
+  // --- calcular estado a partir de la fecha_fin ---
+  let estado = "activo";
+  if (raw.fecha_fin) {
+    const hoy = new Date();
+    const fin = new Date(raw.fecha_fin);
+    if (!isNaN(fin)) {
+      if (hoy >= fin) {
+        estado = "completado"; // ya vencido
+      } else {
+        const dias = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+        if (dias <= 7) estado = "proximo_vencer";
+      }
+    }
+  }
+
+  return {
+    id: raw.id_ticket,
+    ministerio: raw.ministerio || "-", // si no lo tienes, placeholder
+    monto: parseFloat(raw.monto_presupuestado || 0),
+    moneda: raw.moneda || "Q", // fija tu símbolo
+    fechaCreacion: raw.creado_en, // lo que espera tu UI
+    fechaVencimiento: raw.fecha_fin,
+    estado,
+    gastado: parseFloat(raw.total_gastado || 0),
+    administrador: raw.administrador || "-", // si no lo tienes aún
+    // extras que podrías necesitar luego:
+    // beneficiario: raw.beneficiario,
+    // fechaInicio: raw.fecha_inicio,
+    // actualizadoEn: raw.actualizado_en,
+  };
+}
+
 // ==============================
 // Configuración de API (ajusta rutas según tu MVC)
 // ==============================
-const API_BASE = ""; // opcional, ej. "http://localhost:8080"
+const API_BASE = "http://localhost:8080"; // opcional, ej. "http://localhost:8080"
 const ENDPOINTS = {
-    // GET: lista de tickets del usuario autenticado
-    tickets: "/viaticos/tickets",
-    // GET: descarga archivo de facturas (zip/csv/pdf). Devuelve binario.
-    descargarFacturas: "/viaticos/facturas/descargar",
-    // GET: info de usuario (opcional si ya la tienes)
-    me: "/perfil/userData"
+  // GET: lista de tickets del usuario autenticado
+  tickets: "/viaticos/tickets",
+  // GET: descarga archivo de facturas (zip/csv/pdf). Devuelve binario.
+  descargarFacturas: "/viaticos/facturas/descargar",
+  // GET: info de usuario (opcional si ya la tienes)
+  me: "/perfil/userData",
 };
 
-// Si usas Auth por Bearer Token
-function getAuthToken() {
-    try {
-        return localStorage.getItem("auth.token") || localStorage.getItem("token") || "";
-    } catch {
-        return "";
-    }
-}
-
 async function apiFetch(path, opts = {}) {
-    const headers = new Headers(opts.headers || {});
-    if (!headers.has("Content-Type") && !(opts.body instanceof FormData)) {
-        headers.set("Content-Type", "application/json");
-    }
-    const token = getAuthToken();
-    if (token && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${token}`);
-    }
-    const url = `${API_BASE}${path}`;
-    const res = await fetch(url, { ...opts, headers });
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
-    }
-    const ct = res.headers.get("Content-Type") || "";
-    if (ct.includes("application/json")) return res.json();
-    return res;
+  const headers = new Headers(opts.headers || {});
+  if (!headers.has("Content-Type") && !(opts.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
+  }
+  const ct = res.headers.get("Content-Type") || "";
+  if (ct.includes("application/json")) return res.json();
+  return res;
 }
 
 // ==============================
@@ -50,180 +71,195 @@ let showProfile = false;
 
 // NUEVO: estado de búsqueda para pestaña "completados"
 let completedSearchMode = "id"; // "id" | "fecha"
-let completedIdQuery = "";      // int como string
-let completedStartDate = "";    // YYYY-MM-DD
-let completedEndDate = "";      // YYYY-MM-DD
+let completedIdQuery = ""; // int como string
+let completedStartDate = ""; // YYYY-MM-DD
+let completedEndDate = ""; // YYYY-MM-DD
 
 // ==============================
 // Referencias a elementos DOM
 // ==============================
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const profileBtn = document.getElementById('profileBtn');
-const profileDropdown = document.getElementById('profileDropdown');
-const statsGrid = document.getElementById('statsGrid');
-const filters = document.getElementById('filters');
-const ticketsGrid = document.getElementById('ticketsGrid');
-const noData = document.getElementById('noData');
-const noDataSubtext = document.getElementById('noDataSubtext');
-const downloadBtn = document.getElementById('downloadBtn');
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+const profileBtn = document.getElementById("profileBtn");
+const profileDropdown = document.getElementById("profileDropdown");
+const statsGrid = document.getElementById("statsGrid");
+const filters = document.getElementById("filters");
+const ticketsGrid = document.getElementById("ticketsGrid");
+const noData = document.getElementById("noData");
+const noDataSubtext = document.getElementById("noDataSubtext");
+const downloadBtn = document.getElementById("downloadBtn");
 
 // ==============================
 // Utilidades
 // ==============================
 function getGastadoPercentage(gastado, monto) {
-    const g = parseFloat(gastado || 0);
-    const m = parseFloat(monto || 0);
-    if (!m) return 0;
-    return (g / m) * 100;
+  const g = parseFloat(gastado || 0);
+  const m = parseFloat(monto || 0);
+  if (!m) return 0;
+  return (g / m) * 100;
 }
 
 function getEstadoColor(estado) {
-    switch (estado) {
-        case "activo":
-            return "status-active";
-        case "proximo_vencer":
-            return "status-expiring";
-        case "completado":
-            return "status-completed";
-        default:
-            return "status-active";
-    }
+  switch (estado) {
+    case "activo":
+      return "status-active";
+    case "proximo_vencer":
+      return "status-expiring";
+    case "completado":
+      return "status-completed";
+    default:
+      return "status-active";
+  }
 }
 
 function getEstadoTexto(estado) {
-    switch (estado) {
-        case "activo":
-            return "Activo";
-        case "proximo_vencer":
-            return "Próximo a vencer";
-        case "completado":
-            return "Completado";
-        default:
-            return "Desconocido";
-    }
+  switch (estado) {
+    case "activo":
+      return "Activo";
+    case "proximo_vencer":
+      return "Próximo a vencer";
+    case "completado":
+      return "Completado";
+    default:
+      return "Desconocido";
+  }
 }
 
 function formatNumber(num) {
-    const n = parseFloat(num || 0);
-    if (Number.isNaN(n)) return "0";
-    return n.toLocaleString();
+  const n = parseFloat(num || 0);
+  if (Number.isNaN(n)) return "0";
+  return n.toLocaleString();
 }
 
 // --- Helpers para búsqueda en "completados" ---
 function matchTicketById(ticket, qInt) {
-    // intenta igualdad estricta numérica; si el id es string, intenta convertir
-    const idVal = ticket?.id;
-    if (typeof idVal === "number") return idVal === qInt;
-    const asNum = Number(idVal);
-    if (!Number.isNaN(asNum)) return asNum === qInt;
-    // fallback: coincidencia por inclusión de texto del número
-    return String(idVal ?? "").includes(String(qInt));
+  // intenta igualdad estricta numérica; si el id es string, intenta convertir
+  const idVal = ticket?.id;
+  if (typeof idVal === "number") return idVal === qInt;
+  const asNum = Number(idVal);
+  if (!Number.isNaN(asNum)) return asNum === qInt;
+  // fallback: coincidencia por inclusión de texto del número
+  return String(idVal ?? "").includes(String(qInt));
 }
 
 function toYMD(dateStr) {
-    if (!dateStr) return null;
-    // Soporta "YYYY-MM-DD" / ISO, o "DD/MM/YYYY"
-    if (dateStr.includes("-")) {
-        const d = new Date(dateStr);
-        if (isNaN(d)) return null;
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
-    }
-    if (dateStr.includes("/")) {
-        const [dd, mm, yyyy] = dateStr.split("/");
-        if (!dd || !mm || !yyyy) return null;
-        return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-    }
-    // último intento
+  if (!dateStr) return null;
+  // Soporta "YYYY-MM-DD" / ISO, o "DD/MM/YYYY"
+  if (dateStr.includes("-")) {
     const d = new Date(dateStr);
     if (isNaN(d)) return null;
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
+  }
+  if (dateStr.includes("/")) {
+    const [dd, mm, yyyy] = dateStr.split("/");
+    if (!dd || !mm || !yyyy) return null;
+    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  }
+  // último intento
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function inDateRange(ticketDateStr, startYMD, endYMD) {
-    const t = toYMD(ticketDateStr);
-    if (!t) return false;
-    const tN = Number(t.replaceAll("-", ""));
-    const sN = startYMD ? Number(startYMD.replaceAll("-", "")) : null;
-    const eN = endYMD ? Number(endYMD.replaceAll("-", "")) : null;
-    if (sN && tN < sN) return false;
-    if (eN && tN > eN) return false;
-    return true;
+  const t = toYMD(ticketDateStr);
+  if (!t) return false;
+  const tN = Number(t.replaceAll("-", ""));
+  const sN = startYMD ? Number(startYMD.replaceAll("-", "")) : null;
+  const eN = endYMD ? Number(endYMD.replaceAll("-", "")) : null;
+  if (sN && tN < sN) return false;
+  if (eN && tN > eN) return false;
+  return true;
 }
 
 // ==============================
 // Carga de datos desde API
 // ==============================
 async function loadTickets() {
-    // Espera que el backend retorne un array de tickets con:
-    // { id, ministerio, descripcion, monto, moneda, fechaCreacion, fechaVencimiento, estado, gastado, administrador }
-    const data = await apiFetch(ENDPOINTS.tickets, { method: "GET" });
-    if (!Array.isArray(data)) {
-        throw new Error("El endpoint de tickets no devolvió un arreglo");
-    }
-    TICKETS = data;
+  // GET simple
+  const data = await apiFetch("/usermain/ticketEmpleado");
+
+  // tu backend responde con { items: [...], page, pageSize, total, totalPages }
+  if (!Array.isArray(data.items)) {
+    throw new Error(
+      "El endpoint no devolvió un objeto con 'items' como arreglo"
+    );
+  }
+
+  // normalizamos cada item
+  TICKETS = data.items.map(normalizeTicket);
 }
 
 async function downloadInvoices() {
-    const res = await apiFetch(ENDPOINTS.descargarFacturas, { method: "GET" });
-    if (res instanceof Response) {
-        const blob = await res.blob();
-        const a = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        a.href = url;
-        a.download = "facturas.zip";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-    } else {
-        throw new Error("El endpoint de descarga no devolvió un archivo binario.");
-    }
+  const res = await apiFetch(ENDPOINTS.descargarFacturas, { method: "GET" });
+  if (res instanceof Response) {
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = "facturas.zip";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } else {
+    throw new Error("El endpoint de descarga no devolvió un archivo binario.");
+  }
 }
 
 // ==============================
 // Renderizado
 // ==============================
 function renderStats() {
-    const activosCount = TICKETS.filter(t => t.estado === "activo").length;
-    const totalMonto = TICKETS.reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
-    const totalGastado = TICKETS.reduce((sum, t) => sum + parseFloat(t.gastado || 0), 0);
-    const proximosVencer = TICKETS.filter(t => t.estado === "proximo_vencer").length;
+  const activosCount = TICKETS.filter((t) => t.estado === "activo").length;
+  const totalMonto = TICKETS.reduce(
+    (sum, t) => sum + parseFloat(t.monto || 0),
+    0
+  );
+  const totalGastado = TICKETS.reduce(
+    (sum, t) => sum + parseFloat(t.gastado || 0),
+    0
+  );
+  const proximosVencer = TICKETS.filter(
+    (t) => t.estado === "proximo_vencer"
+  ).length;
 
-    const stats = [
-        {
-            icon: "green",
-            svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />`,
-            number: activosCount,
-            label: "Tickets activos"
-        },
-        {
-            icon: "blue",
-            svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />`,
-            number: `Q${formatNumber(totalMonto)}`,
-            label: "Total disponible"
-        },
-        {
-            icon: "purple",
-            svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />`,
-            number: `Q${formatNumber(totalGastado)}`,
-            label: "Total gastado"
-        },
-        {
-            icon: "yellow",
-            svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />`,
-            number: proximosVencer,
-            label: "Por vencer"
-        }
-    ];
+  const stats = [
+    {
+      icon: "green",
+      svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+      number: activosCount,
+      label: "Tickets activos",
+    },
+    {
+      icon: "blue",
+      svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />`,
+      number: `Q${formatNumber(totalMonto)}`,
+      label: "Total disponible",
+    },
+    {
+      icon: "purple",
+      svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />`,
+      number: `Q${formatNumber(totalGastado)}`,
+      label: "Total gastado",
+    },
+    {
+      icon: "yellow",
+      svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+      number: proximosVencer,
+      label: "Por vencer",
+    },
+  ];
 
-    statsGrid.innerHTML = stats.map(stat => `
+  statsGrid.innerHTML = stats
+    .map(
+      (stat) => `
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-icon ${stat.icon}">
@@ -237,41 +273,69 @@ function renderStats() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `
+    )
+    .join("");
 }
 
 function renderFilters() {
-    const filterOptions = [
-        { key: "todos", label: "Todos", count: TICKETS.length },
-        { key: "activos", label: "Activos", count: TICKETS.filter(t => t.estado === "activo").length },
-        { key: "proximo_vencer", label: "Por vencer", count: TICKETS.filter(t => t.estado === "proximo_vencer").length },
-        { key: "completados", label: "Completados", count: TICKETS.filter(t => t.estado === "completado").length }
-    ];
+  const filterOptions = [
+    { key: "todos", label: "Todos", count: TICKETS.length },
+    {
+      key: "activos",
+      label: "Activos",
+      count: TICKETS.filter((t) => t.estado === "activo").length,
+    },
+    {
+      key: "proximo_vencer",
+      label: "Por vencer",
+      count: TICKETS.filter((t) => t.estado === "proximo_vencer").length,
+    },
+    {
+      key: "completados",
+      label: "Completados",
+      count: TICKETS.filter((t) => t.estado === "completado").length,
+    },
+  ];
 
-    filters.innerHTML = filterOptions.map(filter => `
-        <button class="filter-btn ${selectedFilter === filter.key ? 'active' : ''}" 
+  filters.innerHTML = filterOptions
+    .map(
+      (filter) => `
+        <button class="filter-btn ${
+          selectedFilter === filter.key ? "active" : ""
+        }" 
                 data-filter="${filter.key}">
             ${filter.label} (${filter.count})
         </button>
-    `).join('');
+    `
+    )
+    .join("");
 
-    // NUEVO: controles adicionales solo cuando está seleccionada la pestaña "completados"
-    if (selectedFilter === "completados") {
-        const extraControls = `
+  // NUEVO: controles adicionales solo cuando está seleccionada la pestaña "completados"
+  if (selectedFilter === "completados") {
+    const extraControls = `
             <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                 <select id="completedSearchMode" style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--bg-tertiary);color:var(--text-tertiary);">
-                    <option value="id" ${completedSearchMode === "id" ? "selected" : ""}>Buscar por ID ticket</option>
-                    <option value="fecha" ${completedSearchMode === "fecha" ? "selected" : ""}>Buscar por fecha</option>
+                    <option value="id" ${
+                      completedSearchMode === "id" ? "selected" : ""
+                    }>Buscar por ID ticket</option>
+                    <option value="fecha" ${
+                      completedSearchMode === "fecha" ? "selected" : ""
+                    }>Buscar por fecha</option>
                 </select>
 
-                <div id="completedById" style="display:${completedSearchMode === "id" ? "flex" : "none"};gap:8px;align-items:center;">
+                <div id="completedById" style="display:${
+                  completedSearchMode === "id" ? "flex" : "none"
+                };gap:8px;align-items:center;">
                     <input type="number" id="completedIdInput" placeholder="ID (entero)" value="${completedIdQuery}"
                            style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);width:160px;">
                     <button id="completedIdSearchBtn" class="filter-btn">Buscar</button>
                     <button id="completedIdClearBtn" class="filter-btn">Borrar</button>
                 </div>
 
-                <div id="completedByDate" style="display:${completedSearchMode === "fecha" ? "flex" : "none"};gap:8px;align-items:center;flex-wrap:wrap;">
+                <div id="completedByDate" style="display:${
+                  completedSearchMode === "fecha" ? "flex" : "none"
+                };gap:8px;align-items:center;flex-wrap:wrap;">
                     <input type="date" id="completedStartDate" value="${completedStartDate}"
                            style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
                     <span style="color:var(--text-secondary);">a</span>
@@ -282,132 +346,153 @@ function renderFilters() {
                 </div>
             </div>
         `;
-        filters.insertAdjacentHTML("beforeend", extraControls);
+    filters.insertAdjacentHTML("beforeend", extraControls);
 
-        // Listeners de los controles extra
-        const modeSel = document.getElementById("completedSearchMode");
-        const idInput = document.getElementById("completedIdInput");
-        const idSearchBtn = document.getElementById("completedIdSearchBtn");
-        const idClearBtn = document.getElementById("completedIdClearBtn");
-        const startEl = document.getElementById("completedStartDate");
-        const endEl = document.getElementById("completedEndDate");
-        const dateSearchBtn = document.getElementById("completedDateSearchBtn");
-        const dateClearBtn = document.getElementById("completedDateClearBtn");
+    // Listeners de los controles extra
+    const modeSel = document.getElementById("completedSearchMode");
+    const idInput = document.getElementById("completedIdInput");
+    const idSearchBtn = document.getElementById("completedIdSearchBtn");
+    const idClearBtn = document.getElementById("completedIdClearBtn");
+    const startEl = document.getElementById("completedStartDate");
+    const endEl = document.getElementById("completedEndDate");
+    const dateSearchBtn = document.getElementById("completedDateSearchBtn");
+    const dateClearBtn = document.getElementById("completedDateClearBtn");
 
-        modeSel.addEventListener("change", () => {
-            completedSearchMode = modeSel.value;
-            // re-render para mostrar el bloque correcto
-            renderFilters();
-            renderTickets();
-        });
+    modeSel.addEventListener("change", () => {
+      completedSearchMode = modeSel.value;
+      // re-render para mostrar el bloque correcto
+      renderFilters();
+      renderTickets();
+    });
 
-        if (idInput && idSearchBtn && idClearBtn) {
-            idSearchBtn.addEventListener("click", () => {
-                completedIdQuery = (idInput.value || "").trim();
-                renderTickets();
-            });
-            idClearBtn.addEventListener("click", () => {
-                completedIdQuery = "";
-                if (idInput) idInput.value = "";
-                renderTickets();
-            });
-            // enter en el input
-            idInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    completedIdQuery = (idInput.value || "").trim();
-                    renderTickets();
-                }
-            });
+    if (idInput && idSearchBtn && idClearBtn) {
+      idSearchBtn.addEventListener("click", () => {
+        completedIdQuery = (idInput.value || "").trim();
+        renderTickets();
+      });
+      idClearBtn.addEventListener("click", () => {
+        completedIdQuery = "";
+        if (idInput) idInput.value = "";
+        renderTickets();
+      });
+      // enter en el input
+      idInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          completedIdQuery = (idInput.value || "").trim();
+          renderTickets();
         }
-
-        if (startEl && endEl && dateSearchBtn && dateClearBtn) {
-            dateSearchBtn.addEventListener("click", () => {
-                completedStartDate = startEl.value || "";
-                completedEndDate = endEl.value || "";
-                renderTickets();
-            });
-            dateClearBtn.addEventListener("click", () => {
-                completedStartDate = "";
-                completedEndDate = "";
-                startEl.value = "";
-                endEl.value = "";
-                renderTickets();
-            });
-        }
+      });
     }
 
-    // Listeners de los botones de filtro (siempre al final)
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        // evitar que los botones internos (buscar/borrar) reasignen selectedFilter
-        const isSearchOrClear = ["completedIdSearchBtn","completedIdClearBtn","completedDateSearchBtn","completedDateClearBtn"].includes(btn.id);
-        if (isSearchOrClear) return;
+    if (startEl && endEl && dateSearchBtn && dateClearBtn) {
+      dateSearchBtn.addEventListener("click", () => {
+        completedStartDate = startEl.value || "";
+        completedEndDate = endEl.value || "";
+        renderTickets();
+      });
+      dateClearBtn.addEventListener("click", () => {
+        completedStartDate = "";
+        completedEndDate = "";
+        startEl.value = "";
+        endEl.value = "";
+        renderTickets();
+      });
+    }
+  }
 
-        btn.addEventListener('click', (e) => {
-            const key = e.currentTarget.dataset.filter;
-            if (!key) return;
-            selectedFilter = key;
-            renderFilters();
-            renderTickets();
-        });
+  // Listeners de los botones de filtro (siempre al final)
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    // evitar que los botones internos (buscar/borrar) reasignen selectedFilter
+    const isSearchOrClear = [
+      "completedIdSearchBtn",
+      "completedIdClearBtn",
+      "completedDateSearchBtn",
+      "completedDateClearBtn",
+    ].includes(btn.id);
+    if (isSearchOrClear) return;
+
+    btn.addEventListener("click", (e) => {
+      const key = e.currentTarget.dataset.filter;
+      if (!key) return;
+      selectedFilter = key;
+      renderFilters();
+      renderTickets();
     });
+  });
 }
 
 function renderTickets() {
-    // Filtrar por pestaña
-    let filteredTickets = TICKETS.filter(ticket => {
-        if (selectedFilter === "todos") return true;
-        if (selectedFilter === "activos") return ticket.estado === "activo";
-        if (selectedFilter === "proximo_vencer") return ticket.estado === "proximo_vencer";
-        if (selectedFilter === "completados") return ticket.estado === "completado";
-        return true;
-    });
+  // Filtrar por pestaña
+  let filteredTickets = TICKETS.filter((ticket) => {
+    if (selectedFilter === "todos") return true;
+    if (selectedFilter === "activos") return ticket.estado === "activo";
+    if (selectedFilter === "proximo_vencer")
+      return ticket.estado === "proximo_vencer";
+    if (selectedFilter === "completados") return ticket.estado === "completado";
+    return true;
+  });
 
-    // Filtros adicionales si estamos en "completados"
+  // Filtros adicionales si estamos en "completados"
+  if (selectedFilter === "completados") {
+    if (completedSearchMode === "id" && completedIdQuery) {
+      const qInt = parseInt(completedIdQuery, 10);
+      if (!Number.isNaN(qInt)) {
+        filteredTickets = filteredTickets.filter((t) =>
+          matchTicketById(t, qInt)
+        );
+      } else {
+        // si no es número válido, no muestra nada para evitar confusión
+        filteredTickets = [];
+      }
+    } else if (
+      completedSearchMode === "fecha" &&
+      (completedStartDate || completedEndDate)
+    ) {
+      filteredTickets = filteredTickets.filter((t) =>
+        inDateRange(t.fechaCreacion, completedStartDate, completedEndDate)
+      );
+    }
+  }
+
+  if (filteredTickets.length === 0) {
+    ticketsGrid.style.display = "none";
+    noData.style.display = "block";
     if (selectedFilter === "completados") {
-        if (completedSearchMode === "id" && completedIdQuery) {
-            const qInt = parseInt(completedIdQuery, 10);
-            if (!Number.isNaN(qInt)) {
-                filteredTickets = filteredTickets.filter(t => matchTicketById(t, qInt));
-            } else {
-                // si no es número válido, no muestra nada para evitar confusión
-                filteredTickets = [];
-            }
-        } else if (completedSearchMode === "fecha" && (completedStartDate || completedEndDate)) {
-            filteredTickets = filteredTickets.filter(t => inDateRange(t.fechaCreacion, completedStartDate, completedEndDate));
-        }
+      noDataSubtext.textContent =
+        "Ajusta los criterios de búsqueda o borra los filtros.";
+    } else {
+      noDataSubtext.textContent =
+        selectedFilter !== "todos"
+          ? "Prueba cambiando el filtro"
+          : "Espera a que un administrador te asigne tickets";
     }
+    return;
+  }
 
-    if (filteredTickets.length === 0) {
-        ticketsGrid.style.display = 'none';
-        noData.style.display = 'block';
-        if (selectedFilter === "completados") {
-            noDataSubtext.textContent = "Ajusta los criterios de búsqueda o borra los filtros.";
-        } else {
-            noDataSubtext.textContent = selectedFilter !== "todos" 
-                ? "Prueba cambiando el filtro" 
-                : "Espera a que un administrador te asigne tickets";
-        }
-        return;
-    }
+  ticketsGrid.style.display = "grid";
+  noData.style.display = "none";
 
-    ticketsGrid.style.display = 'grid';
-    noData.style.display = 'none';
+  ticketsGrid.innerHTML = filteredTickets
+    .map((ticket) => {
+      const disponible =
+        parseFloat(ticket.monto || 0) - parseFloat(ticket.gastado || 0);
+      const porcentaje = getGastadoPercentage(ticket.gastado, ticket.monto);
+      const estadoClass = getEstadoColor(ticket.estado);
+      const estadoTexto = getEstadoTexto(ticket.estado);
+      const isCompleted = ticket.estado === "completado";
 
-    ticketsGrid.innerHTML = filteredTickets.map(ticket => {
-        const disponible = parseFloat(ticket.monto || 0) - parseFloat(ticket.gastado || 0);
-        const porcentaje = getGastadoPercentage(ticket.gastado, ticket.monto);
-        const estadoClass = getEstadoColor(ticket.estado);
-        const estadoTexto = getEstadoTexto(ticket.estado);
-        const isCompleted = ticket.estado === "completado";
-
-        return `
+      return `
             <div class="ticket-card">
                 <!-- Header del ticket -->
                 <div class="ticket-header">
                     <div>
                         <h3 class="ticket-title">${ticket.id || "-"}</h3>
-                        <p class="ticket-ministry">${ticket.ministerio || "-"}</p>
-                        <p class="ticket-ministry">Administrador: ${ticket.administrador || "-"}</p>
+                        <p class="ticket-ministry">${
+                          ticket.ministerio || "-"
+                        }</p>
+                        <p class="ticket-ministry">Administrador: ${
+                          ticket.administrador || "-"
+                        }</p>
                     </div>
                     <span class="ticket-status ${estadoClass}">
                         ${estadoTexto}
@@ -421,16 +506,22 @@ function renderTickets() {
                 <div class="ticket-budget">
                     <div class="budget-row">
                         <span class="budget-label">Presupuesto</span>
-                        <span class="budget-amount budget-total">${ticket.moneda || ""}${formatNumber(ticket.monto)}</span>
+                        <span class="budget-amount budget-total">${
+                          ticket.moneda || ""
+                        }${formatNumber(ticket.monto)}</span>
                     </div>
                     <div class="budget-row">
                         <span class="budget-label">Gastado</span>
-                        <span class="budget-amount budget-spent">${ticket.moneda || ""}${formatNumber(ticket.gastado)}</span>
+                        <span class="budget-amount budget-spent">${
+                          ticket.moneda || ""
+                        }${formatNumber(ticket.gastado)}</span>
                     </div>
                     <div class="budget-row">
                         <span class="budget-label">Disponible</span>
                         <span class="budget-amount budget-available">
-                            ${ticket.moneda || ""}${formatNumber(disponible.toFixed(2))}
+                            ${ticket.moneda || ""}${formatNumber(
+        disponible.toFixed(2)
+      )}
                         </span>
                     </div>
 
@@ -451,7 +542,9 @@ function renderTickets() {
 
                 <!-- Botones de acción -->
                 <div class="ticket-actions">
-                    <button class="action-btn primary" ${isCompleted ? 'disabled' : ''}>
+                    <button class="action-btn primary" ${
+                      isCompleted ? "disabled" : ""
+                    }>
                         Agregar Gasto
                     </button>
                     <button class="action-btn secondary">
@@ -460,67 +553,73 @@ function renderTickets() {
                 </div>
             </div>
         `;
-    }).join('');
+    })
+    .join("");
 }
 
 // ==============================
 // Tema y Perfil
 // ==============================
 function toggleTheme() {
-    isDark = !isDark;
-    document.body.classList.toggle('light-theme', !isDark);
-    
-    if (isDark) {
-        themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
-    } else {
-        themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
-    }
+  isDark = !isDark;
+  document.body.classList.toggle("light-theme", !isDark);
+
+  if (isDark) {
+    themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
+  } else {
+    themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
+  }
 }
 
 function toggleProfile() {
-    showProfile = !showProfile;
-    profileDropdown.classList.toggle('show', showProfile);
+  showProfile = !showProfile;
+  profileDropdown.classList.toggle("show", showProfile);
 }
 
 // ==============================
 // Event Listeners
 // ==============================
-if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-if (profileBtn) profileBtn.addEventListener('click', toggleProfile);
+if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
+if (profileBtn) profileBtn.addEventListener("click", toggleProfile);
 
 // Cerrar dropdown al hacer clic fuera
-document.addEventListener('click', (e) => {
-    if (profileBtn && !profileBtn.contains(e.target) && profileDropdown && !profileDropdown.contains(e.target)) {
-        showProfile = false;
-        profileDropdown.classList.remove('show');
-    }
+document.addEventListener("click", (e) => {
+  if (
+    profileBtn &&
+    !profileBtn.contains(e.target) &&
+    profileDropdown &&
+    !profileDropdown.contains(e.target)
+  ) {
+    showProfile = false;
+    profileDropdown.classList.remove("show");
+  }
 });
 
 // Botón Descargar Facturas
 if (downloadBtn) {
-    downloadBtn.addEventListener('click', async () => {
-        try {
-            await downloadInvoices();
-        } catch (err) {
-            alert("No se pudieron descargar las facturas. " + (err?.message || ""));
-        }
-    });
+  downloadBtn.addEventListener("click", async () => {
+    try {
+      await downloadInvoices();
+    } catch (err) {
+      alert("No se pudieron descargar las facturas. " + (err?.message || ""));
+    }
+  });
 }
 
 // ==============================
 // Inicialización
 // ==============================
 async function init() {
-    try {
-        await loadTickets();   // <- carga desde tu backend
-    } catch (err) {
-        console.error("Error al cargar tickets:", err);
-        TICKETS = []; // aseguramos array
-    }
-    renderStats();
-    renderFilters();
-    renderTickets();
+  try {
+    await loadTickets(); // <- carga desde tu backend
+  } catch (err) {
+    console.error("Error al cargar tickets:", err);
+    TICKETS = []; // aseguramos array
+  }
+  renderStats();
+  renderFilters();
+  renderTickets();
 }
 
 // Cargar la aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener("DOMContentLoaded", init);

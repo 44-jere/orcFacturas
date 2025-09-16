@@ -9,6 +9,7 @@ import { mainFacturasRouter } from "./controlador/logicaFacturas/mainfacturas/ma
 import { homeRouter } from "./controlador/logicaFacturas/home/home.js";
 import { adminRouter } from "./controlador/logicaFacturas/administrador/administrador.js";
 import { supervisorRouter } from "./controlador/logicaFacturas/supervisor/supervisor.js";
+import { userMainRouter } from "./controlador/logicaFacturas/usermain/usermain.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors"; // 👈 agregado
@@ -87,6 +88,8 @@ app.use("/perfil", perfilRouter);
 app.use("/logout", logoutRouter);
 
 app.use("/mainfacturas", mainFacturasRouter);
+
+app.use("/usermain", userMainRouter);
 
 app.listen(port, "0.0.0.0");
 console.log("Server started at http://localhost:" + port);
