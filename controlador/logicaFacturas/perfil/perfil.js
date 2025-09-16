@@ -34,7 +34,6 @@ perfilRouter.get("/userData", async (req, res) => {
   try {
     const db = req.db;
     const response = await db.perfilGetUsuario({ id });
-    console.log(response);
     res.status(200).send(response);
   } catch (e) {
     console.log(e);
