@@ -213,3 +213,58 @@ adminRouter.get("/subordinados/buscarUsuario", async (req, res) => {
     res.status(500).json({ error: "Error al buscar usuarios" });
   }
 });
+
+adminRouter.get("/adminDashboard", (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+
+  res.sendFile(
+    path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "public",
+      "Administrador",
+      "AdminDashboard",
+      "dashboard.html"
+    )
+  );
+});
+adminRouter.get("/adminDescargaFacturas", (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+
+  res.sendFile(
+    path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "public",
+      "Administrador",
+      "AdminDescargaFacturasGeneral",
+      "DescargarFacturas.html"
+    )
+  );
+});
+adminRouter.get("/verGastosTicket", (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+
+  res.sendFile(
+    path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "public",
+      "Administrador",
+      "VerGastosTicket",
+      "VerGastos.html"
+    )
+  );
+});

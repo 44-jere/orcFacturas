@@ -50,6 +50,24 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.resolve(__dirname, "./public")));
 
+// 1) Bloquear solo HTML
+app.use("/public", (req, res, next) => {
+  if (req.path.endsWith(".html")) {
+    return res.status(404).end(); // 🚫 no expone HTML
+  }
+  next(); // ✅ pasa a static si no es .html
+});
+
+// 2) Servir assets (png, css, js, etc.)
+app.use(
+  "/public",
+  express.static("public", {
+    index: false, // no servir index.html
+    redirect: false, // no redirecciones automáticas
+    dotfiles: "ignore",
+  })
+);
+
 app.use((req, _res, next) => {
   req.db = db; // <- ahora está en req
   next();
