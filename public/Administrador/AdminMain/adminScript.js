@@ -35,8 +35,8 @@ let appState = {
   /* ====== NUEVO: búsqueda incremental ====== */
   searchTimeout: null,
   gestSearchTimeout: null,     // debounce para "Gestionar → Nombre"
-  histSearchTimeout: null,     // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
-  searchResults: [],              // resultados de búsqueda incremental
+  histSearchTimeout: null,     // debounce para "Historial → Nombre"
+  searchResults: [],           // resultados de búsqueda incremental
 };
 
 /* ====== Filtros Gestionar ====== */
@@ -289,25 +289,39 @@ async function searchUsersIncremental(query) {
   }
 }
 
+/* ========= MODIFICADO: búsqueda por ID usando /admin/subordinados/buscarUsuario?id= ======== */
 async function searchUserById(userId) {
   if (!userId || isNaN(parseInt(userId))) {
     return null;
   }
 
   try {
-    const response = await fetch(`http://localhost:8080/admin/subordinados?user_id=${encodeURIComponent(userId)}`, {
+    const url = `http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(userId)}`;
+    const response = await fetch(url, {
       method: "GET",
       headers: { "Accept": "application/json" },
       credentials: "include"
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      return data.items && data.items.length > 0 ? data.items[0] : null;
-    } else {
+    if (!response.ok) {
       console.error("Error en búsqueda por ID:", response.status);
       return null;
     }
+
+    const data = await response.json();
+    // Se espera el formato: { items: [ {...usuario...} ], criteria: {...}, limit: n }
+    const user = Array.isArray(data.items) && data.items.length > 0 ? data.items[0] : null;
+
+    // Opcional: mantener coherencia con searchResults para que getUserByIdSafe lo encuentre
+    if (user) {
+      // Normalizamos el id para búsquedas internas
+      if (typeof user.id_usuario !== "undefined") {
+        const exists = appState.searchResults.some(u => String(u.id_usuario) === String(user.id_usuario));
+        if (!exists) appState.searchResults.push(user);
+      }
+    }
+
+    return user;
   } catch (error) {
     console.error("Error en búsqueda por ID:", error);
     return null;
@@ -644,7 +658,7 @@ async function onUserIdSearchClick() {
     return;
   }
 
-  const user = await searchUserById(idNum);
+  const user = await searchUserById(idNum); // <-- usa el endpoint nuevo
   if (!user) {
     showNotification("No se encontró un usuario con ese ID", "error");
     hiddenId.value = "";
@@ -657,7 +671,7 @@ async function onUserIdSearchClick() {
   handleUserSelect(user.id_usuario, user);
   updateCreateButton();
 
-  /* Mostrar recuadro y bloquear */
+  /* Mostrar recuadro */
   showSelectedUserBox(user.id_usuario);
 }
 
@@ -678,7 +692,7 @@ function getUserByIdSafe(id) {
   // Buscar primero en searchResults (datos más recientes de la API)
   const fromSearch = appState.searchResults.find(u => String(u.id_usuario) === String(id));
   if (fromSearch) return fromSearch;
-  
+
   // Fallback a users (si existe)
   return appState.users.find(u => String(u.id) === String(id)) || null;
 }
@@ -733,9 +747,9 @@ function renderSelectedUsersBox() {
     lockUserSelectionFields(false);
     return;
   }
-  
+
   box.classList.remove("hidden");
-  
+
   if (appState.selectedUsersIds.length > 0) {
     if (listBlock) listBlock.classList.remove("hidden");
     renderSelectedUsersList();
@@ -783,7 +797,7 @@ function changeUserSelection() {
   // Ocultar el recuadro de usuario seleccionado pero mantener la lista
   const box = document.getElementById("selectedUserCard");
   if (box) box.classList.add("hidden");
-  
+
   renderSelectedUsersBox();
 }
 
@@ -840,7 +854,7 @@ function renderCrearUserFields() {
 
 function handleMinisterioSelect(ministerioId) {
   const user = appState.users.find((u) => u.id === appState.ticketForm.usuario_id);
-  const ministerio = user?.ministerios_asignados.find((m) => m.id === ministerioId);
+  const ministerio = user?.ministerios_asignados?.find?.((m) => m.id === ministroId);
   const ministerioInfo = document.getElementById("ministerioInfo");
   const generatedId = document.getElementById("generatedId");
 
@@ -1164,6 +1178,8 @@ function updateTicketsTab() {
     ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
   }
 }
+
+/* ===== AQUI TERMINA LA PRIMERA MITAD ===== */
 /* ====================== Historial ====================== */
 function ddmmy_to_Date(ddmmyyyy) {
   if (!ddmmyyyy) return null;
@@ -1239,7 +1255,7 @@ function createHistorialCard(ticket) {
         </div>
         <div class="date-item">
           <span class="date-label">Completado</span>
-          <span class="date-value date-completed">${ticket.fecha_completado}</span>
+          <span class="date-value date-completado">${ticket.fecha_completado}</span>
         </div>
       </div>
 
@@ -1478,7 +1494,7 @@ function switchTab(tabName) {
   }
 }
 
-/* ====================== Carga Inicial (SIN DEMO) ====================== */
+/* ====================== Carga Inicial (SIN MODO DEMO) ====================== */
 async function loadAdminData() {
   appState.loading = true;
   updateStats();
@@ -1682,6 +1698,8 @@ function renderGestionarFields() {
     const btnS = document.getElementById("gestNameSearchBtn");
     const btnC = document.getElementById("gestNameClearBtn");
 
+    if (inp) inp.addEventListener("input", onGestNameInput);
+
     if (inp) inp.value = gestCriteria.nameQuery || "";
     if (f1)  f1.value  = gestCriteria.from || "";
     if (f2)  f2.value  = gestCriteria.to || "";
@@ -1703,9 +1721,6 @@ function renderGestionarFields() {
       updateTicketsTab();
     });
 
-    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
-    if (inp) inp.addEventListener("input", onGestNameInput);
-
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0%;">
@@ -1721,10 +1736,6 @@ function renderGestionarFields() {
     const f2    = document.getElementById("gestToDate");
     const btnS  = document.getElementById("gestIdSearchBtn");
     const btnC  = document.getElementById("gestIdClearBtn");
-
-    if (idInp) idInp.value = gestCriteria.idQuery || "";
-    if (f1)    f1.value   = gestCriteria.from || "";
-    if (f2)    f2.value   = gestCriteria.to || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       gestCriteria.idQuery = idInp?.value || "";
@@ -1754,8 +1765,6 @@ function renderGestionarFields() {
     const idInp = document.getElementById("gestIdInput");
     const btnS  = document.getElementById("gestIdSearchBtn");
     const btnC  = document.getElementById("gestIdClearBtn");
-
-    if (idInp) idInp.value = gestCriteria.idQuery || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       gestCriteria.idQuery = idInp?.value || "";
@@ -1813,6 +1822,8 @@ function renderHistorialFields() {
     const btnS = document.getElementById("histNameSearchBtnAdv");
     const btnC = document.getElementById("histNameClearBtnAdv");
 
+    if (inp) inp.addEventListener("input", onHistNameInput);
+
     if (inp) inp.value = histAdvCriteria.nameQuery || "";
     if (f1)  f1.value  = histAdvCriteria.from || "";
     if (f2)  f2.value  = histAdvCriteria.to || "";
@@ -1834,9 +1845,6 @@ function renderHistorialFields() {
       updateHistorialTab();
     });
 
-    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
-    if (inp) inp.addEventListener("input", onHistNameInput);
-
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
@@ -1852,10 +1860,6 @@ function renderHistorialFields() {
     const f2    = document.getElementById("histToDateAdv");
     const btnS  = document.getElementById("histIdSearchBtnAdv");
     const btnC  = document.getElementById("histIdClearBtnAdv");
-
-    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
-    if (f1)    f1.value   = histAdvCriteria.from || "";
-    if (f2)    f2.value   = histAdvCriteria.to || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       histAdvCriteria.idQuery = idInp?.value || "";
@@ -1884,8 +1888,6 @@ function renderHistorialFields() {
     const idInp = document.getElementById("histIdInputAdv");
     const btnS  = document.getElementById("histIdSearchBtnAdv");
     const btnC  = document.getElementById("histIdClearBtnAdv");
-
-    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       histAdvCriteria.idQuery = idInp?.value || "";
@@ -1946,7 +1948,7 @@ function renderAssignedUsersTable(items) {
     const id = u?.id_usuario ?? "";
     const correo = u?.correo ?? "";
     const cargo = u?.rol ?? "";
-    const dpi = u?.cui ?? ""; // “Cui en dpi”
+    const dpi = u?.cui ?? "";
     return `
       <tr>
         <td>${nombre}</td>
