@@ -26,16 +26,22 @@ let appState = {
   },
 
   /* ====== NUEVO: selección múltiple en Crear Ticket ====== */
-  currentUserCandidateId: "",     // id del usuario actualmente “seleccionado” (antes de agregar a lista)
+  currentUserCandidateId: "",     // id del usuario actualmente "seleccionado" (antes de agregar a lista)
   selectedUsersIds: [],           // ids confirmados (máx 5)
+
+  /* ====== NUEVO: total de usuarios desde API ====== */
+  usersTotal: null,               // se pobla con GET /admin/subordinados (campo "total")
+
+  /* ====== NUEVO: búsqueda incremental ====== */
+  searchTimeout: null,            // timeout para debounce de búsqueda
+  searchResults: [],              // resultados de búsqueda incremental
 };
 
 /* ====== Filtros Gestionar ====== */
 let gestCriteria = { mode: "", nameQuery: "", idQuery: "", from: "", to: "" };
 
-/* ====== Filtros Historial (se mantienen) ====== */
-let histSearchActive = false;
-let histCriteria = { ministerio: "", month: "", from: "", to: "", user: "" };
+/* ====== NUEVO: Filtros Historial (sistema igual a Gestionar) ====== */
+let histAdvCriteria = { mode: "", nameQuery: "", idQuery: "", from: "", to: "" };
 
 /* ====================== Utilidades ====================== */
 function showNotification(message, type = "success") {
@@ -174,7 +180,12 @@ function updateStats() {
 
     if (totalTickets) totalTickets.textContent = appState.tickets.length;
     if (activeTickets) activeTickets.textContent = activeCount;
-    if (totalUsers) totalUsers.textContent = appState.users.length;
+
+    // ===== ÚNICO CAMBIO: usar valor "total" del endpoint si está disponible =====
+    const usersTotalValue =
+      typeof appState.usersTotal === "number" ? appState.usersTotal : appState.users.length;
+    if (totalUsers) totalUsers.textContent = usersTotalValue;
+
     if (totalBudget) totalBudget.textContent = `Q${formatCurrency(budget)}`;
     if (ticketCount) ticketCount.textContent = appState.tickets.length;
     if (historialCount) historialCount.textContent = appState.historicalTickets.length;
@@ -248,20 +259,61 @@ function updateDashboard() {
   updateMinisterioStats();
 }
 
-/* ====================== Crear Ticket (form) ====================== */
-function updateUserForm() {
-  // Poblamos el datalist SOLO para el modo "Nombre"
-  const dl = document.getElementById("usuarioDatalist");
-  if (dl) {
-    dl.innerHTML = "";
-    appState.users.forEach((user) => {
-      const opt = document.createElement("option");
-      opt.value = `${user.nombre} - ${user.cargo}`;
-      opt.setAttribute("data-id", user.id);
-      dl.appendChild(opt);
-    });
+/* ====================== BÚSQUEDA INCREMENTAL API ====================== */
+async function searchUsersIncremental(query) {
+  if (!query || query.length < 2) {
+    appState.searchResults = [];
+    return [];
   }
 
+  try {
+    const response = await fetch(`http://localhost:8080/admin/subordinados?search=${encodeURIComponent(query)}`, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      credentials: "include"
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      appState.searchResults = data.items || [];
+      return appState.searchResults;
+    } else {
+      console.error("Error en búsqueda incremental:", response.status);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error en búsqueda incremental:", error);
+    return [];
+  }
+}
+
+async function searchUserById(userId) {
+  if (!userId || isNaN(parseInt(userId))) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8080/admin/subordinados?user_id=${encodeURIComponent(userId)}`, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      credentials: "include"
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.items && data.items.length > 0 ? data.items[0] : null;
+    } else {
+      console.error("Error en búsqueda por ID:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error en búsqueda por ID:", error);
+    return null;
+  }
+}
+
+/* ====================== Crear Ticket (form) ====================== */
+function updateUserForm() {
   // reset campos de usuario en crear (solo inputs; la lista confirmada se mantiene)
   const hiddenId = document.getElementById("usuarioSelect");
   const inputNombre = document.getElementById("usuarioSearchInput");
@@ -283,8 +335,13 @@ function hideMinisterioInfo() {
   if (ministerioInfo) ministerioInfo.classList.add("hidden");
 }
 
-function handleUserSelect(userId) {
-  const user = appState.users.find((u) => String(u.id) === String(userId));
+function handleUserSelect(userId, userData = null) {
+  let user = userData;
+  if (!user && userId) {
+    // Si no se proporciona userData, buscar en searchResults
+    user = appState.searchResults.find((u) => String(u.id_usuario) === String(userId));
+  }
+
   const userInfo = document.getElementById("userInfo");
   const userEmail = document.getElementById("userEmail");
   const userCargo = document.getElementById("userCargo");
@@ -295,20 +352,19 @@ function handleUserSelect(userId) {
 
   if (user && userInfo) {
     userInfo.classList.remove("hidden");
-    if (userEmail) userEmail.textContent = user.email;
-    if (userCargo) userCargo.textContent = user.cargo;
-    if (userMinisterios) userMinisterios.textContent = user.ministerios_asignados.length;
+    if (userEmail) userEmail.textContent = user.correo;
+    if (userCargo) userCargo.textContent = user.rol;
+    if (userMinisterios) userMinisterios.textContent = user.ministerio;
 
     if (ministerioSelect) {
       ministerioSelect.disabled = false;
       ministerioSelect.innerHTML = '<option value="">Seleccionar ministerio...</option>';
 
-      user.ministerios_asignados.forEach((ministerio) => {
-        const option = document.createElement("option");
-        option.value = ministerio.id;
-        option.textContent = `${ministerio.nombre} (${ministerio.codigo})`;
-        ministerioSelect.appendChild(option);
-      });
+      // Como la API devuelve solo un ministerio por usuario, agregamos esa opción
+      const option = document.createElement("option");
+      option.value = user.id_usuario; // Usamos el id del usuario como valor temporal
+      option.textContent = user.ministerio;
+      ministerioSelect.appendChild(option);
     }
   } else if (userInfo) {
     userInfo.classList.add("hidden");
@@ -321,34 +377,110 @@ function handleUserSelect(userId) {
   hideMinisterioInfo();
 }
 
-/* === Buscador por nombre (progresivo) === */
-function resolveUserFromInput(text) {
-  if (!text) return null;
-  const lower = text.toLowerCase();
-  const matches = appState.users.filter(u =>
-    (u.nombre || "").toLowerCase().includes(lower) ||
-    (u.email || "").toLowerCase().includes(lower) ||
-    (u.cargo || "").toLowerCase().includes(lower)
-  );
-  if (matches.length === 1) return matches[0];
-  const exact = appState.users.find(u => `${u.nombre} - ${u.cargo}`.toLowerCase() === lower);
-  return exact || null;
+/* === Buscador por nombre (progresivo con API) === */
+function createUserDropdown(results, inputElement) {
+  // Remover dropdown existente
+  const existingDropdown = document.getElementById("userSearchDropdown");
+  if (existingDropdown) {
+    existingDropdown.remove();
+  }
+
+  if (!results || results.length === 0) {
+    return;
+  }
+
+  const dropdown = document.createElement("div");
+  dropdown.id = "userSearchDropdown";
+  dropdown.style.cssText = `
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: ${appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"};
+    color: ${appState.isDark ? "#e5e7eb" : "#111827"};
+    border: 1px solid ${appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"};
+    border-radius: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 2000;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    backdrop-filter: blur(6px);
+`;
+
+  results.forEach((user) => {
+    const option = document.createElement("div");
+    option.style.cssText = `
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.2s;
+    `;
+    option.textContent = user.nombre;
+    
+    option.addEventListener("mouseenter", () => {
+      option.style.backgroundColor = "var(--hover-bg)";
+    });
+    
+    option.addEventListener("mouseleave", () => {
+      option.style.backgroundColor = "transparent";
+    });
+
+    option.addEventListener("click", () => {
+      inputElement.value = user.nombre;
+      const hiddenId = document.getElementById("usuarioSelect");
+      if (hiddenId) hiddenId.value = user.id_usuario;
+      handleUserSelect(user.id_usuario, user);
+      dropdown.remove();
+      updateCreateButton();
+    });
+
+    dropdown.appendChild(option);
+  });
+
+  // Posicionar el dropdown
+  const inputContainer = inputElement.parentElement;
+  inputContainer.style.position = "relative";
+  inputContainer.appendChild(dropdown);
+
+  // Cerrar dropdown al hacer clic fuera
+  setTimeout(() => {
+    document.addEventListener("click", function closeDropdown(e) {
+      if (!dropdown.contains(e.target) && e.target !== inputElement) {
+        dropdown.remove();
+        document.removeEventListener("click", closeDropdown);
+      }
+    });
+  }, 100);
 }
 
-function onUserSearchInput() {
+async function onUserSearchInput() {
   const input = document.getElementById("usuarioSearchInput");
   const hiddenId = document.getElementById("usuarioSelect");
   if (!input || !hiddenId) return;
 
-  const selected = resolveUserFromInput(input.value.trim());
-  if (selected) {
-    hiddenId.value = selected.id;
-    handleUserSelect(selected.id);
-  } else {
+  const query = input.value.trim();
+
+  // Limpiar timeout anterior
+  if (appState.searchTimeout) {
+    clearTimeout(appState.searchTimeout);
+  }
+
+  // Si el input está vacío, limpiar todo
+  if (!query) {
     hiddenId.value = "";
     handleUserSelect("");
+    const dropdown = document.getElementById("userSearchDropdown");
+    if (dropdown) dropdown.remove();
+    updateCreateButton();
+    return;
   }
-  updateCreateButton();
+
+  // Debounce la búsqueda
+  appState.searchTimeout = setTimeout(async () => {
+    const results = await searchUsersIncremental(query);
+    createUserDropdown(results, input);
+  }, 300);
 }
 
 /* === NUEVO: Enter en buscador por nombre → mostrar recuadro y bloquear === */
@@ -364,7 +496,7 @@ function onUserSearchEnter(e) {
 }
 
 /* === Buscador por ID (entero) === */
-function onUserIdSearchClick() {
+async function onUserIdSearchClick() {
   const inp = document.getElementById("usuarioIdInput");
   const hiddenId = document.getElementById("usuarioSelect");
   if (!inp || !hiddenId) return;
@@ -376,7 +508,7 @@ function onUserIdSearchClick() {
     return;
   }
 
-  const user = appState.users.find(u => Number(u.id) === idNum);
+  const user = await searchUserById(idNum);
   if (!user) {
     showNotification("No se encontró un usuario con ese ID", "error");
     hiddenId.value = "";
@@ -385,12 +517,12 @@ function onUserIdSearchClick() {
     return;
   }
 
-  hiddenId.value = user.id;
-  handleUserSelect(user.id);
+  hiddenId.value = user.id_usuario;
+  handleUserSelect(user.id_usuario, user);
   updateCreateButton();
 
   /* Mostrar recuadro y bloquear */
-  showSelectedUserBox(user.id);
+  showSelectedUserBox(user.id_usuario);
 }
 
 /* ====================== NUEVO: Recuadro selección & lista ====================== */
@@ -407,6 +539,11 @@ function lockUserSelectionFields(lock = true) {
 }
 
 function getUserByIdSafe(id) {
+  // Buscar primero en searchResults (datos más recientes de la API)
+  const fromSearch = appState.searchResults.find(u => String(u.id_usuario) === String(id));
+  if (fromSearch) return fromSearch;
+  
+  // Fallback a users (si existe)
   return appState.users.find(u => String(u.id) === String(id)) || null;
 }
 
@@ -416,62 +553,59 @@ function showSelectedUserBox(userId) {
     showNotification("Usuario no válido", "error");
     return;
   }
-  appState.currentUserCandidateId = String(user.id);
+  appState.currentUserCandidateId = String(user.id_usuario || user.id);
 
-  const box = document.getElementById("selectedUsersBox");
-  const boxDetail = document.getElementById("selectedUserDetail");
-  const addBtn = document.getElementById("addUserToListBtn");
-  const addMoreBtn = document.getElementById("addMoreUsersBtn");
-  const changeBtn = document.getElementById("changeUserBtn");
+  const box = document.getElementById("selectedUserCard");
+  const selectedUserName = document.getElementById("selectedUserName");
+  const selectedUserCargo = document.getElementById("selectedUserCargo");
+  const selectedUserId = document.getElementById("selectedUserId");
 
-  if (boxDetail) {
-    boxDetail.innerHTML = `
-      <p class="user-detail"><strong>Nombre:</strong> ${user.nombre}</p>
-      <p class="user-detail"><strong>Cargo:</strong> ${user.cargo}</p>
-      <p class="user-detail"><strong>ID:</strong> ${user.id}</p>
-    `;
-  }
+  if (selectedUserName) selectedUserName.textContent = user.nombre;
+  if (selectedUserCargo) selectedUserCargo.textContent = user.rol || user.cargo;
+  if (selectedUserId) selectedUserId.textContent = user.id_usuario || user.id;
 
   if (box) box.classList.remove("hidden");
 
   // bloquear campos de asignación
   lockUserSelectionFields(true);
 
-  // Habilitar botones
-  if (addBtn) addBtn.disabled = false;
-  if (addMoreBtn) addMoreBtn.disabled = appState.selectedUsersIds.length >= 5;
-  if (changeBtn) changeBtn.disabled = false;
-
   renderSelectedUsersList();
 }
 
 function renderSelectedUsersList() {
   const listEl = document.getElementById("selectedUsersList");
-  const counterEl = document.getElementById("selectedUsersCounter");
-  if (!listEl || !counterEl) return;
+  if (!listEl) return;
 
   const items = appState.selectedUsersIds.map((uid, idx) => {
     const u = getUserByIdSafe(uid);
-    const label = u ? `${u.nombre} (${u.cargo}) - ID ${u.id}` : `Usuario ${uid}`;
+    const label = u ? `${u.nombre} (${u.rol || u.cargo}) - ID ${u.id_usuario || u.id}` : `Usuario ${uid}`;
     return `<li class="selected-user-item">${idx + 1}. ${label}</li>`;
   });
 
   listEl.innerHTML = items.join("") || `<li class="selected-user-item empty">No hay usuarios en la lista</li>`;
-  counterEl.textContent = `${appState.selectedUsersIds.length}/5 seleccionados`;
 }
 
 function renderSelectedUsersBox() {
-  const box = document.getElementById("selectedUsersBox");
+  const box = document.getElementById("selectedUserCard");
+  const listBlock = document.getElementById("selectedUsersBlock");
   if (!box) return;
 
   if (!appState.currentUserCandidateId && appState.selectedUsersIds.length === 0) {
     box.classList.add("hidden");
+    if (listBlock) listBlock.classList.add("hidden");
     // desbloquear campos si no hay nada seleccionado
     lockUserSelectionFields(false);
     return;
   }
+  
   box.classList.remove("hidden");
-  renderSelectedUsersList();
+  
+  if (appState.selectedUsersIds.length > 0) {
+    if (listBlock) listBlock.classList.remove("hidden");
+    renderSelectedUsersList();
+  } else {
+    if (listBlock) listBlock.classList.add("hidden");
+  }
 }
 
 /* Confirmar candidato → agregar a la lista (máx 5) */
@@ -490,7 +624,7 @@ function addCurrentCandidateToList() {
     return;
   }
   appState.selectedUsersIds.push(uid);
-  renderSelectedUsersList();
+  renderSelectedUsersBox();
 
   // Permitir agregar más
   const addMoreBtn = document.getElementById("addMoreUsersBtn");
@@ -500,8 +634,6 @@ function addCurrentCandidateToList() {
 /* Cambiar usuario actual (solo desbloquea para seleccionar a otro, conserva lista) */
 function changeUserSelection() {
   appState.currentUserCandidateId = "";
-  const detail = document.getElementById("selectedUserDetail");
-  if (detail) detail.innerHTML = `<p class="user-detail">Selecciona un usuario por nombre o ID.</p>`;
   lockUserSelectionFields(false);
 
   // limpiar inputs de búsqueda para evitar confusión
@@ -511,6 +643,12 @@ function changeUserSelection() {
   if (hiddenId) hiddenId.value = "";
   if (inputNombre) inputNombre.value = "";
   if (inputId) inputId.value = "";
+
+  // Ocultar el recuadro de usuario seleccionado pero mantener la lista
+  const box = document.getElementById("selectedUserCard");
+  if (box) box.classList.add("hidden");
+  
+  renderSelectedUsersBox();
 }
 
 /* Agregar otro usuario: habilita campos para seleccionar otro, sin borrar la lista */
@@ -536,8 +674,7 @@ function renderCrearUserFields() {
         id="usuarioSearchInput"
         class="form-input"
         type="text"
-        placeholder="Buscar usuario por nombre, email o cargo..."
-        list="usuarioDatalist"
+        placeholder="Buscar usuario por nombre..."
         autocomplete="off"
         required
       />
@@ -648,14 +785,14 @@ async function createTicket() {
     const createdIds = [];
 
     for (const uid of targetUserIds) {
-      const selectedUser = appState.users.find((u) => String(u.id) === String(uid));
+      const selectedUser = getUserByIdSafe(uid);
       if (!selectedUser) continue;
 
       const newTicketId = getNextTicketId();
       const newTicket = {
         id: newTicketId,
         usuario_asignado: selectedUser.nombre,
-        ministerio: "",
+        ministerio: selectedUser.ministerio || "",
         descripcion: appState.ticketForm.descripcion,
         presupuesto: appState.ticketForm.presupuesto,
         gastado: "0.00",
@@ -712,6 +849,10 @@ function clearTicketForm() {
   if (hiddenId) hiddenId.value = "";
   if (inputNombre) inputNombre.value = "";
   if (inputId) inputId.value = "";
+
+  // Limpiar dropdown de búsqueda si existe
+  const dropdown = document.getElementById("userSearchDropdown");
+  if (dropdown) dropdown.remove();
 
   // Recuadro
   renderSelectedUsersBox();
@@ -981,41 +1122,56 @@ function updateHistorialTab() {
 
   let list = [...appState.historicalTickets];
 
-  if (histSearchActive) {
-    const { ministerio, month, from, to, user } = histCriteria;
+  // ====== Sistema de búsqueda (solo avanzado, igual a Gestionar) ======
+  const hMode = (histAdvCriteria.mode || "").trim();
+  const hFrom = histAdvCriteria.from ? new Date(histAdvCriteria.from) : null;
+  const hTo   = histAdvCriteria.to   ? new Date(histAdvCriteria.to)   : null;
+  let hEnd = null;
+  if (hTo) {
+    hEnd = new Date(hTo);
+    hEnd.setHours(23,59,59,999);
+  }
 
-    if (ministerio) {
-      list = list.filter((t) => String(t.id).startsWith(ministerio));
+  if (hMode === "nombre") {
+    const q = (histAdvCriteria.nameQuery || "").toLowerCase();
+    if (q) {
+      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(q));
     }
-
-    if (month) {
-      const [year, mm] = month.split("-");
-      list = list.filter((t) => {
-        const [d, m, y] = (t.fecha_completado || "").split("/");
-        return y === year && m === mm;
-      });
-    }
-
-    if (from || to) {
-      const fromDt = from ? new Date(from) : null;
-      const toDt = to ? new Date(to) : null;
-      list = list.filter((t) => {
+    if (hFrom || hEnd) {
+      list = list.filter(t => {
         const dt = ddmmy_to_Date(t.fecha_completado);
         if (!dt) return false;
-        if (fromDt && dt < fromDt) return false;
-        if (toDt) {
-          const end = new Date(toDt);
-          end.setHours(23, 59, 59, 999);
-          if (dt > end) return false;
-        }
+        if (hFrom && dt < hFrom) return false;
+        if (hEnd && dt > hEnd) return false;
         return true;
       });
     }
-
-    if (user) {
-      const u = user.toLowerCase();
-      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(u));
+  } else if (hMode === "id") {
+    const idQ = parseInt(histAdvCriteria.idQuery, 10);
+    if (!isNaN(idQ)) {
+      list = list.filter(t => Number(t.id) === idQ);
+    } else {
+      list = [];
     }
+    if (hFrom || hEnd) {
+      list = list.filter(t => {
+        const dt = ddmmy_to_Date(t.fecha_completado);
+        if (!dt) return false;
+        if (hFrom && dt < hFrom) return false;
+        if (hEnd && dt > hEnd) return false;
+        return true;
+      });
+    }
+  } else if (hMode === "id-ticket") {
+    const idQ = parseInt(histAdvCriteria.idQuery, 10);
+    if (!isNaN(idQ)) {
+      list = list.filter(t => Number(t.id) === idQ);
+    } else {
+      list = [];
+    }
+    // Importante: sin fechas en id-ticket
+  } else {
+    // sin filtro adicional
   }
 
   if (!list.length) {
@@ -1139,7 +1295,7 @@ async function handleLogout() {
     await fetch("/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      body: JSON.stringify({} ),
       credentials: "include"
     });
   }
@@ -1174,7 +1330,8 @@ function switchTab(tabName) {
     setupGestionarDynamicFields();
     updateTicketsTab();
   } else if (tabName === "historial") {
-    populateUserFilters();
+    populateUserFilters();           // también para historial
+    setupHistorialDynamicFields();   // sistema avanzado
     updateHistorialTab();
   }
 
@@ -1189,7 +1346,21 @@ async function loadAdminData() {
   updateStats();
 
   try {
-    // Carga real de API (opcional)
+    /* ========= ÚNICO GET requerido: total de usuarios ========= */
+    const resp = await fetch("http://localhost:8080/admin/subordinados", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      credentials: "include"
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && typeof data.total !== "undefined") {
+        appState.usersTotal = Number(data.total) || 0;
+      }
+    }
+    /* ========================================================== */
+
+    // (Espacio para más cargas reales si se requieren)
   } catch (e) {
     console.error("Error cargando datos:", e);
     showNotification("No se pudieron cargar los datos iniciales", "error");
@@ -1199,6 +1370,7 @@ async function loadAdminData() {
     updateDashboard();
     populateUserFilters();
     setupGestionarDynamicFields();
+    setupHistorialDynamicFields(); // NUEVO
     renderCrearUserFields();
     updateUserForm();
     updateTicketsTab();
@@ -1319,7 +1491,21 @@ function populateUserFilters() {
       gestUserFilter.value = current;
     }
   }
-  // Historial → buscador incremental ya usa input
+
+  // Historial → mismas opciones
+  const histUserFilter = document.getElementById("histUserFilter");
+  if (histUserFilter) {
+    const currentH = histUserFilter.value || "";
+    histUserFilter.innerHTML = `
+      <option value="">Buscar por</option>
+      <option value="nombre">Nombre</option>
+      <option value="id">ID</option>
+      <option value="id-ticket">ID Ticket</option>
+    `;
+    if ([...histUserFilter.options].some(o => o.value === currentH)) {
+      histUserFilter.value = currentH;
+    }
+  }
 }
 
 function setupGestionarDynamicFields() {
@@ -1450,6 +1636,132 @@ function renderGestionarFields() {
   }
 }
 
+/* ===== Historial dinámico (igual a Gestionar; SIN campos extras) ===== */
+function setupHistorialDynamicFields() {
+  const modeSelect = document.getElementById("histUserFilter");
+  const fieldsBox = document.getElementById("histModeFields");
+  if (!modeSelect || !fieldsBox) return;
+
+  renderHistorialFields();
+
+  modeSelect.onchange = () => {
+    histAdvCriteria = { mode: modeSelect.value, nameQuery: "", idQuery: "", from: "", to: "" };
+    renderHistorialFields();
+    updateHistorialTab();
+  };
+}
+
+function renderHistorialFields() {
+  const mode = histAdvCriteria.mode || "";
+  const fieldsBox = document.getElementById("histModeFields");
+  if (!fieldsBox) return;
+
+  if (mode === "nombre") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="histNameInputAdv" class="filter-input" type="text" placeholder="Escribe un nombre..." />
+        <input type="date" id="histFromDateAdv" class="filter-input" title="Desde (completado)">
+        <input type="date" id="histToDateAdv" class="filter-input" title="Hasta (completado)">
+        <button id="histNameSearchBtnAdv" class="pagination-btn" type="button">Buscar</button>
+        <button id="histNameClearBtnAdv" class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const inp  = document.getElementById("histNameInputAdv");
+    const f1   = document.getElementById("histFromDateAdv");
+    const f2   = document.getElementById("histToDateAdv");
+    const btnS = document.getElementById("histNameSearchBtnAdv");
+    const btnC = document.getElementById("histNameClearBtnAdv");
+
+    if (inp) inp.value = histAdvCriteria.nameQuery || "";
+    if (f1)  f1.value  = histAdvCriteria.from || "";
+    if (f2)  f2.value  = histAdvCriteria.to || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      histAdvCriteria.nameQuery = inp?.value || "";
+      histAdvCriteria.from = f1?.value || "";
+      histAdvCriteria.to   = f2?.value || "";
+      updateHistorialTab();
+    });
+
+    if (btnC) btnC.addEventListener("click", () => {
+      if (inp) inp.value = "";
+      if (f1) f1.value = "";
+      if (f2) f2.value = "";
+      histAdvCriteria.nameQuery = "";
+      histAdvCriteria.from = "";
+      histAdvCriteria.to   = "";
+      updateHistorialTab();
+    });
+
+  } else if (mode === "id") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="histIdInputAdv" class="filter-input" type="number" placeholder="ID (entero)" />
+        <input type="date" id="histFromDateAdv" class="filter-input" title="Desde (completado)">
+        <input type="date" id="histToDateAdv" class="filter-input" title="Hasta (completado)">
+        <button id="histIdSearchBtnAdv" class="pagination-btn" type="button">Buscar</button>
+        <button id="histIdClearBtnAdv" class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const idInp = document.getElementById("histIdInputAdv");
+    const f1    = document.getElementById("histFromDateAdv");
+    const f2    = document.getElementById("histToDateAdv");
+    const btnS  = document.getElementById("histIdSearchBtnAdv");
+    const btnC  = document.getElementById("histIdClearBtnAdv");
+
+    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
+    if (f1)    f1.value   = histAdvCriteria.from || "";
+    if (f2)    f2.value   = histAdvCriteria.to || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      histAdvCriteria.idQuery = idInp?.value || "";
+      histAdvCriteria.from    = f1?.value    || "";
+      histAdvCriteria.to      = f2?.value    || "";
+      updateHistorialTab();
+    });
+    if (btnC) btnC.addEventListener("click", () => {
+      if(idInp) idInp.value = "";
+      if(f1) f1.value = "";
+      if(f2) f2.value = "";
+      histAdvCriteria.idQuery = "";
+      histAdvCriteria.from    = "";
+      histAdvCriteria.to      = "";
+      updateHistorialTab();
+    });
+
+  } else if (mode === "id-ticket") {
+    fieldsBox.innerHTML = `
+      <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
+        <input id="histIdInputAdv" class="filter-input" type="number" placeholder="ID Ticket (entero)" />
+        <button id="histIdSearchBtnAdv" class="pagination-btn" type="button">Buscar</button>
+        <button id="histIdClearBtnAdv" class="pagination-btn" type="button">Borrar</button>
+      </div>
+    `;
+    const idInp = document.getElementById("histIdInputAdv");
+    const btnS  = document.getElementById("histIdSearchBtnAdv");
+    const btnC  = document.getElementById("histIdClearBtnAdv");
+
+    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
+
+    if (btnS) btnS.addEventListener("click", () => {
+      histAdvCriteria.idQuery = idInp?.value || "";
+      histAdvCriteria.from = "";
+      histAdvCriteria.to   = "";
+      updateHistorialTab();
+    });
+    if (btnC) btnC.addEventListener("click", () => {
+      if(idInp) idInp.value = "";
+      histAdvCriteria.idQuery = "";
+      histAdvCriteria.from = "";
+      histAdvCriteria.to   = "";
+      updateHistorialTab();
+    });
+
+  } else {
+    fieldsBox.innerHTML = "";
+  }
+}
+
 /* ====================== Wiring (DOMContentLoaded) ====================== */
 document.addEventListener("DOMContentLoaded", () => {
   // TABS
@@ -1510,52 +1822,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ===== Botones del recuadro seleccionado ===== */
-  const addBtn = document.getElementById("addUserToListBtn");
+  const addBtn = document.getElementById("addUserBtn");
   if (addBtn) addBtn.addEventListener("click", addCurrentCandidateToList);
 
   const changeBtn = document.getElementById("changeUserBtn");
   if (changeBtn) changeBtn.addEventListener("click", changeUserSelection);
-
-  const addMoreBtn = document.getElementById("addMoreUsersBtn");
-  if (addMoreBtn) addMoreBtn.addEventListener("click", addAnotherUser);
-
-  /* ===== Historial: Buscar/Borrar ===== */
-  const histSearchBtn = document.getElementById("histSearchBtn");
-  const histClearBtn  = document.getElementById("histClearBtn");
-
-  if (histSearchBtn) {
-    histSearchBtn.addEventListener("click", () => {
-      const ministerio = document.getElementById("ministerioFilter")?.value || "";
-      const month = document.getElementById("monthFilter")?.value || "";
-      const from = document.getElementById("histFromDate")?.value || "";
-      const to = document.getElementById("histToDate")?.value || "";
-      const user = document.getElementById("histUserSearch")?.value || "";
-
-      histCriteria = { ministerio, month, from, to, user };
-      histSearchActive = true;
-      updateHistorialTab();
-    });
-  }
-
-  if (histClearBtn) {
-    histClearBtn.addEventListener("click", () => {
-      const ministerioFilter = document.getElementById("ministerioFilter");
-      const monthFilter = document.getElementById("monthFilter");
-      const histFromDate = document.getElementById("histFromDate");
-      const histToDate = document.getElementById("histToDate");
-      const histUserSearch = document.getElementById("histUserSearch");
-
-      if (ministerioFilter) ministerioFilter.value = "";
-      if (monthFilter) monthFilter.value = "";
-      if (histFromDate) histFromDate.value = "";
-      if (histToDate) histToDate.value = "";
-      if (histUserSearch) histUserSearch.value = "";
-
-      histCriteria = { ministerio: "", month: "", from: "", to: "", user: "" };
-      histSearchActive = false;
-      updateHistorialTab();
-    });
-  }
 
   // MODAL EDICIÓN
   const editForm = document.getElementById("editForm");

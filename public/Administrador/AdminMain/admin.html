@@ -38,6 +38,22 @@
                             <span class="btn-label">Dashboard general</span>
                         </a>
 
+                        <!-- NUEVO: Botón Buscar imágenes -->
+                        <a id="btnBuscarImagenes"
+                           class="quick-btn"
+                           href="#"
+                           onclick="window.location.assign('__ROUTE_BUSCAR_IMAGENES__'); return false;"
+                           title="Buscar imágenes" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 5a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2h-7l-4 4v-4H6a2 2 0 01-2-2V5z" />
+                                <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"></circle>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M21 12l-4.5-4.5L10 14l-2-2L3 17" />
+                            </svg>
+                            <span class="btn-label">Buscar imágenes</span>
+                        </a>
+
                         <a id="btnDescargarFacturas"
                            class="quick-btn"
                            href="#"
@@ -292,6 +308,7 @@
                             <option value="nombre">Nombre</option>
                             <option value="id">ID</option>
                             <!-- Opción "fecha" eliminada según solicitud -->
+                            <option value="id-ticket">ID Ticket</option>
                         </select>
 
                         <div id="gestModeFields" class="filters-row" style="margin-bottom:0;"></div>
@@ -313,24 +330,16 @@
                 <div id="historial-tab" class="tab-content">
                     <h2 class="tab-title">Historial de Tickets</h2>
 
+                    <!-- Solo se mantiene la lista "Buscar por" con su contenedor dinámico -->
                     <div class="filters-row">
-                        <input type="date" id="histFromDate" class="filter-input" title="Desde (completado)">
-                        <input type="date" id="histToDate" class="filter-input" title="Hasta (completado)">
-                    </div>
-                    
-                    <div class="filters-row">
-                        <select id="ministerioFilter" class="filter-select">
-                            <option value="">Todos los ministerios</option>
-                            <option value="ME">Ministerio de Educación</option>
-                            <option value="MS">Ministerio de Salud</option>
-                            <option value="MA">Ministerio de Agricultura</option>
-                            <option value="EC">Ministerio de Economía</option>
+                        <select id="histUserFilter" class="filter-select" title="Buscar por">
+                            <option value="">Buscar por</option>
+                            <option value="nombre">Nombre</option>
+                            <option value="id">ID</option>
+                            <option value="id-ticket">ID Ticket</option>
                         </select>
 
-                        <input id="histUserSearch" class="filter-input" type="text" placeholder="Buscar usuario..." title="Usuario (incremental)" />
-
-                        <button id="histSearchBtn" class="pagination-btn" type="button">Buscar</button>
-                        <button id="histClearBtn" class="pagination-btn" type="button">Borrar</button>
+                        <div id="histModeFields" class="filters-row" style="margin-bottom:0;"></div>
                     </div>
 
                     <div id="noHistorial" class="no-data">

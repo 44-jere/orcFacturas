@@ -1,57 +1,62 @@
-// Datos de ejemplo
-const SAMPLE_TICKETS = [
-    {
-        id: "TK-2025-001",
-        ministerio: "Ministerio de Educación",
-        descripcion: "Capacitación docente en Quetzaltenango",
-        monto: "2500.00",
-        moneda: "Q",
-        fechaCreacion: "28/08/2025",
-        fechaVencimiento: "15/09/2025",
-        estado: "activo",
-        gastado: "850.00"
-    },
-    {
-        id: "TK-2025-002", 
-        ministerio: "Ministerio de Salud",
-        descripcion: "Supervisión hospitales regionales",
-        monto: "3200.00",
-        moneda: "Q",
-        fechaCreacion: "25/08/2025",
-        fechaVencimiento: "10/09/2025",
-        estado: "activo",
-        gastado: "1200.00"
-    },
-    {
-        id: "TK-2025-003",
-        ministerio: "Ministerio de Agricultura",
-        descripcion: "Evaluación proyectos agrícolas en Petén",
-        monto: "4100.00",
-        moneda: "Q",
-        fechaCreacion: "20/08/2025",
-        fechaVencimiento: "05/09/2025",
-        estado: "proximo_vencer",
-        gastado: "0.00"
-    },
-    {
-        id: "TK-2025-004",
-        ministerio: "Ministerio de Economía",
-        descripcion: "Reuniones comerciales internacionales",
-        monto: "1800.00",
-        moneda: "Q",
-        fechaCreacion: "15/08/2025",
-        fechaVencimiento: "02/09/2025",
-        estado: "completado",
-        gastado: "1800.00"
-    }
-];
+// ==============================
+// Configuración de API (ajusta rutas según tu MVC)
+// ==============================
+const API_BASE = ""; // opcional, ej. "http://localhost:8080"
+const ENDPOINTS = {
+    // GET: lista de tickets del usuario autenticado
+    tickets: "/viaticos/tickets",
+    // GET: descarga archivo de facturas (zip/csv/pdf). Devuelve binario.
+    descargarFacturas: "/viaticos/facturas/descargar",
+    // GET: info de usuario (opcional si ya la tienes)
+    me: "/perfil/userData"
+};
 
-// Variables de estado
+// Si usas Auth por Bearer Token
+function getAuthToken() {
+    try {
+        return localStorage.getItem("auth.token") || localStorage.getItem("token") || "";
+    } catch {
+        return "";
+    }
+}
+
+async function apiFetch(path, opts = {}) {
+    const headers = new Headers(opts.headers || {});
+    if (!headers.has("Content-Type") && !(opts.body instanceof FormData)) {
+        headers.set("Content-Type", "application/json");
+    }
+    const token = getAuthToken();
+    if (token && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
+    }
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, { ...opts, headers });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
+    }
+    const ct = res.headers.get("Content-Type") || "";
+    if (ct.includes("application/json")) return res.json();
+    return res;
+}
+
+// ==============================
+// Estado (sin DEMO)
+// ==============================
+let TICKETS = []; // <- se cargan desde API
 let isDark = true;
 let selectedFilter = "todos";
 let showProfile = false;
 
+// NUEVO: estado de búsqueda para pestaña "completados"
+let completedSearchMode = "id"; // "id" | "fecha"
+let completedIdQuery = "";      // int como string
+let completedStartDate = "";    // YYYY-MM-DD
+let completedEndDate = "";      // YYYY-MM-DD
+
+// ==============================
 // Referencias a elementos DOM
+// ==============================
 const themeToggle = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 const profileBtn = document.getElementById('profileBtn');
@@ -61,10 +66,16 @@ const filters = document.getElementById('filters');
 const ticketsGrid = document.getElementById('ticketsGrid');
 const noData = document.getElementById('noData');
 const noDataSubtext = document.getElementById('noDataSubtext');
+const downloadBtn = document.getElementById('downloadBtn');
 
-// Funciones de utilidad
+// ==============================
+// Utilidades
+// ==============================
 function getGastadoPercentage(gastado, monto) {
-    return (parseFloat(gastado) / parseFloat(monto)) * 100;
+    const g = parseFloat(gastado || 0);
+    const m = parseFloat(monto || 0);
+    if (!m) return 0;
+    return (g / m) * 100;
 }
 
 function getEstadoColor(estado) {
@@ -94,15 +105,96 @@ function getEstadoTexto(estado) {
 }
 
 function formatNumber(num) {
-    return parseFloat(num).toLocaleString();
+    const n = parseFloat(num || 0);
+    if (Number.isNaN(n)) return "0";
+    return n.toLocaleString();
 }
 
-// Funciones de renderizado
+// --- Helpers para búsqueda en "completados" ---
+function matchTicketById(ticket, qInt) {
+    // intenta igualdad estricta numérica; si el id es string, intenta convertir
+    const idVal = ticket?.id;
+    if (typeof idVal === "number") return idVal === qInt;
+    const asNum = Number(idVal);
+    if (!Number.isNaN(asNum)) return asNum === qInt;
+    // fallback: coincidencia por inclusión de texto del número
+    return String(idVal ?? "").includes(String(qInt));
+}
+
+function toYMD(dateStr) {
+    if (!dateStr) return null;
+    // Soporta "YYYY-MM-DD" / ISO, o "DD/MM/YYYY"
+    if (dateStr.includes("-")) {
+        const d = new Date(dateStr);
+        if (isNaN(d)) return null;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+    if (dateStr.includes("/")) {
+        const [dd, mm, yyyy] = dateStr.split("/");
+        if (!dd || !mm || !yyyy) return null;
+        return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    }
+    // último intento
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+function inDateRange(ticketDateStr, startYMD, endYMD) {
+    const t = toYMD(ticketDateStr);
+    if (!t) return false;
+    const tN = Number(t.replaceAll("-", ""));
+    const sN = startYMD ? Number(startYMD.replaceAll("-", "")) : null;
+    const eN = endYMD ? Number(endYMD.replaceAll("-", "")) : null;
+    if (sN && tN < sN) return false;
+    if (eN && tN > eN) return false;
+    return true;
+}
+
+// ==============================
+// Carga de datos desde API
+// ==============================
+async function loadTickets() {
+    // Espera que el backend retorne un array de tickets con:
+    // { id, ministerio, descripcion, monto, moneda, fechaCreacion, fechaVencimiento, estado, gastado, administrador }
+    const data = await apiFetch(ENDPOINTS.tickets, { method: "GET" });
+    if (!Array.isArray(data)) {
+        throw new Error("El endpoint de tickets no devolvió un arreglo");
+    }
+    TICKETS = data;
+}
+
+async function downloadInvoices() {
+    const res = await apiFetch(ENDPOINTS.descargarFacturas, { method: "GET" });
+    if (res instanceof Response) {
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = "facturas.zip";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } else {
+        throw new Error("El endpoint de descarga no devolvió un archivo binario.");
+    }
+}
+
+// ==============================
+// Renderizado
+// ==============================
 function renderStats() {
-    const activosCount = SAMPLE_TICKETS.filter(t => t.estado === "activo").length;
-    const totalMonto = SAMPLE_TICKETS.reduce((sum, t) => sum + parseFloat(t.monto), 0);
-    const totalGastado = SAMPLE_TICKETS.reduce((sum, t) => sum + parseFloat(t.gastado), 0);
-    const proximosVencer = SAMPLE_TICKETS.filter(t => t.estado === "proximo_vencer").length;
+    const activosCount = TICKETS.filter(t => t.estado === "activo").length;
+    const totalMonto = TICKETS.reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
+    const totalGastado = TICKETS.reduce((sum, t) => sum + parseFloat(t.gastado || 0), 0);
+    const proximosVencer = TICKETS.filter(t => t.estado === "proximo_vencer").length;
 
     const stats = [
         {
@@ -150,10 +242,10 @@ function renderStats() {
 
 function renderFilters() {
     const filterOptions = [
-        { key: "todos", label: "Todos", count: SAMPLE_TICKETS.length },
-        { key: "activos", label: "Activos", count: SAMPLE_TICKETS.filter(t => t.estado === "activo").length },
-        { key: "proximo_vencer", label: "Por vencer", count: SAMPLE_TICKETS.filter(t => t.estado === "proximo_vencer").length },
-        { key: "completados", label: "Completados", count: SAMPLE_TICKETS.filter(t => t.estado === "completado").length }
+        { key: "todos", label: "Todos", count: TICKETS.length },
+        { key: "activos", label: "Activos", count: TICKETS.filter(t => t.estado === "activo").length },
+        { key: "proximo_vencer", label: "Por vencer", count: TICKETS.filter(t => t.estado === "proximo_vencer").length },
+        { key: "completados", label: "Completados", count: TICKETS.filter(t => t.estado === "completado").length }
     ];
 
     filters.innerHTML = filterOptions.map(filter => `
@@ -163,10 +255,97 @@ function renderFilters() {
         </button>
     `).join('');
 
-    // Agregar event listeners a los filtros
+    // NUEVO: controles adicionales solo cuando está seleccionada la pestaña "completados"
+    if (selectedFilter === "completados") {
+        const extraControls = `
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                <select id="completedSearchMode" style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--bg-tertiary);color:var(--text-tertiary);">
+                    <option value="id" ${completedSearchMode === "id" ? "selected" : ""}>Buscar por ID ticket</option>
+                    <option value="fecha" ${completedSearchMode === "fecha" ? "selected" : ""}>Buscar por fecha</option>
+                </select>
+
+                <div id="completedById" style="display:${completedSearchMode === "id" ? "flex" : "none"};gap:8px;align-items:center;">
+                    <input type="number" id="completedIdInput" placeholder="ID (entero)" value="${completedIdQuery}"
+                           style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);width:160px;">
+                    <button id="completedIdSearchBtn" class="filter-btn">Buscar</button>
+                    <button id="completedIdClearBtn" class="filter-btn">Borrar</button>
+                </div>
+
+                <div id="completedByDate" style="display:${completedSearchMode === "fecha" ? "flex" : "none"};gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="date" id="completedStartDate" value="${completedStartDate}"
+                           style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+                    <span style="color:var(--text-secondary);">a</span>
+                    <input type="date" id="completedEndDate" value="${completedEndDate}"
+                           style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+                    <button id="completedDateSearchBtn" class="filter-btn">Buscar</button>
+                    <button id="completedDateClearBtn" class="filter-btn">Borrar</button>
+                </div>
+            </div>
+        `;
+        filters.insertAdjacentHTML("beforeend", extraControls);
+
+        // Listeners de los controles extra
+        const modeSel = document.getElementById("completedSearchMode");
+        const idInput = document.getElementById("completedIdInput");
+        const idSearchBtn = document.getElementById("completedIdSearchBtn");
+        const idClearBtn = document.getElementById("completedIdClearBtn");
+        const startEl = document.getElementById("completedStartDate");
+        const endEl = document.getElementById("completedEndDate");
+        const dateSearchBtn = document.getElementById("completedDateSearchBtn");
+        const dateClearBtn = document.getElementById("completedDateClearBtn");
+
+        modeSel.addEventListener("change", () => {
+            completedSearchMode = modeSel.value;
+            // re-render para mostrar el bloque correcto
+            renderFilters();
+            renderTickets();
+        });
+
+        if (idInput && idSearchBtn && idClearBtn) {
+            idSearchBtn.addEventListener("click", () => {
+                completedIdQuery = (idInput.value || "").trim();
+                renderTickets();
+            });
+            idClearBtn.addEventListener("click", () => {
+                completedIdQuery = "";
+                if (idInput) idInput.value = "";
+                renderTickets();
+            });
+            // enter en el input
+            idInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    completedIdQuery = (idInput.value || "").trim();
+                    renderTickets();
+                }
+            });
+        }
+
+        if (startEl && endEl && dateSearchBtn && dateClearBtn) {
+            dateSearchBtn.addEventListener("click", () => {
+                completedStartDate = startEl.value || "";
+                completedEndDate = endEl.value || "";
+                renderTickets();
+            });
+            dateClearBtn.addEventListener("click", () => {
+                completedStartDate = "";
+                completedEndDate = "";
+                startEl.value = "";
+                endEl.value = "";
+                renderTickets();
+            });
+        }
+    }
+
+    // Listeners de los botones de filtro (siempre al final)
     document.querySelectorAll('.filter-btn').forEach(btn => {
+        // evitar que los botones internos (buscar/borrar) reasignen selectedFilter
+        const isSearchOrClear = ["completedIdSearchBtn","completedIdClearBtn","completedDateSearchBtn","completedDateClearBtn"].includes(btn.id);
+        if (isSearchOrClear) return;
+
         btn.addEventListener('click', (e) => {
-            selectedFilter = e.target.dataset.filter;
+            const key = e.currentTarget.dataset.filter;
+            if (!key) return;
+            selectedFilter = key;
             renderFilters();
             renderTickets();
         });
@@ -174,8 +353,8 @@ function renderFilters() {
 }
 
 function renderTickets() {
-    // Filtrar tickets
-    const filteredTickets = SAMPLE_TICKETS.filter(ticket => {
+    // Filtrar por pestaña
+    let filteredTickets = TICKETS.filter(ticket => {
         if (selectedFilter === "todos") return true;
         if (selectedFilter === "activos") return ticket.estado === "activo";
         if (selectedFilter === "proximo_vencer") return ticket.estado === "proximo_vencer";
@@ -183,92 +362,114 @@ function renderTickets() {
         return true;
     });
 
+    // Filtros adicionales si estamos en "completados"
+    if (selectedFilter === "completados") {
+        if (completedSearchMode === "id" && completedIdQuery) {
+            const qInt = parseInt(completedIdQuery, 10);
+            if (!Number.isNaN(qInt)) {
+                filteredTickets = filteredTickets.filter(t => matchTicketById(t, qInt));
+            } else {
+                // si no es número válido, no muestra nada para evitar confusión
+                filteredTickets = [];
+            }
+        } else if (completedSearchMode === "fecha" && (completedStartDate || completedEndDate)) {
+            filteredTickets = filteredTickets.filter(t => inDateRange(t.fechaCreacion, completedStartDate, completedEndDate));
+        }
+    }
+
     if (filteredTickets.length === 0) {
         ticketsGrid.style.display = 'none';
         noData.style.display = 'block';
-        noDataSubtext.textContent = selectedFilter !== "todos" 
-            ? "Prueba cambiando el filtro" 
-            : "Espera a que un administrador te asigne tickets";
-    } else {
-        ticketsGrid.style.display = 'grid';
-        noData.style.display = 'none';
+        if (selectedFilter === "completados") {
+            noDataSubtext.textContent = "Ajusta los criterios de búsqueda o borra los filtros.";
+        } else {
+            noDataSubtext.textContent = selectedFilter !== "todos" 
+                ? "Prueba cambiando el filtro" 
+                : "Espera a que un administrador te asigne tickets";
+        }
+        return;
+    }
 
-        ticketsGrid.innerHTML = filteredTickets.map(ticket => {
-            const disponible = parseFloat(ticket.monto) - parseFloat(ticket.gastado);
-            const porcentaje = getGastadoPercentage(ticket.gastado, ticket.monto);
-            const estadoClass = getEstadoColor(ticket.estado);
-            const estadoTexto = getEstadoTexto(ticket.estado);
-            const isCompleted = ticket.estado === "completado";
+    ticketsGrid.style.display = 'grid';
+    noData.style.display = 'none';
 
-            return `
-                <div class="ticket-card">
-                    <!-- Header del ticket -->
-                    <div class="ticket-header">
-                        <div>
-                            <h3 class="ticket-title">${ticket.id}</h3>
-                            <p class="ticket-ministry">${ticket.ministerio}</p>
-                        </div>
-                        <span class="ticket-status ${estadoClass}">
-                            ${estadoTexto}
+    ticketsGrid.innerHTML = filteredTickets.map(ticket => {
+        const disponible = parseFloat(ticket.monto || 0) - parseFloat(ticket.gastado || 0);
+        const porcentaje = getGastadoPercentage(ticket.gastado, ticket.monto);
+        const estadoClass = getEstadoColor(ticket.estado);
+        const estadoTexto = getEstadoTexto(ticket.estado);
+        const isCompleted = ticket.estado === "completado";
+
+        return `
+            <div class="ticket-card">
+                <!-- Header del ticket -->
+                <div class="ticket-header">
+                    <div>
+                        <h3 class="ticket-title">${ticket.id || "-"}</h3>
+                        <p class="ticket-ministry">${ticket.ministerio || "-"}</p>
+                        <p class="ticket-ministry">Administrador: ${ticket.administrador || "-"}</p>
+                    </div>
+                    <span class="ticket-status ${estadoClass}">
+                        ${estadoTexto}
+                    </span>
+                </div>
+
+                <!-- Descripción -->
+                <p class="ticket-description">${ticket.descripcion || "-"}</p>
+
+                <!-- Información financiera -->
+                <div class="ticket-budget">
+                    <div class="budget-row">
+                        <span class="budget-label">Presupuesto</span>
+                        <span class="budget-amount budget-total">${ticket.moneda || ""}${formatNumber(ticket.monto)}</span>
+                    </div>
+                    <div class="budget-row">
+                        <span class="budget-label">Gastado</span>
+                        <span class="budget-amount budget-spent">${ticket.moneda || ""}${formatNumber(ticket.gastado)}</span>
+                    </div>
+                    <div class="budget-row">
+                        <span class="budget-label">Disponible</span>
+                        <span class="budget-amount budget-available">
+                            ${ticket.moneda || ""}${formatNumber(disponible.toFixed(2))}
                         </span>
                     </div>
 
-                    <!-- Descripción -->
-                    <p class="ticket-description">${ticket.descripcion}</p>
-
-                    <!-- Información financiera -->
-                    <div class="ticket-budget">
-                        <div class="budget-row">
-                            <span class="budget-label">Presupuesto</span>
-                            <span class="budget-amount budget-total">${ticket.moneda}${formatNumber(ticket.monto)}</span>
-                        </div>
-                        <div class="budget-row">
-                            <span class="budget-label">Gastado</span>
-                            <span class="budget-amount budget-spent">${ticket.moneda}${formatNumber(ticket.gastado)}</span>
-                        </div>
-                        <div class="budget-row">
-                            <span class="budget-label">Disponible</span>
-                            <span class="budget-amount budget-available">
-                                ${ticket.moneda}${formatNumber(disponible.toFixed(2))}
-                            </span>
-                        </div>
-
-                        <!-- Barra de progreso -->
-                        <div class="budget-progress">
-                            <div class="budget-fill" style="width: ${porcentaje}%"></div>
-                        </div>
-                        <p class="budget-percentage">
-                            ${porcentaje.toFixed(1)}% utilizado
-                        </p>
+                    <!-- Barra de progreso -->
+                    <div class="budget-progress">
+                        <div class="budget-fill" style="width: ${porcentaje}%"></div>
                     </div>
-
-                    <!-- Fechas -->
-                    <div class="ticket-dates">
-                        <span>Creado: ${ticket.fechaCreacion}</span>
-                        <span>Vence: ${ticket.fechaVencimiento}</span>
-                    </div>
-
-                    <!-- Botones de acción -->
-                    <div class="ticket-actions">
-                        <button class="action-btn primary" ${isCompleted ? 'disabled' : ''}>
-                            Agregar Gasto
-                        </button>
-                        <button class="action-btn secondary">
-                            Ver Detalles
-                        </button>
-                    </div>
+                    <p class="budget-percentage">
+                        ${porcentaje.toFixed(1)}% utilizado
+                    </p>
                 </div>
-            `;
-        }).join('');
-    }
+
+                <!-- Fechas -->
+                <div class="ticket-dates">
+                    <span>Creado: ${ticket.fechaCreacion || "-"}</span>
+                    <span>Vence: ${ticket.fechaVencimiento || "-"}</span>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="ticket-actions">
+                    <button class="action-btn primary" ${isCompleted ? 'disabled' : ''}>
+                        Agregar Gasto
+                    </button>
+                    <button class="action-btn secondary">
+                        Ver Detalles
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-// Función para cambiar tema
+// ==============================
+// Tema y Perfil
+// ==============================
 function toggleTheme() {
     isDark = !isDark;
     document.body.classList.toggle('light-theme', !isDark);
     
-    // Cambiar icono del tema
     if (isDark) {
         themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
     } else {
@@ -276,26 +477,46 @@ function toggleTheme() {
     }
 }
 
-// Función para mostrar/ocultar dropdown de perfil
 function toggleProfile() {
     showProfile = !showProfile;
     profileDropdown.classList.toggle('show', showProfile);
 }
 
+// ==============================
 // Event Listeners
-themeToggle.addEventListener('click', toggleTheme);
-profileBtn.addEventListener('click', toggleProfile);
+// ==============================
+if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+if (profileBtn) profileBtn.addEventListener('click', toggleProfile);
 
 // Cerrar dropdown al hacer clic fuera
 document.addEventListener('click', (e) => {
-    if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+    if (profileBtn && !profileBtn.contains(e.target) && profileDropdown && !profileDropdown.contains(e.target)) {
         showProfile = false;
         profileDropdown.classList.remove('show');
     }
 });
 
+// Botón Descargar Facturas
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', async () => {
+        try {
+            await downloadInvoices();
+        } catch (err) {
+            alert("No se pudieron descargar las facturas. " + (err?.message || ""));
+        }
+    });
+}
+
+// ==============================
 // Inicialización
-function init() {
+// ==============================
+async function init() {
+    try {
+        await loadTickets();   // <- carga desde tu backend
+    } catch (err) {
+        console.error("Error al cargar tickets:", err);
+        TICKETS = []; // aseguramos array
+    }
     renderStats();
     renderFilters();
     renderTickets();
