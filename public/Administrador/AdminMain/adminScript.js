@@ -33,7 +33,9 @@ let appState = {
   usersTotal: null,               // se pobla con GET /admin/subordinados (campo "total")
 
   /* ====== NUEVO: búsqueda incremental ====== */
-  searchTimeout: null,            // timeout para debounce de búsqueda
+  searchTimeout: null,
+  gestSearchTimeout: null,     // debounce para "Gestionar → Nombre"
+  histSearchTimeout: null,     // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
   searchResults: [],              // resultados de búsqueda incremental
 };
 
@@ -312,6 +314,29 @@ async function searchUserById(userId) {
   }
 }
 
+/* ====================== Normalización y match por prefijos (tokens) ====================== */
+/* — NO cambia nada de UX. Solo utilidades para que “empleado a” filtre a “Empleado Ana”, etc. */
+function norm(s) {
+  return (s || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function tokensPrefixMatch(query, name) {
+  const qTokens = norm(query).split(/\s+/).filter(Boolean);
+  const nTokens = norm(name).split(/\s+/).filter(Boolean);
+  if (!qTokens.length) return true;
+  // cada token del query debe ser prefijo del token correspondiente del nombre
+  for (let i = 0; i < qTokens.length; i++) {
+    if (i >= nTokens.length) return false;
+    if (!nTokens[i].startsWith(qTokens[i])) return false;
+  }
+  return true;
+}
+
 /* ====================== Crear Ticket (form) ====================== */
 function updateUserForm() {
   // reset campos de usuario en crear (solo inputs; la lista confirmada se mantiene)
@@ -377,17 +402,76 @@ function handleUserSelect(userId, userData = null) {
   hideMinisterioInfo();
 }
 
-/* === Buscador por nombre (progresivo con API) === */
-function createUserDropdown(results, inputElement) {
-  // Remover dropdown existente
-  const existingDropdown = document.getElementById("userSearchDropdown");
-  if (existingDropdown) {
-    existingDropdown.remove();
-  }
+/* === Helper genérico para dropdown incremental en otros módulos === */
+function createIncrementalDropdown(dropdownId, results, inputElement, onSelect) {
+  // Remover dropdown existente con ese id
+  const existing = document.getElementById(dropdownId);
+  if (existing) existing.remove();
 
-  if (!results || results.length === 0) {
-    return;
-  }
+  if (!results || results.length === 0) return;
+
+  const dropdown = document.createElement("div");
+  dropdown.id = dropdownId;
+  dropdown.style.cssText = `
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: ${appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"};
+    color: ${appState.isDark ? "#e5e7eb" : "#111827"};
+    border: 1px solid ${appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"};
+    border-radius: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 2000;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    backdrop-filter: blur(6px);
+  `;
+
+  results.forEach((user) => {
+    const option = document.createElement("div");
+    option.style.cssText = `
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.2s;
+    `;
+    option.textContent = user.nombre;
+
+    option.addEventListener("mouseenter", () => { option.style.backgroundColor = "var(--hover-bg)"; });
+    option.addEventListener("mouseleave", () => { option.style.backgroundColor = "transparent"; });
+    option.addEventListener("click", () => {
+      onSelect(user);
+      dropdown.remove();
+    });
+
+    dropdown.appendChild(option);
+  });
+
+  // Posicionar y adjuntar
+  const inputContainer = inputElement.parentElement;
+  inputContainer.style.position = "relative";
+  inputContainer.appendChild(dropdown);
+
+  // Cerrar al hacer clic fuera
+  setTimeout(() => {
+    document.addEventListener("click", function close(e) {
+      if (!dropdown.contains(e.target) && e.target !== inputElement) {
+        dropdown.remove();
+        document.removeEventListener("click", close);
+      }
+    });
+  }, 0);
+}
+
+/* === *** NUEVO: Dropdown incremental específico para “Crear → Nombre” *** === */
+function createUserDropdown(results, inputElement) {
+  // Quitar el dropdown previo
+  const existing = document.getElementById("userSearchDropdown");
+  if (existing) existing.remove();
+
+  if (!results || results.length === 0) return;
 
   const dropdown = document.createElement("div");
   dropdown.id = "userSearchDropdown";
@@ -406,7 +490,7 @@ function createUserDropdown(results, inputElement) {
     z-index: 2000;
     box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     backdrop-filter: blur(6px);
-`;
+  `;
 
   results.forEach((user) => {
     const option = document.createElement("div");
@@ -417,41 +501,91 @@ function createUserDropdown(results, inputElement) {
       transition: background-color 0.2s;
     `;
     option.textContent = user.nombre;
-    
-    option.addEventListener("mouseenter", () => {
-      option.style.backgroundColor = "var(--hover-bg)";
-    });
-    
-    option.addEventListener("mouseleave", () => {
-      option.style.backgroundColor = "transparent";
-    });
 
+    option.addEventListener("mouseenter", () => { option.style.backgroundColor = "var(--hover-bg)"; });
+    option.addEventListener("mouseleave", () => { option.style.backgroundColor = "transparent"; });
     option.addEventListener("click", () => {
-      inputElement.value = user.nombre;
       const hiddenId = document.getElementById("usuarioSelect");
-      if (hiddenId) hiddenId.value = user.id_usuario;
+      if (inputElement) inputElement.value = user.nombre || "";
+      if (hiddenId) hiddenId.value = user.id_usuario || "";
       handleUserSelect(user.id_usuario, user);
-      dropdown.remove();
       updateCreateButton();
+      dropdown.remove();
     });
 
     dropdown.appendChild(option);
   });
 
-  // Posicionar el dropdown
+  // Posicionar y adjuntar
   const inputContainer = inputElement.parentElement;
   inputContainer.style.position = "relative";
   inputContainer.appendChild(dropdown);
 
-  // Cerrar dropdown al hacer clic fuera
+  // Cerrar al hacer clic fuera
   setTimeout(() => {
-    document.addEventListener("click", function closeDropdown(e) {
+    document.addEventListener("click", function close(e) {
       if (!dropdown.contains(e.target) && e.target !== inputElement) {
         dropdown.remove();
-        document.removeEventListener("click", closeDropdown);
+        document.removeEventListener("click", close);
       }
     });
-  }, 100);
+  }, 0);
+}
+
+/* === Gestionar → Nombre: input incremental === */
+async function onGestNameInput() {
+  const input = document.getElementById("gestNameInput");
+  if (!input) return;
+  const query = input.value.trim();
+
+  if (appState.gestSearchTimeout) clearTimeout(appState.gestSearchTimeout);
+
+  if (!query) {
+    const dd = document.getElementById("gestNameDropdown");
+    if (dd) dd.remove();
+    gestCriteria.nameQuery = "";
+    updateTicketsTab();
+    return;
+  }
+
+  appState.gestSearchTimeout = setTimeout(async () => {
+    const raw = await searchUsersIncremental(query);
+    // === filtro progresivo por tokens (prefijos)
+    const filtered = raw.filter(u => tokensPrefixMatch(query, u.nombre));
+    createIncrementalDropdown("gestNameDropdown", filtered, input, (user) => {
+      input.value = user.nombre;
+      gestCriteria.nameQuery = user.nombre;     // usamos el nombre seleccionado
+      updateTicketsTab();
+    });
+  }, 300);
+}
+
+/* === Historial → Nombre: input incremental === */
+async function onHistNameInput() {
+  const input = document.getElementById("histNameInputAdv");
+  if (!input) return;
+  const query = input.value.trim();
+
+  if (appState.histSearchTimeout) clearTimeout(appState.histSearchTimeout);
+
+  if (!query) {
+    const dd = document.getElementById("histNameDropdown");
+    if (dd) dd.remove();
+    histAdvCriteria.nameQuery = "";
+    updateHistorialTab();
+    return;
+  }
+
+  appState.histSearchTimeout = setTimeout(async () => {
+    const raw = await searchUsersIncremental(query);
+    // === filtro progresivo por tokens (prefijos)
+    const filtered = raw.filter(u => tokensPrefixMatch(query, u.nombre));
+    createIncrementalDropdown("histNameDropdown", filtered, input, (user) => {
+      input.value = user.nombre;
+      histAdvCriteria.nameQuery = user.nombre;  // usamos el nombre seleccionado
+      updateHistorialTab();
+    });
+  }, 300);
 }
 
 async function onUserSearchInput() {
@@ -478,7 +612,9 @@ async function onUserSearchInput() {
 
   // Debounce la búsqueda
   appState.searchTimeout = setTimeout(async () => {
-    const results = await searchUsersIncremental(query);
+    const raw = await searchUsersIncremental(query);
+    // === filtro progresivo por tokens (prefijos) para “Crear”
+    const results = raw.filter(u => tokensPrefixMatch(query, u.nombre));
     createUserDropdown(results, input);
   }, 300);
 }
@@ -1028,7 +1164,6 @@ function updateTicketsTab() {
     ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
   }
 }
-
 /* ====================== Historial ====================== */
 function ddmmy_to_Date(ddmmyyyy) {
   if (!ddmmyyyy) return null;
@@ -1333,6 +1468,9 @@ function switchTab(tabName) {
     populateUserFilters();           // también para historial
     setupHistorialDynamicFields();   // sistema avanzado
     updateHistorialTab();
+  } else if (tabName === "usuarios-asignados") {
+    // Mantener comportamiento existente: cargar y renderizar tabla
+    fetchAndRenderAssignedUsers();
   }
 
   if (window.innerWidth <= 768 && appState.showSidebar) {
@@ -1565,6 +1703,9 @@ function renderGestionarFields() {
       updateTicketsTab();
     });
 
+    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
+    if (inp) inp.addEventListener("input", onGestNameInput);
+
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0%;">
@@ -1693,6 +1834,9 @@ function renderHistorialFields() {
       updateHistorialTab();
     });
 
+    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
+    if (inp) inp.addEventListener("input", onHistNameInput);
+
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
@@ -1760,6 +1904,61 @@ function renderHistorialFields() {
   } else {
     fieldsBox.innerHTML = "";
   }
+}
+
+/* ====================== Usuarios Asignados (mantener funcionamiento) ====================== */
+async function fetchAndRenderAssignedUsers() {
+  const tbody = document.getElementById("usuariosAsignadosBody");
+  const empty = document.getElementById("noUsuariosAsignados");
+  if (tbody) tbody.innerHTML = "";
+  if (empty) empty.classList.add("hidden");
+
+  try {
+    const resp = await fetch("http://localhost:8080/admin/subordinados", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      credentials: "include"
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    renderAssignedUsersTable(items);
+  } catch (e) {
+    console.error("Error al cargar usuarios asignados:", e);
+    if (empty) empty.classList.remove("hidden");
+  }
+}
+
+function renderAssignedUsersTable(items) {
+  const tbody = document.getElementById("usuariosAsignadosBody");
+  const empty = document.getElementById("noUsuariosAsignados");
+  if (!tbody) return;
+
+  if (!items.length) {
+    if (empty) empty.classList.remove("hidden");
+    return;
+  }
+  if (empty) empty.classList.add("hidden");
+
+  const rows = items.map(u => {
+    const nombre = u?.nombre ?? "";
+    const id = u?.id_usuario ?? "";
+    const correo = u?.correo ?? "";
+    const cargo = u?.rol ?? "";
+    const dpi = u?.cui ?? ""; // “Cui en dpi”
+    return `
+      <tr>
+        <td>${nombre}</td>
+        <td>${id}</td>
+        <td>${correo}</td>
+        <td>${cargo}</td>
+        <td>${dpi}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = rows.join("");
 }
 
 /* ====================== Wiring (DOMContentLoaded) ====================== */
