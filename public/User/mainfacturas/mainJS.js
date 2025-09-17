@@ -1,28 +1,46 @@
 // Definición de campos
 const FIELD_DEF = [
-    { key: "proveedor", label: "Proveedor", placeholder: "Nombre del proveedor" },
-    { key: "serie", label: "Serie", placeholder: "A, B, C..." },
-    { key: "numero_factura", label: "No. factura", placeholder: "Número de factura" },
-    { key: "fecha_emision", label: "Fecha", placeholder: "AAAA-MM-DD" },
-    { key: "moneda", label: "Moneda", placeholder: "GTQ | USD" },
-    { key: "nit_emisor", label: "NIT Emisor", placeholder: "NIT del emisor" },
-    { key: "nit_receptor", label: "NIT Receptor", placeholder: "NIT del receptor" },
-    { key: "total", label: "Total", placeholder: "0.00" },
+  { key: "proveedor", label: "Proveedor", placeholder: "Nombre del proveedor" },
+  { key: "serie", label: "Serie", placeholder: "A, B, C..." },
+  {
+    key: "numero_factura",
+    label: "No. factura",
+    placeholder: "Número de factura",
+  },
+  { key: "fecha_emision", label: "Fecha", placeholder: "AAAA-MM-DD" },
+  { key: "moneda", label: "Moneda", placeholder: "GTQ | USD" },
+  { key: "nit_emisor", label: "NIT Emisor", placeholder: "NIT del emisor" },
+  {
+    key: "nit_receptor",
+    label: "NIT Receptor",
+    placeholder: "NIT del receptor",
+  },
+  { key: "total", label: "Total", placeholder: "0.00" },
 ];
 
 const CSV_KEYS = [
-    "proveedor","serie","numero_factura","fecha_emision","moneda","nit_emisor","nit_receptor","total","tipo_gasto","comida","extras"
+  "proveedor",
+  "serie",
+  "numero_factura",
+  "fecha_emision",
+  "moneda",
+  "nit_emisor",
+  "nit_receptor",
+  "total",
+  "tipo_gasto",
+  "comida",
+  "extras",
 ];
 
 const TIPO_GASTO_OPTIONS = [
-    { value: "", label: "Seleccionar tipo de gasto" },
-    { value: "hotel", label: "Hotel" },
-    { value: "alimentacion", label: "Alimentación" },
-    { value: "transporte", label: "Transporte" },
-    { value: "combustible", label: "Combustible" },
-    { value: "peajes", label: "Peajes" },
-    { value: "estacionamiento", label: "Estacionamiento" },
-    { value: "otros", label: "Otros" },
+  { value: "", label: "Seleccionar tipo de gasto" },
+  { value: "hotel", label: "Hotel" },
+  { value: "alimentacion", label: "Alimentación" },
+  { value: "transporte", label: "Transporte" },
+  { value: "combustible", label: "Combustible" },
+  { value: "peajes", label: "Peajes" },
+  { value: "estacionamiento", label: "Estacionamiento" },
+  { value: "otros", label: "Otros" },
 ];
 
 const COMIDA_OPTIONS = [
@@ -34,168 +52,210 @@ const COMIDA_OPTIONS = [
 
 // Estado global
 let appState = {
-    files: [],
-    facturas: [],
-    selectedId: null,
-    busy: false,
-    isDark: true
+  files: [],
+  facturas: [],
+  selectedId: null,
+  busy: false,
+  isDark: true,
 };
 
 // Utilidades básicas
 function uid() {
-    return Math.random().toString(36).slice(2);
+  return Math.random().toString(36).slice(2);
 }
 
 function downloadCsv(rows) {
-    if (!rows.length) return;
-    
-    const esc = (v) => `"${(v ?? "").toString().replaceAll('"', '""')}"`;
-    const header = ["id", ...CSV_KEYS].map(esc).join(",");
-    const lines = rows.map(r => [r.id, ...CSV_KEYS.map(k => r[k] ?? "")].map(esc).join(","));
-    const csv = [header, ...lines].join("\n");
-    
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `automatix_facturas_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  if (!rows.length) return;
+
+  const esc = (v) => `"${(v ?? "").toString().replaceAll('"', '""')}"`;
+  const header = ["id", ...CSV_KEYS].map(esc).join(",");
+  const lines = rows.map((r) =>
+    [r.id, ...CSV_KEYS.map((k) => r[k] ?? "")].map(esc).join(",")
+  );
+  const csv = [header, ...lines].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `automatix_facturas_${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function downloadJson(rows) {
-    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `automatix_facturas_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const blob = new Blob([JSON.stringify(rows, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `automatix_facturas_${new Date()
+    .toISOString()
+    .slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function extractWithMVC(files) {
-    try {
-        console.log('🔍 DEBUG: Iniciando extracción con', files.length, 'archivos');
-        
-        // Crear FormData con las imágenes
-        const formData = new FormData();
-        files.forEach((file, index) => {
-            console.log(`📁 DEBUG: Agregando archivo ${index + 1}:`, file.name, file.type, file.size, 'bytes');
-            formData.append('images', file);
-        });
+  try {
+    console.log("🔍 DEBUG: Iniciando extracción con", files.length, "archivos");
 
-        console.log('📤 DEBUG: Enviando POST a /mainfacturas/');
-        const response = await fetch('/mainfacturas/', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        });
+    // Crear FormData con las imágenes
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      console.log(
+        `📁 DEBUG: Agregando archivo ${index + 1}:`,
+        file.name,
+        file.type,
+        file.size,
+        "bytes"
+      );
+      formData.append("images", file);
+    });
 
-        console.log('📥 DEBUG: Respuesta recibida - Status:', response.status, response.statusText);
+    const id = window.location.pathname.split("/").filter(Boolean).pop();
+    console.log("📤 DEBUG: Enviando POST a /mainfacturas/");
+    const response = await fetch(`/mainfacturas/${id}`, {
+      method: "POST",
+      body: formData, // FormData con tus archivos/campos
+      credentials: "include", // mantiene cookies / sesión
+    });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ DEBUG: Error del servidor:', errorText);
-            throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
-        }
+    console.log(
+      "📥 DEBUG: Respuesta recibida - Status:",
+      response.status,
+      response.statusText
+    );
 
-        const data = await response.json();
-        console.log('🔍 DEBUG: Datos JSON recibidos:', JSON.stringify(data, null, 2));
-
-        let processedData = null;
-
-        // Si la respuesta tiene un campo 'raw', extraer el JSON de ahí
-        if (data.raw && typeof data.raw === 'string') {
-            console.log('🔧 DEBUG: Extrayendo datos del campo raw');
-            try {
-                // Limpiar el campo raw eliminando los markdown ```json y ```
-                const cleanJson = data.raw.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-                console.log('🔧 DEBUG: JSON limpio:', cleanJson);
-                processedData = JSON.parse(cleanJson);
-                console.log('🔧 DEBUG: Datos parseados del raw:', JSON.stringify(processedData, null, 2));
-            } catch (parseError) {
-                console.error('❌ DEBUG: Error parseando raw JSON:', parseError);
-                throw new Error('No se pudo procesar la respuesta del servidor');
-            }
-        } else {
-            // Si no hay campo raw, usar los datos directamente
-            processedData = data;
-        }
-
-        // Procesar la respuesta y convertir a formato de la aplicación
-        if (Array.isArray(processedData)) {
-            console.log('📋 DEBUG: Procesando respuesta como array con', processedData.length, 'elementos');
-            return processedData.map((item, index) => {
-                console.log(`🔍 DEBUG: Procesando elemento ${index + 1}:`, JSON.stringify(item, null, 2));
-                return {
-                    id: uid(),
-                    proveedor: item.proveedor || "",
-                    serie: item.serie || "",
-                    numero_factura: item.numero_factura || "",
-                    fecha_emision: item.fecha_emision || "",
-                    moneda: item.moneda || "",
-                    nit_emisor: item.nit_emisor || "",
-                    nit_receptor: item.nit_receptor || "",
-                    total: item.total || "",
-                    tipo_gasto: "",
-                    comida: "",
-                    extras: "",
-                    _archivo: item._archivo || ""
-                };
-            });
-        } else if (processedData && typeof processedData === 'object') {
-            console.log('📄 DEBUG: Procesando respuesta como objeto único');
-            // Si es un solo objeto, convertirlo a array
-            return [{
-                id: uid(),
-                proveedor: processedData.proveedor || "",
-                serie: processedData.serie || "",
-                numero_factura: processedData.numero_factura || "",
-                fecha_emision: processedData.fecha_emision || "",
-                moneda: processedData.moneda || "",
-                nit_emisor: processedData.nit_emisor || "",
-                nit_receptor: processedData.nit_receptor || "",
-                total: processedData.total || "",
-                tipo_gasto: "",
-                comida: "",
-                extras: "",
-                _archivo: processedData._archivo || ""
-            }];
-        } else {
-            console.error('❌ DEBUG: Formato de respuesta inválido:', typeof processedData, processedData);
-            throw new Error('Formato de respuesta no válido del servidor');
-        }
-
-    } catch (error) {
-        console.error('❌ DEBUG: Error completo en extractWithMVC:', error);
-        throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ DEBUG: Error del servidor:", errorText);
+      throw new Error(
+        `Error del servidor: ${response.status} - ${response.statusText}`
+      );
     }
+
+    const data = await response.json();
+    console.log(
+      "🔍 DEBUG: Datos JSON recibidos:",
+      JSON.stringify(data, null, 2)
+    );
+
+    let processedData = null;
+
+    // Si la respuesta tiene un campo 'raw', extraer el JSON de ahí
+    if (data.raw && typeof data.raw === "string") {
+      console.log("🔧 DEBUG: Extrayendo datos del campo raw");
+      try {
+        // Limpiar el campo raw eliminando los markdown ```json y ```
+        const cleanJson = data.raw
+          .replace(/```json\n?/g, "")
+          .replace(/```/g, "")
+          .trim();
+        console.log("🔧 DEBUG: JSON limpio:", cleanJson);
+        processedData = JSON.parse(cleanJson);
+        console.log(
+          "🔧 DEBUG: Datos parseados del raw:",
+          JSON.stringify(processedData, null, 2)
+        );
+      } catch (parseError) {
+        console.error("❌ DEBUG: Error parseando raw JSON:", parseError);
+        throw new Error("No se pudo procesar la respuesta del servidor");
+      }
+    } else {
+      // Si no hay campo raw, usar los datos directamente
+      processedData = data;
+    }
+
+    // Procesar la respuesta y convertir a formato de la aplicación
+    if (Array.isArray(processedData)) {
+      console.log(
+        "📋 DEBUG: Procesando respuesta como array con",
+        processedData.length,
+        "elementos"
+      );
+      return processedData.map((item, index) => {
+        console.log(
+          `🔍 DEBUG: Procesando elemento ${index + 1}:`,
+          JSON.stringify(item, null, 2)
+        );
+        return {
+          id: uid(),
+          proveedor: item.proveedor || "",
+          serie: item.serie || "",
+          numero_factura: item.numero_factura || "",
+          fecha_emision: item.fecha_emision || "",
+          moneda: item.moneda || "",
+          nit_emisor: item.nit_emisor || "",
+          nit_receptor: item.nit_receptor || "",
+          total: item.total || "",
+          tipo_gasto: "",
+          comida: "",
+          extras: "",
+          _archivo: item._archivo || "",
+        };
+      });
+    } else if (processedData && typeof processedData === "object") {
+      console.log("📄 DEBUG: Procesando respuesta como objeto único");
+      // Si es un solo objeto, convertirlo a array
+      return [
+        {
+          id: uid(),
+          proveedor: processedData.proveedor || "",
+          serie: processedData.serie || "",
+          numero_factura: processedData.numero_factura || "",
+          fecha_emision: processedData.fecha_emision || "",
+          moneda: processedData.moneda || "",
+          nit_emisor: processedData.nit_emisor || "",
+          nit_receptor: processedData.nit_receptor || "",
+          total: processedData.total || "",
+          tipo_gasto: "",
+          comida: "",
+          extras: "",
+          _archivo: processedData._archivo || "",
+        },
+      ];
+    } else {
+      console.error(
+        "❌ DEBUG: Formato de respuesta inválido:",
+        typeof processedData,
+        processedData
+      );
+      throw new Error("Formato de respuesta no válido del servidor");
+    }
+  } catch (error) {
+    console.error("❌ DEBUG: Error completo en extractWithMVC:", error);
+    throw error;
+  }
 }
 
 // Funciones de UI
 function showError(message) {
-    const errorDisplay = document.getElementById('errorDisplay');
-    const errorMessage = document.getElementById('errorMessage');
-    
-    if (errorDisplay && errorMessage) {
-        errorMessage.textContent = message;
-        errorDisplay.classList.remove('hidden');
-        
-        setTimeout(() => {
-            errorDisplay.classList.add('hidden');
-        }, 5000);
-    }
+  const errorDisplay = document.getElementById("errorDisplay");
+  const errorMessage = document.getElementById("errorMessage");
+
+  if (errorDisplay && errorMessage) {
+    errorMessage.textContent = message;
+    errorDisplay.classList.remove("hidden");
+
+    setTimeout(() => {
+      errorDisplay.classList.add("hidden");
+    }, 5000);
+  }
 }
 
 function showSuccess(message) {
-    console.log('✅ ' + message);
-    // Crear notificación temporal
-    const notification = document.createElement('div');
-    notification.style.cssText = `
+  console.log("✅ " + message);
+  // Crear notificación temporal
+  const notification = document.createElement("div");
+  notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -207,51 +267,53 @@ function showSuccess(message) {
         z-index: 1000;
         backdrop-filter: blur(8px);
     `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 3000);
 }
 
 function updateTheme() {
-    const body = document.body;
-    const slider = document.getElementById('themeSlider');
-    const moonIcon = document.getElementById('moonIcon');
-    const sunIcon = document.getElementById('sunIcon');
+  const body = document.body;
+  const slider = document.getElementById("themeSlider");
+  const moonIcon = document.getElementById("moonIcon");
+  const sunIcon = document.getElementById("sunIcon");
 
-    if (appState.isDark) {
-        body.className = 'dark-theme';
-        if (slider) slider.style.transform = 'translateX(24px)';
-        if (moonIcon) moonIcon.classList.remove('hidden');
-        if (sunIcon) sunIcon.classList.add('hidden');
-    } else {
-        body.className = 'light-theme';
-        if (slider) slider.style.transform = 'translateX(0)';
-        if (moonIcon) moonIcon.classList.add('hidden');
-        if (sunIcon) sunIcon.classList.remove('hidden');
-    }
+  if (appState.isDark) {
+    body.className = "dark-theme";
+    if (slider) slider.style.transform = "translateX(24px)";
+    if (moonIcon) moonIcon.classList.remove("hidden");
+    if (sunIcon) sunIcon.classList.add("hidden");
+  } else {
+    body.className = "light-theme";
+    if (slider) slider.style.transform = "translateX(0)";
+    if (moonIcon) moonIcon.classList.add("hidden");
+    if (sunIcon) sunIcon.classList.remove("hidden");
+  }
 }
 
 function updateFileList() {
-    const pendingFiles = document.getElementById('pendingFiles');
-    const fileList = document.getElementById('fileList');
-    const fileCount = document.getElementById('fileCount');
-    
-    if (!pendingFiles || !fileList || !fileCount) return;
-    
-    if (appState.files.length === 0) {
-        pendingFiles.classList.add('hidden');
-        return;
-    }
-    
-    pendingFiles.classList.remove('hidden');
-    fileCount.textContent = appState.files.length;
-    
-    fileList.innerHTML = appState.files.map((file, index) => `
+  const pendingFiles = document.getElementById("pendingFiles");
+  const fileList = document.getElementById("fileList");
+  const fileCount = document.getElementById("fileCount");
+
+  if (!pendingFiles || !fileList || !fileCount) return;
+
+  if (appState.files.length === 0) {
+    pendingFiles.classList.add("hidden");
+    return;
+  }
+
+  pendingFiles.classList.remove("hidden");
+  fileCount.textContent = appState.files.length;
+
+  fileList.innerHTML = appState.files
+    .map(
+      (file, index) => `
         <div class="file-item">
             <div class="file-info">
                 <div class="file-icon">
@@ -270,37 +332,47 @@ function updateFileList() {
                 </svg>
             </button>
         </div>
-    `).join('');
-    
-    updateButtons();
+    `
+    )
+    .join("");
+
+  updateButtons();
 }
 
 function updateFacturasList() {
-    const noFacturas = document.getElementById('noFacturas');
-    const facturasContainer = document.getElementById('facturasContainer');
-    const facturaCount = document.getElementById('facturaCount');
-    const facturaCountBadge = document.getElementById('facturaCountBadge');
-    
-    if (facturaCount) facturaCount.textContent = appState.facturas.length;
-    if (facturaCountBadge) facturaCountBadge.textContent = appState.facturas.length;
-    
-    if (appState.facturas.length === 0) {
-        if (noFacturas) noFacturas.classList.remove('hidden');
-        if (facturasContainer) facturasContainer.classList.add('hidden');
-        return;
-    }
-    
-    if (noFacturas) noFacturas.classList.add('hidden');
-    if (facturasContainer) {
-        facturasContainer.classList.remove('hidden');
-        
-        facturasContainer.innerHTML = appState.facturas.map(factura => {
-            const isSelected = appState.selectedId === factura.id;
-            const tipoGastoOption = TIPO_GASTO_OPTIONS.find(opt => opt.value === factura.tipo_gasto);
-            const tipoGastoLabel = tipoGastoOption ? tipoGastoOption.label : factura.tipo_gasto;
-            
-            return `
-                <div class="factura-card ${isSelected ? 'selected' : ''}" onclick="selectFactura('${factura.id}')">
+  const noFacturas = document.getElementById("noFacturas");
+  const facturasContainer = document.getElementById("facturasContainer");
+  const facturaCount = document.getElementById("facturaCount");
+  const facturaCountBadge = document.getElementById("facturaCountBadge");
+
+  if (facturaCount) facturaCount.textContent = appState.facturas.length;
+  if (facturaCountBadge)
+    facturaCountBadge.textContent = appState.facturas.length;
+
+  if (appState.facturas.length === 0) {
+    if (noFacturas) noFacturas.classList.remove("hidden");
+    if (facturasContainer) facturasContainer.classList.add("hidden");
+    return;
+  }
+
+  if (noFacturas) noFacturas.classList.add("hidden");
+  if (facturasContainer) {
+    facturasContainer.classList.remove("hidden");
+
+    facturasContainer.innerHTML = appState.facturas
+      .map((factura) => {
+        const isSelected = appState.selectedId === factura.id;
+        const tipoGastoOption = TIPO_GASTO_OPTIONS.find(
+          (opt) => opt.value === factura.tipo_gasto
+        );
+        const tipoGastoLabel = tipoGastoOption
+          ? tipoGastoOption.label
+          : factura.tipo_gasto;
+
+        return `
+                <div class="factura-card ${
+                  isSelected ? "selected" : ""
+                }" onclick="selectFactura('${factura.id}')">
                     <div class="factura-header">
                         <div class="factura-content">
                             <div class="factura-brand">
@@ -311,31 +383,54 @@ function updateFacturasList() {
                                 </div>
                                 <div>
                                     <h4 class="factura-title">
-                                        ${factura.numero_factura || "Sin número"} · ${factura.serie || "—"}
+                                        ${
+                                          factura.numero_factura || "Sin número"
+                                        } · ${factura.serie || "—"}
                                     </h4>
-                                    <p class="factura-subtitle">${factura.proveedor || "Proveedor no especificado"}</p>
-                                    ${factura.tipo_gasto ? `
+                                    <p class="factura-subtitle">${
+                                      factura.proveedor ||
+                                      "Proveedor no especificado"
+                                    }</p>
+                                    ${
+                                      factura.tipo_gasto
+                                        ? `
                                         <div class="factura-tag">
                                             <span class="tag">${tipoGastoLabel}</span>
                                         </div>
-                                    ` : ''}
+                                    `
+                                        : ""
+                                    }
                                 </div>
                             </div>
                             <div class="factura-footer">
                                 <div class="factura-info">
-                                    <span class="factura-date">${factura.fecha_emision || "—"}</span>
-                                    ${factura.total ? `
+                                    <span class="factura-date">${
+                                      factura.fecha_emision || "—"
+                                    }</span>
+                                    ${
+                                      factura.total
+                                        ? `
                                         <span class="factura-total">
-                                            ${factura.total} ${factura.moneda || ""}
+                                            ${factura.total} ${
+                                            factura.moneda || ""
+                                          }
                                         </span>
-                                    ` : ''}
+                                    `
+                                        : ""
+                                    }
                                 </div>
-                                ${factura.extras ? `
+                                ${
+                                  factura.extras
+                                    ? `
                                     <span class="factura-extra">${factura.extras}</span>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                             </div>
                         </div>
-                        <button onclick="event.stopPropagation(); removeFactura('${factura.id}')" class="remove-btn">
+                        <button onclick="event.stopPropagation(); removeFactura('${
+                          factura.id
+                        }')" class="remove-btn">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -343,63 +438,73 @@ function updateFacturasList() {
                     </div>
                 </div>
             `;
-        }).join('');
-    }
-    
-    updateButtons();
+      })
+      .join("");
+  }
+
+  updateButtons();
 }
 
 function updateEditor() {
-    const noSelection = document.getElementById('noSelection');
-    const facturaForm = document.getElementById('facturaForm');
-    const editingIndicator = document.getElementById('editingIndicator');
-    
-    const selected = appState.facturas.find(f => f.id === appState.selectedId);
-    
-    if (!selected) {
-        if (noSelection) noSelection.classList.remove('hidden');
-        if (facturaForm) facturaForm.classList.add('hidden');
-        if (editingIndicator) editingIndicator.classList.add('hidden');
-        return;
-    }
-    
-    if (noSelection) noSelection.classList.add('hidden');
-    if (facturaForm) facturaForm.classList.remove('hidden');
-    if (editingIndicator) editingIndicator.classList.remove('hidden');
-    
-    if (!facturaForm) return;
-    
-    // Generar campos del formulario
-    let formHTML = '';
-    
-    // Campos básicos
-    FIELD_DEF.forEach(({ key, label, placeholder }) => {
-        formHTML += `
+  const noSelection = document.getElementById("noSelection");
+  const facturaForm = document.getElementById("facturaForm");
+  const editingIndicator = document.getElementById("editingIndicator");
+
+  const selected = appState.facturas.find((f) => f.id === appState.selectedId);
+
+  if (!selected) {
+    if (noSelection) noSelection.classList.remove("hidden");
+    if (facturaForm) facturaForm.classList.add("hidden");
+    if (editingIndicator) editingIndicator.classList.add("hidden");
+    return;
+  }
+
+  if (noSelection) noSelection.classList.add("hidden");
+  if (facturaForm) facturaForm.classList.remove("hidden");
+  if (editingIndicator) editingIndicator.classList.remove("hidden");
+
+  if (!facturaForm) return;
+
+  // Generar campos del formulario
+  let formHTML = "";
+
+  // Campos básicos
+  FIELD_DEF.forEach(({ key, label, placeholder }) => {
+    formHTML += `
             <div class="form-group">
                 <label class="form-label">${label}</label>
                 <input
                     class="form-input"
                     placeholder="${placeholder}"
-                    value="${selected[key] || ''}"
-                    onchange="updateField('${selected.id}', '${key}', this.value)"
+                    value="${selected[key] || ""}"
+                    onchange="updateField('${
+                      selected.id
+                    }', '${key}', this.value)"
                 />
             </div>
         `;
-    });
-    
-    // Campos adicionales
-    formHTML += `
+  });
+
+  // Campos adicionales
+  formHTML += `
         <div class="form-group full-width">
             <div class="two-columns">
                 <div class="form-group">
                     <label class="form-label">Tipo de gasto</label>
                     <select
                         class="form-select"
-                        onchange="updateField('${selected.id}', 'tipo_gasto', this.value)"
+                        onchange="updateField('${
+                          selected.id
+                        }', 'tipo_gasto', this.value)"
                     >
-                        ${TIPO_GASTO_OPTIONS.map(option => 
-                            `<option value="${option.value}" ${selected.tipo_gasto === option.value ? 'selected' : ''}>${option.label}</option>`
-                        ).join('')}
+                        ${TIPO_GASTO_OPTIONS.map(
+                          (option) =>
+                            `<option value="${option.value}" ${
+                              selected.tipo_gasto === option.value
+                                ? "selected"
+                                : ""
+                            }>${option.label}</option>`
+                        ).join("")}
                     </select>
                 </div>
                 <div>
@@ -407,11 +512,18 @@ function updateEditor() {
                         <label class="form-label">Tiempo de comida</label>
                         <select
                             class="form-select"
-                            onchange="updateField('${selected.id}', 'comida', this.value)"
+                            onchange="updateField('${
+                              selected.id
+                            }', 'comida', this.value)"
                         >
-                            ${COMIDA_OPTIONS.map(option => 
-                                `<option value="${option.value}" ${selected.comida === option.value ? 'selected' : ''}>${option.label}</option>`
-                            ).join('')}
+                            ${COMIDA_OPTIONS.map(
+                              (option) =>
+                                `<option value="${option.value}" ${
+                                  selected.comida === option.value
+                                    ? "selected"
+                                    : ""
+                                }>${option.label}</option>`
+                            ).join("")}
                         </select>
                     </div>
                     <div class="form-group">
@@ -419,256 +531,264 @@ function updateEditor() {
                         <input
                             class="form-input"
                             placeholder="Ej. Taxi aeropuerto a hotel"
-                            value="${selected.extras || ''}"
-                            onchange="updateField('${selected.id}', 'extras', this.value)"
+                            value="${selected.extras || ""}"
+                            onchange="updateField('${
+                              selected.id
+                            }', 'extras', this.value)"
                         />
                     </div>
                 </div>
             </div>
         </div>
     `;
-    
-    facturaForm.innerHTML = formHTML;
+
+  facturaForm.innerHTML = formHTML;
 }
 
 function updateButtons() {
-    const clearBtn = document.getElementById('clearBtn');
-    const extractBtn = document.getElementById('extractBtn');
-    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
-    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-    const removeAllBtn = document.getElementById('removeAllBtn');
-    
-    // Botones de archivos
-    if (clearBtn) clearBtn.disabled = appState.files.length === 0;
-    if (extractBtn) {
-        extractBtn.disabled = appState.files.length === 0 || appState.busy;
-        extractBtn.textContent = appState.busy ? "Procesando..." : "Extraer";
-    }
-    
-    // Botones de exportación
-    if (downloadJsonBtn) downloadJsonBtn.disabled = appState.facturas.length === 0;
-    if (downloadCsvBtn) downloadCsvBtn.disabled = appState.facturas.length === 0;
-    if (removeAllBtn) removeAllBtn.disabled = appState.facturas.length === 0;
+  const clearBtn = document.getElementById("clearBtn");
+  const extractBtn = document.getElementById("extractBtn");
+  const downloadJsonBtn = document.getElementById("downloadJsonBtn");
+  const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+  const removeAllBtn = document.getElementById("removeAllBtn");
+
+  // Botones de archivos
+  if (clearBtn) clearBtn.disabled = appState.files.length === 0;
+  if (extractBtn) {
+    extractBtn.disabled = appState.files.length === 0 || appState.busy;
+    extractBtn.textContent = appState.busy ? "Procesando..." : "Extraer";
+  }
+
+  // Botones de exportación
+  if (downloadJsonBtn)
+    downloadJsonBtn.disabled = appState.facturas.length === 0;
+  if (downloadCsvBtn) downloadCsvBtn.disabled = appState.facturas.length === 0;
+  if (removeAllBtn) removeAllBtn.disabled = appState.facturas.length === 0;
 }
 
 // Funciones de eventos (globales para HTML)
 function removeTempFile(index) {
-    appState.files = appState.files.filter((_, i) => i !== index);
-    updateFileList();
+  appState.files = appState.files.filter((_, i) => i !== index);
+  updateFileList();
 }
 
 function removeFactura(id) {
-    appState.facturas = appState.facturas.filter(f => f.id !== id);
-    if (appState.selectedId === id) {
-        appState.selectedId = null;
-    }
-    updateFacturasList();
-    updateEditor();
+  appState.facturas = appState.facturas.filter((f) => f.id !== id);
+  if (appState.selectedId === id) {
+    appState.selectedId = null;
+  }
+  updateFacturasList();
+  updateEditor();
 }
 
 function removeAllFacturas() {
-    appState.facturas = [];
-    appState.selectedId = null;
-    updateFacturasList();
-    updateEditor();
+  appState.facturas = [];
+  appState.selectedId = null;
+  updateFacturasList();
+  updateEditor();
 }
 
 function selectFactura(id) {
-    appState.selectedId = id;
-    updateFacturasList();
-    updateEditor();
+  appState.selectedId = id;
+  updateFacturasList();
+  updateEditor();
 }
 
 function updateField(id, key, value) {
-    appState.facturas = appState.facturas.map(f => 
-        f.id === id ? { ...f, [key]: value } : f
-    );
-    updateFacturasList();
+  appState.facturas = appState.facturas.map((f) =>
+    f.id === id ? { ...f, [key]: value } : f
+  );
+  updateFacturasList();
 }
 
 function handleFiles(files) {
-    const fileArray = Array.from(files);
-    const imageFiles = fileArray.filter(file => file.type.startsWith('image/'));
-    
-    if (imageFiles.length === 0) {
-        showError('Por favor selecciona solo archivos de imagen');
-        return;
-    }
-    
-    appState.files = [...appState.files, ...imageFiles];
-    updateFileList();
-    console.log('📁 Archivos agregados:', imageFiles.length);
+  const fileArray = Array.from(files);
+  const imageFiles = fileArray.filter((file) => file.type.startsWith("image/"));
+
+  if (imageFiles.length === 0) {
+    showError("Por favor selecciona solo archivos de imagen");
+    return;
+  }
+
+  appState.files = [...appState.files, ...imageFiles];
+  updateFileList();
+  console.log("📁 Archivos agregados:", imageFiles.length);
 }
 
 async function extractAll() {
-    if (appState.files.length === 0) return;
-    
-    appState.busy = true;
-    updateButtons();
-    
-    try {
-        console.log('📤 Enviando archivos al servidor...', appState.files.length);
-        const results = await extractWithMVC(appState.files);
-        
-        console.log('📥 Respuesta procesada:', results);
-        
-        // Agregar nombres de archivo a cada factura
-        results.forEach((factura, index) => {
-            if (index < appState.files.length) {
-                factura._archivo = appState.files[index].name;
-            }
-        });
-        
-        appState.facturas = [...appState.facturas, ...results];
-        appState.files = [];
-        
-        if (results.length > 0) {
-            appState.selectedId = results[results.length - 1].id;
-        }
-        
-        updateFileList();
-        updateFacturasList();
-        updateEditor();
-        
-        showSuccess(`${results.length} factura(s) procesada(s) exitosamente`);
-        
-    } catch (error) {
-        console.error('❌ Error al extraer datos:', error);
-        showError(error.message || 'Error al procesar las imágenes');
-    } finally {
-        appState.busy = false;
-        updateButtons();
+  if (appState.files.length === 0) return;
+
+  appState.busy = true;
+  updateButtons();
+
+  try {
+    console.log("📤 Enviando archivos al servidor...", appState.files.length);
+    const results = await extractWithMVC(appState.files);
+
+    console.log("📥 Respuesta procesada:", results);
+
+    // Agregar nombres de archivo a cada factura
+    results.forEach((factura, index) => {
+      if (index < appState.files.length) {
+        factura._archivo = appState.files[index].name;
+      }
+    });
+
+    appState.facturas = [...appState.facturas, ...results];
+    appState.files = [];
+
+    if (results.length > 0) {
+      appState.selectedId = results[results.length - 1].id;
     }
+
+    updateFileList();
+    updateFacturasList();
+    updateEditor();
+
+    showSuccess(`${results.length} factura(s) procesada(s) exitosamente`);
+  } catch (error) {
+    console.error("❌ Error al extraer datos:", error);
+    showError(error.message || "Error al procesar las imágenes");
+  } finally {
+    appState.busy = false;
+    updateButtons();
+  }
 }
 
 // Inicialización
 function init() {
-    console.log('🚀 Iniciando Automatix Facturas (MVC)...');
-    
-    // Configuración inicial
-    updateTheme();
-    updateFileList();
-    updateFacturasList();
-    updateEditor();
-    updateButtons();
+  console.log("🚀 Iniciando Automatix Facturas (MVC)...");
 
-    // Event listeners básicos
-    const fileInput = document.getElementById('fileInput');
-    const dropzone = document.getElementById('dropzone');
-    const selectBtn = document.getElementById('selectBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const extractBtn = document.getElementById('extractBtn');
-    const themeToggle = document.getElementById('themeToggle');
-    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
-    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-    const removeAllBtn = document.getElementById('removeAllBtn');
+  // Configuración inicial
+  updateTheme();
+  updateFileList();
+  updateFacturasList();
+  updateEditor();
+  updateButtons();
 
-    // Verificar elementos críticos
-    if (!fileInput || !selectBtn || !dropzone) {
-        console.error('❌ Elementos críticos no encontrados');
-        return;
+  // Event listeners básicos
+  const fileInput = document.getElementById("fileInput");
+  const dropzone = document.getElementById("dropzone");
+  const selectBtn = document.getElementById("selectBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const extractBtn = document.getElementById("extractBtn");
+  const themeToggle = document.getElementById("themeToggle");
+  const downloadJsonBtn = document.getElementById("downloadJsonBtn");
+  const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+  const removeAllBtn = document.getElementById("removeAllBtn");
+
+  // Verificar elementos críticos
+  if (!fileInput || !selectBtn || !dropzone) {
+    console.error("❌ Elementos críticos no encontrados");
+    return;
+  }
+
+  console.log("✅ Elementos encontrados correctamente");
+
+  // File input
+  fileInput.addEventListener("change", function (e) {
+    console.log("📁 Input change event");
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+      e.target.value = "";
     }
+  });
 
-    console.log('✅ Elementos encontrados correctamente');
+  // Select button
+  selectBtn.addEventListener("click", function (e) {
+    console.log("🖱️ Select button clicked");
+    e.preventDefault();
+    fileInput.click();
+  });
 
-    // File input
-    fileInput.addEventListener('change', function(e) {
-        console.log('📁 Input change event');
-        if (e.target.files && e.target.files.length > 0) {
-            handleFiles(e.target.files);
-            e.target.value = '';
+  // Dropzone
+  dropzone.addEventListener("click", function (e) {
+    console.log("🖱️ Dropzone clicked");
+    e.preventDefault();
+    fileInput.click();
+  });
+
+  // Drag and drop
+  dropzone.addEventListener("dragover", function (e) {
+    e.preventDefault();
+    dropzone.style.borderColor = "rgba(59, 130, 246, 0.5)";
+  });
+
+  dropzone.addEventListener("drop", function (e) {
+    e.preventDefault();
+    dropzone.style.borderColor = "";
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  });
+
+  // Theme toggle
+  if (themeToggle) {
+    themeToggle.addEventListener("click", function () {
+      appState.isDark = !appState.isDark;
+      updateTheme();
+    });
+  }
+
+  // Clear button
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function () {
+      appState.files = [];
+      updateFileList();
+    });
+  }
+
+  // Extract button
+  if (extractBtn) {
+    extractBtn.addEventListener("click", function () {
+      if (!appState.busy && appState.files.length > 0) {
+        extractAll();
+      }
+    });
+  }
+
+  // Download buttons
+  if (downloadJsonBtn) {
+    downloadJsonBtn.addEventListener("click", function () {
+      if (appState.facturas.length > 0) {
+        downloadJson(appState.facturas);
+        showSuccess(
+          `Archivo JSON descargado con ${appState.facturas.length} facturas`
+        );
+      }
+    });
+  }
+
+  if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener("click", function () {
+      if (appState.facturas.length > 0) {
+        downloadCsv(appState.facturas);
+        showSuccess(
+          `Archivo CSV descargado con ${appState.facturas.length} facturas`
+        );
+      }
+    });
+  }
+
+  if (removeAllBtn) {
+    removeAllBtn.addEventListener("click", function () {
+      if (appState.facturas.length > 0) {
+        if (
+          confirm("¿Estás seguro de que quieres eliminar todas las facturas?")
+        ) {
+          removeAllFacturas();
         }
+      }
     });
+  }
 
-    // Select button
-    selectBtn.addEventListener('click', function(e) {
-        console.log('🖱️ Select button clicked');
-        e.preventDefault();
-        fileInput.click();
-    });
-
-    // Dropzone
-    dropzone.addEventListener('click', function(e) {
-        console.log('🖱️ Dropzone clicked');
-        e.preventDefault();
-        fileInput.click();
-    });
-
-    // Drag and drop
-    dropzone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        dropzone.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-    });
-
-    dropzone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        dropzone.style.borderColor = '';
-        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-            handleFiles(e.dataTransfer.files);
-        }
-    });
-
-    // Theme toggle
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            appState.isDark = !appState.isDark;
-            updateTheme();
-        });
-    }
-
-    // Clear button
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            appState.files = [];
-            updateFileList();
-        });
-    }
-
-    // Extract button
-    if (extractBtn) {
-        extractBtn.addEventListener('click', function() {
-            if (!appState.busy && appState.files.length > 0) {
-                extractAll();
-            }
-        });
-    }
-
-    // Download buttons
-    if (downloadJsonBtn) {
-        downloadJsonBtn.addEventListener('click', function() {
-            if (appState.facturas.length > 0) {
-                downloadJson(appState.facturas);
-                showSuccess(`Archivo JSON descargado con ${appState.facturas.length} facturas`);
-            }
-        });
-    }
-
-    if (downloadCsvBtn) {
-        downloadCsvBtn.addEventListener('click', function() {
-            if (appState.facturas.length > 0) {
-                downloadCsv(appState.facturas);
-                showSuccess(`Archivo CSV descargado con ${appState.facturas.length} facturas`);
-            }
-        });
-    }
-
-    if (removeAllBtn) {
-        removeAllBtn.addEventListener('click', function() {
-            if (appState.facturas.length > 0) {
-                if (confirm('¿Estás seguro de que quieres eliminar todas las facturas?')) {
-                    removeAllFacturas();
-                }
-            }
-        });
-    }
-
-    console.log('✅ Event listeners configurados');
-    console.log('🎉 Aplicación lista para usar (MVC)');
+  console.log("✅ Event listeners configurados");
+  console.log("🎉 Aplicación lista para usar (MVC)");
 }
 
 // Inicializar cuando DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-    init();
+  init();
 }

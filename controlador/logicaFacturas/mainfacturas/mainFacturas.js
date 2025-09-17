@@ -59,10 +59,12 @@ mainFacturasRouter.get("/:id", (req, res) => {
 });
 
 mainFacturasRouter.post(
-  "/",
+  "/:id",
   handleMulter(uploadImages), // 👈 multer aislado y con errores capturados
   async (req, res, next) => {
     try {
+      const id_ticket = parseInt(req.params.id);
+      if (!id_ticket) return res.redirect("/usermain");
       const { id, role } = protegerRuta({ req, res });
       if (denegarNoEmpleados({ res, role })) return;
 
@@ -92,10 +94,12 @@ mainFacturasRouter.post(
 );
 
 mainFacturasRouter.post(
-  "/guardarFactura",
+  "/:id/guardarFactura",
   handleMulter(uploadImages),
   async (req, res, next) => {
     try {
+      const id_ticket = parseInt(req.params.id);
+      if (!id_ticket) return res.redirect("/usermain");
       const { id, role } = protegerRuta({ req, res });
       const db = req.db;
       if (denegarNoEmpleados({ res, role })) return;
@@ -105,7 +109,6 @@ mainFacturasRouter.post(
       }
 
       const {
-        id_ticket,
         proveedor,
         serie,
         numero_factura,

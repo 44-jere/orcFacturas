@@ -1144,7 +1144,7 @@ async function createTicket() {
           .trim(), // puede ser ""
       };
 
-      const resp = await fetch("http://localhost:8080/admin/crearTicket", {
+      const resp = await fetch("/crearTicket/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1805,7 +1805,7 @@ async function loadAdminData() {
 
   try {
     /* ========= ÚNICO GET requerido: total de usuarios ========= */
-    const resp = await fetch("http://localhost:8080/admin/subordinados", {
+    const resp = await fetch("/subordinados/", {
       method: "GET",
       headers: { Accept: "application/json" },
       credentials: "include",
@@ -2257,7 +2257,7 @@ async function fetchAndRenderAssignedUsers() {
   if (empty) empty.classList.add("hidden");
 
   try {
-    const resp = await fetch("http://localhost:8080/admin/subordinados", {
+    const resp = await fetch("/subordinados/", {
       method: "GET",
       headers: { Accept: "application/json" },
       credentials: "include",
