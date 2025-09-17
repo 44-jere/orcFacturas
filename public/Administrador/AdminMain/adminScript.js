@@ -35,8 +35,8 @@ let appState = {
   /* ====== NUEVO: búsqueda incremental ====== */
   searchTimeout: null,
   gestSearchTimeout: null,     // debounce para "Gestionar → Nombre"
-  histSearchTimeout: null,     // debounce para "Historial → Nombre"
-  searchResults: [],           // resultados de búsqueda incremental
+  histSearchTimeout: null,     // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
+  searchResults: [],              // resultados de búsqueda incremental
 };
 
 /* ====== Filtros Gestionar ====== */
@@ -269,11 +269,15 @@ async function searchUsersIncremental(query) {
   }
 
   try {
-    const response = await fetch(`http://localhost:8080/admin/subordinados?search=${encodeURIComponent(query)}`, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-      credentials: "include"
-    });
+    // ▶️ Usar /buscarUsuario con parámetro ?nombre=
+    const response = await fetch(
+      `http://localhost:8080/admin/subordinados/buscarUsuario?nombre=${encodeURIComponent(query)}`,
+      {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        credentials: "include"
+      }
+    );
 
     if (response.ok) {
       const data = await response.json();
@@ -289,39 +293,25 @@ async function searchUsersIncremental(query) {
   }
 }
 
-/* ========= MODIFICADO: búsqueda por ID usando /admin/subordinados/buscarUsuario?id= ======== */
 async function searchUserById(userId) {
   if (!userId || isNaN(parseInt(userId))) {
     return null;
   }
 
   try {
-    const url = `http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(userId)}`;
-    const response = await fetch(url, {
+    const response = await fetch(`http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(userId)}`, {
       method: "GET",
       headers: { "Accept": "application/json" },
       credentials: "include"
     });
 
-    if (!response.ok) {
+    if (response.ok) {
+      const data = await response.json();
+      return data.items && data.items.length > 0 ? data.items[0] : null;
+    } else {
       console.error("Error en búsqueda por ID:", response.status);
       return null;
     }
-
-    const data = await response.json();
-    // Se espera el formato: { items: [ {...usuario...} ], criteria: {...}, limit: n }
-    const user = Array.isArray(data.items) && data.items.length > 0 ? data.items[0] : null;
-
-    // Opcional: mantener coherencia con searchResults para que getUserByIdSafe lo encuentre
-    if (user) {
-      // Normalizamos el id para búsquedas internas
-      if (typeof user.id_usuario !== "undefined") {
-        const exists = appState.searchResults.some(u => String(u.id_usuario) === String(user.id_usuario));
-        if (!exists) appState.searchResults.push(user);
-      }
-    }
-
-    return user;
   } catch (error) {
     console.error("Error en búsqueda por ID:", error);
     return null;
@@ -524,6 +514,10 @@ function createUserDropdown(results, inputElement) {
       if (hiddenId) hiddenId.value = user.id_usuario || "";
       handleUserSelect(user.id_usuario, user);
       updateCreateButton();
+
+      // ➕ Mostrar también el recuadro de “Usuario seleccionado” (sin bloquear campos)
+      showSelectedUserBox(user.id_usuario);
+
       dropdown.remove();
     });
 
@@ -633,7 +627,7 @@ async function onUserSearchInput() {
   }, 300);
 }
 
-/* === NUEVO: Enter en buscador por nombre → mostrar recuadro y bloquear === */
+/* === NUEVO: Enter en buscador por nombre → mostrar recuadro (sin bloquear) === */
 function onUserSearchEnter(e) {
   if (e.key !== "Enter") return;
   const hiddenId = document.getElementById("usuarioSelect");
@@ -658,7 +652,7 @@ async function onUserIdSearchClick() {
     return;
   }
 
-  const user = await searchUserById(idNum); // <-- usa el endpoint nuevo
+  const user = await searchUserById(idNum);
   if (!user) {
     showNotification("No se encontró un usuario con ese ID", "error");
     hiddenId.value = "";
@@ -669,30 +663,38 @@ async function onUserIdSearchClick() {
 
   hiddenId.value = user.id_usuario;
   handleUserSelect(user.id_usuario, user);
+
+  // guardar en cache para que el recuadro lo encuentre
+  appState.searchResults = [
+    user,
+    ...appState.searchResults.filter(u => String(u.id_usuario) !== String(user.id_usuario))
+  ];
+
   updateCreateButton();
 
-  /* Mostrar recuadro */
+  /* Mostrar recuadro (no bloquear campos) */
   showSelectedUserBox(user.id_usuario);
 }
 
 /* ====================== NUEVO: Recuadro selección & lista ====================== */
 function lockUserSelectionFields(lock = true) {
+  // ⚠️ Ya no bloqueamos campos: mantenemos la función por compatibilidad, pero sin efectos.
   const modeSel = document.getElementById("crearUserSearchMode");
   const nameInp = document.getElementById("usuarioSearchInput");
   const idInp = document.getElementById("usuarioIdInput");
   const idBtn = document.getElementById("usuarioIdSearchBtn");
-
-  if (modeSel) modeSel.disabled = lock;
-  if (nameInp) nameInp.disabled = lock;
-  if (idInp) idInp.disabled = lock;
-  if (idBtn) idBtn.disabled = lock;
+  // sin-op para no bloquear; dejamos los elementos habilitados
+  if (modeSel) modeSel.disabled = false;
+  if (nameInp) nameInp.disabled = false;
+  if (idInp) idInp.disabled = false;
+  if (idBtn) idBtn.disabled = false;
 }
 
 function getUserByIdSafe(id) {
   // Buscar primero en searchResults (datos más recientes de la API)
   const fromSearch = appState.searchResults.find(u => String(u.id_usuario) === String(id));
   if (fromSearch) return fromSearch;
-
+  
   // Fallback a users (si existe)
   return appState.users.find(u => String(u.id) === String(id)) || null;
 }
@@ -716,20 +718,76 @@ function showSelectedUserBox(userId) {
 
   if (box) box.classList.remove("hidden");
 
-  // bloquear campos de asignación
-  lockUserSelectionFields(true);
+  // ❌ Ya NO bloqueamos campos al seleccionar
+  // lockUserSelectionFields(true);
 
   renderSelectedUsersList();
+}
+
+function removeUserFromList(uid) {
+  const i = appState.selectedUsersIds.findIndex(x => String(x) === String(uid));
+  if (i !== -1) {
+    appState.selectedUsersIds.splice(i, 1);
+    renderSelectedUsersBox();
+    const addMoreBtn = document.getElementById("addMoreUsersBtn");
+    if (addMoreBtn) addMoreBtn.disabled = appState.selectedUsersIds.length >= 5;
+  }
+}
+
+function clearSelectedUsersList() {
+  appState.selectedUsersIds = [];
+  renderSelectedUsersBox();
+  const addMoreBtn = document.getElementById("addMoreUsersBtn");
+  if (addMoreBtn) addMoreBtn.disabled = false;
 }
 
 function renderSelectedUsersList() {
   const listEl = document.getElementById("selectedUsersList");
   if (!listEl) return;
 
+  const isDark = appState.isDark;
+  const cardBg = isDark ? 'rgba(31,41,55,0.9)' : '#ddd6fe';      // oscuro vs violeta claro (violet-200)
+  const borderCol = isDark ? 'rgba(148,163,184,0.25)' : '#c4b5fd'; // slate-300-ish vs violet-300
+  const trashColor = isDark ? '#ffffff' : '#4c1d95';              // blanco en dark, violeta oscuro en light
+
   const items = appState.selectedUsersIds.map((uid, idx) => {
     const u = getUserByIdSafe(uid);
-    const label = u ? `${u.nombre} (${u.rol || u.cargo}) - ID ${u.id_usuario || u.id}` : `Usuario ${uid}`;
-    return `<li class="selected-user-item">${idx + 1}. ${label}</li>`;
+    const nombre = u ? u.nombre : `Usuario ${uid}`;
+    const cargo  = u ? (u.rol || u.cargo || "") : "";
+    const idTxt  = u ? (u.id_usuario || u.id) : uid;
+
+    // Tarjeta de cada usuario + ícono de basurero (inline SVG)
+    return `
+      <li class="selected-user-item" style="
+        display:flex;align-items:center;justify-content:space-between;
+        padding:10px 12px;margin:8px 0;border:1px solid ${borderCol};
+        border-radius:10px;background:${cardBg};
+        backdrop-filter:blur(6px);
+      ">
+        <div style="display:flex;gap:10px;align-items:center;color:${isDark ? '#e5e7eb' : '#1f2937'};">
+          <div style="
+            width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+            font-weight:600;border:1px solid ${borderCol}; color:${isDark ? '#e5e7eb' : '#1f2937'};
+            background:${isDark ? 'rgba(17,24,39,0.6)' : '#ede9fe'};
+          ">${idx + 1}</div>
+          <div>
+            <div style="font-weight:600;">${nombre}</div>
+            <div style="font-size:.85rem;opacity:.85;">${cargo} · ID ${idTxt}</div>
+          </div>
+        </div>
+        <button title="Eliminar" onclick="removeUserFromList('${uid}')" style="
+          background:transparent;border:none;cursor:pointer;padding:6px;border-radius:8px;color:${trashColor};
+        ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </li>
+    `;
   });
 
   listEl.innerHTML = items.join("") || `<li class="selected-user-item empty">No hay usuarios en la lista</li>`;
@@ -743,15 +801,23 @@ function renderSelectedUsersBox() {
   if (!appState.currentUserCandidateId && appState.selectedUsersIds.length === 0) {
     box.classList.add("hidden");
     if (listBlock) listBlock.classList.add("hidden");
-    // desbloquear campos si no hay nada seleccionado
+    // No bloqueo de campos
     lockUserSelectionFields(false);
     return;
   }
-
+  
   box.classList.remove("hidden");
-
+  
   if (appState.selectedUsersIds.length > 0) {
-    if (listBlock) listBlock.classList.remove("hidden");
+    if (listBlock) {
+      listBlock.classList.remove("hidden");
+      // pequeño “recuadro” visual para la lista (violeta claro en modo claro)
+      listBlock.style.cssText = `
+        margin-top:10px;padding:12px;border:1px solid ${appState.isDark ? 'rgba(148,163,184,0.25)' : '#c4b5fd'};
+        border-radius:12px;background:${appState.isDark ? 'rgba(2,6,23,0.55)' : '#ede9fe'};
+        box-shadow:0 8px 20px rgba(0,0,0,.15)
+      `;
+    }
     renderSelectedUsersList();
   } else {
     if (listBlock) listBlock.classList.add("hidden");
@@ -781,11 +847,10 @@ function addCurrentCandidateToList() {
   if (addMoreBtn) addMoreBtn.disabled = appState.selectedUsersIds.length >= 5;
 }
 
-/* Cambiar usuario actual (solo desbloquea para seleccionar a otro, conserva lista) */
+/* Cambiar usuario actual (ya no se usa para bloquear, se mantiene por compatibilidad) */
 function changeUserSelection() {
   appState.currentUserCandidateId = "";
-  lockUserSelectionFields(false);
-
+  // No bloquear / desbloquear: sin-op
   // limpiar inputs de búsqueda para evitar confusión
   const hiddenId = document.getElementById("usuarioSelect");
   const inputNombre = document.getElementById("usuarioSearchInput");
@@ -797,7 +862,7 @@ function changeUserSelection() {
   // Ocultar el recuadro de usuario seleccionado pero mantener la lista
   const box = document.getElementById("selectedUserCard");
   if (box) box.classList.add("hidden");
-
+  
   renderSelectedUsersBox();
 }
 
@@ -833,7 +898,7 @@ function renderCrearUserFields() {
     const userSearch = document.getElementById("usuarioSearchInput");
     if (userSearch) {
       userSearch.addEventListener("input", onUserSearchInput);
-      userSearch.addEventListener("keydown", onUserSearchEnter); // NUEVO: Enter → recuadro
+      userSearch.addEventListener("keydown", onUserSearchEnter); // Enter → recuadro
     }
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
@@ -847,14 +912,14 @@ function renderCrearUserFields() {
     if (btn) btn.addEventListener("click", onUserIdSearchClick);
   }
 
-  // Si ya hay un candidato o lista, mantener recuadro visible y bloquear si corresponde
+  // Mantener recuadro visible si corresponde (y NO bloquear campos)
   renderSelectedUsersBox();
-  lockUserSelectionFields(!!appState.currentUserCandidateId);
+  lockUserSelectionFields(false);
 }
 
 function handleMinisterioSelect(ministerioId) {
   const user = appState.users.find((u) => u.id === appState.ticketForm.usuario_id);
-  const ministerio = user?.ministerios_asignados?.find?.((m) => m.id === ministroId);
+  const ministerio = user?.ministerios_asignados.find((m) => m.id === ministerioId);
   const ministerioInfo = document.getElementById("ministerioInfo");
   const generatedId = document.getElementById("generatedId");
 
@@ -1021,7 +1086,7 @@ function clearTicketForm() {
   const userInfo = document.getElementById("userInfo");
   if (userInfo) userInfo.classList.add("hidden");
 
-  // desbloquear campos de usuario
+  // no bloqueo
   lockUserSelectionFields(false);
 }
 
@@ -1178,8 +1243,6 @@ function updateTicketsTab() {
     ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
   }
 }
-
-/* ===== AQUI TERMINA LA PRIMERA MITAD ===== */
 /* ====================== Historial ====================== */
 function ddmmy_to_Date(ddmmyyyy) {
   if (!ddmmyyyy) return null;
@@ -1196,8 +1259,6 @@ function createHistorialCard(ticket) {
   const usedPct = isFinite(usedRatio) ? (usedRatio * 100) : 0;
 
   const difference = presupuesto - gastado; // + ahorro, - exceso
-  const isUnderBudget = difference > 0;
-
   const excess = Math.max(0, -difference);
   const excessRatio = presupuesto > 0 ? excess / presupuesto : 0;
   const excessPct = isFinite(excessRatio) ? (excessRatio * 100) : 0;
@@ -1255,7 +1316,7 @@ function createHistorialCard(ticket) {
         </div>
         <div class="date-item">
           <span class="date-label">Completado</span>
-          <span class="date-value date-completado">${ticket.fecha_completado}</span>
+          <span class="date-value date-completed">${ticket.fecha_completado}</span>
         </div>
       </div>
 
@@ -1494,7 +1555,7 @@ function switchTab(tabName) {
   }
 }
 
-/* ====================== Carga Inicial (SIN MODO DEMO) ====================== */
+/* ====================== Carga Inicial (SIN DEMO) ====================== */
 async function loadAdminData() {
   appState.loading = true;
   updateStats();
@@ -1698,8 +1759,6 @@ function renderGestionarFields() {
     const btnS = document.getElementById("gestNameSearchBtn");
     const btnC = document.getElementById("gestNameClearBtn");
 
-    if (inp) inp.addEventListener("input", onGestNameInput);
-
     if (inp) inp.value = gestCriteria.nameQuery || "";
     if (f1)  f1.value  = gestCriteria.from || "";
     if (f2)  f2.value  = gestCriteria.to || "";
@@ -1721,6 +1780,9 @@ function renderGestionarFields() {
       updateTicketsTab();
     });
 
+    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
+    if (inp) inp.addEventListener("input", onGestNameInput);
+
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0%;">
@@ -1736,6 +1798,10 @@ function renderGestionarFields() {
     const f2    = document.getElementById("gestToDate");
     const btnS  = document.getElementById("gestIdSearchBtn");
     const btnC  = document.getElementById("gestIdClearBtn");
+
+    if (idInp) idInp.value = gestCriteria.idQuery || "";
+    if (f1)    f1.value   = gestCriteria.from || "";
+    if (f2)    f2.value   = gestCriteria.to || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       gestCriteria.idQuery = idInp?.value || "";
@@ -1765,6 +1831,8 @@ function renderGestionarFields() {
     const idInp = document.getElementById("gestIdInput");
     const btnS  = document.getElementById("gestIdSearchBtn");
     const btnC  = document.getElementById("gestIdClearBtn");
+
+    if (idInp) idInp.value = gestCriteria.idQuery || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       gestCriteria.idQuery = idInp?.value || "";
@@ -1822,8 +1890,6 @@ function renderHistorialFields() {
     const btnS = document.getElementById("histNameSearchBtnAdv");
     const btnC = document.getElementById("histNameClearBtnAdv");
 
-    if (inp) inp.addEventListener("input", onHistNameInput);
-
     if (inp) inp.value = histAdvCriteria.nameQuery || "";
     if (f1)  f1.value  = histAdvCriteria.from || "";
     if (f2)  f2.value  = histAdvCriteria.to || "";
@@ -1845,6 +1911,9 @@ function renderHistorialFields() {
       updateHistorialTab();
     });
 
+    // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
+    if (inp) inp.addEventListener("input", onHistNameInput);
+
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
@@ -1860,6 +1929,10 @@ function renderHistorialFields() {
     const f2    = document.getElementById("histToDateAdv");
     const btnS  = document.getElementById("histIdSearchBtnAdv");
     const btnC  = document.getElementById("histIdClearBtnAdv");
+
+    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
+    if (f1)    f1.value   = histAdvCriteria.from || "";
+    if (f2)    f2.value   = histAdvCriteria.to || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       histAdvCriteria.idQuery = idInp?.value || "";
@@ -1888,6 +1961,8 @@ function renderHistorialFields() {
     const idInp = document.getElementById("histIdInputAdv");
     const btnS  = document.getElementById("histIdSearchBtnAdv");
     const btnC  = document.getElementById("histIdClearBtnAdv");
+
+    if (idInp) idInp.value = histAdvCriteria.idQuery || "";
 
     if (btnS) btnS.addEventListener("click", () => {
       histAdvCriteria.idQuery = idInp?.value || "";
@@ -1948,7 +2023,7 @@ function renderAssignedUsersTable(items) {
     const id = u?.id_usuario ?? "";
     const correo = u?.correo ?? "";
     const cargo = u?.rol ?? "";
-    const dpi = u?.cui ?? "";
+    const dpi = u?.cui ?? ""; // “Cui en dpi”
     return `
       <tr>
         <td>${nombre}</td>
@@ -2026,8 +2101,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("addUserBtn");
   if (addBtn) addBtn.addEventListener("click", addCurrentCandidateToList);
 
+  // ❌ Ocultar botón "Cambiar usuario"
   const changeBtn = document.getElementById("changeUserBtn");
-  if (changeBtn) changeBtn.addEventListener("click", changeUserSelection);
+  if (changeBtn) changeBtn.style.display = "none";
+
+  // ➕ Botón "Borrar lista completa" (si existe en el HTML)
+  const clearBtn = document.getElementById("clearUsersBtn");
+  if (clearBtn) {
+    clearBtn.classList.remove("hidden");
+    clearBtn.addEventListener("click", clearSelectedUsersList);
+  }
 
   // MODAL EDICIÓN
   const editForm = document.getElementById("editForm");
