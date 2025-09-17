@@ -3,9 +3,21 @@
    Archivo: admin-script.js (SIN MODO DEMO)
    ========================================================================= */
 
+/* ====================== Tema (detectar desde LocalStorage/DOM) ====================== */
+function getInitialIsDark() {
+  // Respeta el valor persistido por la otra página:
+  try {
+    const t = localStorage.getItem("automatix.theme");
+    if (t === "light") return false;
+    if (t === "dark") return true;
+  } catch (e) {}
+  // Fallback: clase aplicada por el anti-flash en <html>
+  return document.documentElement.classList.contains("dark-theme");
+}
+
 /* ====================== Estado global ====================== */
 let appState = {
-  isDark: true,
+  isDark: getInitialIsDark(), // ← inicializado según localStorage / clase del documento
   showProfile: false,
   showSidebar: false,
   // Pestaña inicial (se eliminó "dashboard")
@@ -107,6 +119,9 @@ function getNextTicketId() {
 
 /* ====================== Tema ====================== */
 function updateTheme() {
+  // Re-resolver desde LocalStorage/clase HTML para que el tema SIEMPRE coincida
+  appState.isDark = getInitialIsDark();
+
   const body = document.body;
   const moonIcon = document.getElementById("moonIcon");
   const sunIcon = document.getElementById("sunIcon");
@@ -120,6 +135,9 @@ function updateTheme() {
     if (moonIcon) moonIcon.classList.add("hidden");
     if (sunIcon) sunIcon.classList.remove("hidden");
   }
+
+  // Re-render donde dependemos del tema (lista de usuarios en crear)
+  renderSelectedUsersBox();
 }
 
 /* ====================== SIDEBAR ====================== */
@@ -745,6 +763,7 @@ function renderSelectedUsersList() {
   const listEl = document.getElementById("selectedUsersList");
   if (!listEl) return;
 
+  // ====== Ajuste de estilo SOLO para la lista según el tema actual ======
   const isDark = appState.isDark;
   const cardBg = isDark ? 'rgba(31,41,55,0.9)' : '#ddd6fe';      // oscuro vs violeta claro (violet-200)
   const borderCol = isDark ? 'rgba(148,163,184,0.25)' : '#c4b5fd'; // slate-300-ish vs violet-300
@@ -2045,7 +2064,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
 
-  // TEMA
+  // TEMA (compat: si existe el botón en esta página)
   const themeToggle = document.getElementById("themeToggle");
   if (themeToggle) themeToggle.addEventListener("click", () => { appState.isDark = !appState.isDark; updateTheme(); });
 
@@ -2101,7 +2120,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("addUserBtn");
   if (addBtn) addBtn.addEventListener("click", addCurrentCandidateToList);
 
-  // ❌ Ocultar botón "Cambiar usuario"
+  // ❌ Ocultar botón "Cambiar usuario" (si existe en el HTML actual)
   const changeBtn = document.getElementById("changeUserBtn");
   if (changeBtn) changeBtn.style.display = "none";
 
@@ -2143,6 +2162,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // INIT
-  updateTheme();
+  updateTheme();      // asegura que la lista se pinte acorde al tema actual
   loadAdminData();
 });

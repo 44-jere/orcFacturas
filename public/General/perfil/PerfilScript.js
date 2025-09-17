@@ -6,6 +6,9 @@ const profileState = {
     loading: false
 };
 
+// ===== Clave global para el tema (compartida entre vistas) =====
+const THEME_KEY = "automatix.theme"; // 'dark' | 'light'
+
 // ===== Variables de elementos DOM =====
 let elements = {};
 
@@ -40,7 +43,7 @@ async function apiFetch(url, opts = {}) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeElements();
     setupEventListeners();
-    setupTheme();
+    setupTheme();          // <-- ya usa automatix.theme + html.dark + sync
     loadUserProfile();
     addAnimations();
 });
@@ -129,41 +132,93 @@ function setupEventListeners() {
     on(elements.logoutBtn, 'click', handleLogout);
 }
 
-/* ======================== Tema ======================== */
-function setupTheme() {
-    const savedTheme = localStorage.getItem('profile-theme');
-    if (savedTheme) {
-        profileState.isDark = savedTheme === 'dark';
-    } else {
-        profileState.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    updateThemeClasses();
+/* ======================== Tema (global, sincronizado) ======================== */
+function safeReadTheme() {
+    try {
+        const t = localStorage.getItem(THEME_KEY);
+        if (t === "dark" || t === "light") return t;
+    } catch {}
+    return null;
 }
+
+function setupTheme() {
+    // 1) Prioriza valor global guardado
+    const saved = safeReadTheme();
+
+    // 2) Respeta si <html> ya trae .dark (anti-flash en <head>)
+    // 3) Si no, usa preferencia del sistema
+    const preferDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialTheme =
+        saved ?? (document.documentElement.classList.contains("dark") ? "dark" : (preferDark ? "dark" : "light"));
+
+    profileState.isDark = initialTheme === "dark";
+    applyThemeToDom(profileState.isDark);
+
+    // Sincroniza cambios entre pestañas/ventanas
+    window.addEventListener("storage", (e) => {
+        if (e.key === THEME_KEY && (e.newValue === "light" || e.newValue === "dark")) {
+            profileState.isDark = e.newValue === "dark";
+            applyThemeToDom(profileState.isDark);
+        }
+    });
+}
+
 function toggleTheme() {
     profileState.isDark = !profileState.isDark;
-    localStorage.setItem('profile-theme', profileState.isDark ? 'dark' : 'light');
+    try { localStorage.setItem(THEME_KEY, profileState.isDark ? "dark" : "light"); } catch {}
+    applyThemeToDom(profileState.isDark);
+}
+
+function applyThemeToDom(isDark) {
+    // Tailwind (darkMode:'class') + data-theme
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+
+    // Fondo del <body>: preserva clases y solo cambia el esquema
+    const bodyEl = elements.body || document.body;
+    if (bodyEl) {
+        bodyEl.classList.add("min-h-screen");
+        bodyEl.classList.remove(
+          "bg-gradient-to-br","from-slate-900","via-slate-800","to-slate-900",
+          "from-gray-50","via-white","to-gray-100","bg-white"
+        );
+        if (isDark) {
+            bodyEl.classList.add("bg-gradient-to-br","from-slate-900","via-slate-800","to-slate-900");
+        } else {
+            bodyEl.classList.add("bg-gradient-to-br","from-gray-50","via-white","to-gray-100");
+        }
+    }
+
+    // Actualiza UI dependiente del tema (botón, íconos, textos, etc.)
     updateThemeClasses();
 }
+
 function updateThemeClasses() {
     const isDark = profileState.isDark;
 
-    if (elements.body) {
-        elements.body.className = `min-h-screen ${isDark ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'}`;
-    }
+    // Header
     if (elements.header) {
         elements.header.className = `sticky top-0 z-50 backdrop-blur-xl ${isDark ? 'bg-slate-900/80' : 'bg-white/80'} border-b ${isDark ? 'border-slate-700/50' : 'border-gray-200/50'}`;
     }
+
+    // Card principal
     if (elements.profileCard) {
         elements.profileCard.className = `${isDark ? 'bg-slate-800/50' : 'bg-white/80'} backdrop-blur-sm rounded-3xl border ${isDark ? 'border-slate-700/50' : 'border-gray-200/50'} p-8 mb-8 shadow-2xl`;
     }
+
+    // Botón toggle + tooltip
     if (elements.themeToggle) {
         elements.themeToggle.className = `w-10 h-10 ${isDark ? 'bg-slate-700/50' : 'bg-gray-200/50'} rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50`;
         elements.themeToggle.title = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
     }
+
+    // Íconos
     if (elements.moonIcon && elements.sunIcon) {
-        if (isDark) { elements.moonIcon.classList.remove('hidden'); elements.sunIcon.classList.add('hidden'); }
-        else { elements.moonIcon.classList.add('hidden'); elements.sunIcon.classList.remove('hidden'); }
+        elements.moonIcon.classList.toggle('hidden', !isDark);
+        elements.sunIcon.classList.toggle('hidden', isDark);
     }
+
+    // Varios textos / botones
     if (elements.backButton) {
         elements.backButton.className = `w-10 h-10 ${isDark ? 'bg-slate-700/50' : 'bg-gray-200/50'} rounded-xl transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-center`;
     }
@@ -194,8 +249,7 @@ function updateTabStyles() {
 /* ======================== Carga del perfil ======================== */
 // Mapea el JSON de /perfil/userData al modelo que usa la UI
 function normalizeProfile(api) {
-    // api esperado (según tu screenshot): 
-    // { id_usuario, rol, ministerio, nombre, correo, usuario, nit_persona, creado_en, actualizado_en, cui, encargado }
+    // api esperado: { id_usuario, rol, ministerio, nombre, correo, usuario, nit_persona, creado_en, actualizado_en, cui, encargado }
     const full = (api?.nombre || "").trim();
     const parts = full.split(/\s+/);
     const nombre = parts.shift() || "";
@@ -211,13 +265,13 @@ function normalizeProfile(api) {
         nombre,
         apellidos,
         email: api?.correo || "",
-        cui: api?.cui || "",                          // backend no lo envía
-        cargo: api?.rol ? api.rol.charAt(0).toUpperCase() + api.rol.slice(1) : "", // opcional
-        departamento: ministerioNombre || "",  // si no hay depto, mostramos ministerio
-        fecha_registro: api?.creado_en || "",  // yyyy-mm-dd...
+        cui: api?.cui || "",
+        cargo: api?.rol ? api.rol.charAt(0).toUpperCase() + api.rol.slice(1) : "",
+        departamento: ministerioNombre || "",
+        fecha_registro: api?.creado_en || "",
         ultimo_acceso: api?.actualizado_en || "",
         rol: (api?.rol === 'admin') ? 'admin' : (api?.rol || 'usuario'),
-        estado: "activo",                      // si no viene, asumimos activo
+        estado: "activo",
         foto_perfil: null,
         ministerios_asignados: ministerioNombre ? [
             { id: "min_api_1", nombre: ministerioNombre, codigo: ministerioCodigo, fecha_asignacion: api?.creado_en || "" }
