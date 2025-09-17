@@ -65,7 +65,7 @@ export async function traerUsuariosPorSuperiorPaginado({
   }
 }
 
-export async function buscarUsuarios({ id, nombre }) {
+export async function buscarUsuarios({ id, nombre, idSuperior }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
 
@@ -109,10 +109,10 @@ export async function buscarUsuarios({ id, nombre }) {
           ON u.id_ministerio = m.id_ministerio
         LEFT JOIN viaticos.usuarios sup
           ON u.id_superior = sup.id_usuario
-        WHERE u.id_usuario = $1
+        WHERE u.id_usuario = $1 AND u.id_rol = 3 AND u.id_superior = $2
         LIMIT ${LIMIT}
         `,
-        [Number(id)]
+        [Number(id), Number(idSuperior)]
       );
 
       // Devolvemos como lista para mantener formato homogéneo
@@ -147,11 +147,11 @@ export async function buscarUsuarios({ id, nombre }) {
         ON u.id_ministerio = m.id_ministerio
       LEFT JOIN viaticos.usuarios sup
         ON u.id_superior = sup.id_usuario
-      WHERE u.nombre ILIKE $1
+      WHERE u.nombre ILIKE $1 AND u.id_rol = 3 AND u.id_superior = $2
       ORDER BY u.nombre ASC, u.id_usuario ASC
       LIMIT ${LIMIT}
       `,
-      [pattern]
+      [pattern,]Number(idSuperior)
     );
 
     return {

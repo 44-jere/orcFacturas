@@ -201,6 +201,7 @@ adminRouter.get("/subordinados/buscarUsuario", async (req, res) => {
     const resultado = await req.db.administradorBuscarUsuarios({
       id: id ? Number(id) : undefined,
       nombre: nombre || undefined,
+      idSuperior: decoded.id,
     });
 
     if (resultado?.error) {
