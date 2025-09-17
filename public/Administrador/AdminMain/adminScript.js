@@ -22,9 +22,9 @@ let appState = {
   showSidebar: false,
   // Pestaña inicial (se eliminó "dashboard")
   activeTab: "crear",
-  users: [],                 // SIN DEMO
-  tickets: [],               // SIN DEMO
-  historicalTickets: [],     // SIN DEMO
+  users: [], // SIN DEMO
+  tickets: [], // SIN DEMO
+  historicalTickets: [], // SIN DEMO
   loading: false,
   creating: false,
   ticketForm: {
@@ -38,24 +38,30 @@ let appState = {
   },
 
   /* ====== NUEVO: selección múltiple en Crear Ticket ====== */
-  currentUserCandidateId: "",     // id del usuario actualmente "seleccionado" (antes de agregar a lista)
-  selectedUsersIds: [],           // ids confirmados (máx 5)
+  currentUserCandidateId: "", // id del usuario actualmente "seleccionado" (antes de agregar a lista)
+  selectedUsersIds: [], // ids confirmados (máx 5)
 
   /* ====== NUEVO: total de usuarios desde API ====== */
-  usersTotal: null,               // se pobla con GET /admin/subordinados (campo "total")
+  usersTotal: null, // se pobla con GET /admin/subordinados (campo "total")
 
   /* ====== NUEVO: búsqueda incremental ====== */
   searchTimeout: null,
-  gestSearchTimeout: null,     // debounce para "Gestionar → Nombre"
-  histSearchTimeout: null,     // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
-  searchResults: [],              // resultados de búsqueda incremental
+  gestSearchTimeout: null, // debounce para "Gestionar → Nombre"
+  histSearchTimeout: null, // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
+  searchResults: [], // resultados de búsqueda incremental
 };
 
 /* ====== Filtros Gestionar ====== */
 let gestCriteria = { mode: "", nameQuery: "", idQuery: "", from: "", to: "" };
 
 /* ====== NUEVO: Filtros Historial (sistema igual a Gestionar) ====== */
-let histAdvCriteria = { mode: "", nameQuery: "", idQuery: "", from: "", to: "" };
+let histAdvCriteria = {
+  mode: "",
+  nameQuery: "",
+  idQuery: "",
+  from: "",
+  to: "",
+};
 
 /* ====================== Utilidades ====================== */
 function showNotification(message, type = "success") {
@@ -63,9 +69,21 @@ function showNotification(message, type = "success") {
   notification.className = "notification";
 
   const colors = {
-    success: { bg: "rgba(16, 185, 129, 0.2)", border: "rgba(16, 185, 129, 0.3)", text: "#6ee7b7" },
-    error:   { bg: "rgba(239, 68, 68, 0.2)", border: "rgba(239, 68, 68, 0.3)", text: "#fca5a5" },
-    info:    { bg: "rgba(59, 130, 246, 0.2)", border: "rgba(59, 130, 246, 0.3)", text: "#60a5fa" },
+    success: {
+      bg: "rgba(16, 185, 129, 0.2)",
+      border: "rgba(16, 185, 129, 0.3)",
+      text: "#6ee7b7",
+    },
+    error: {
+      bg: "rgba(239, 68, 68, 0.2)",
+      border: "rgba(239, 68, 68, 0.3)",
+      text: "#fca5a5",
+    },
+    info: {
+      bg: "rgba(59, 130, 246, 0.2)",
+      border: "rgba(59, 130, 246, 0.3)",
+      text: "#60a5fa",
+    },
   };
 
   const color = colors[type] || colors.success;
@@ -167,16 +185,20 @@ function closeSidebar() {
 
 function updateSidebarBadges() {
   const sidebarTicketCount = document.getElementById("sidebarTicketCount");
-  const sidebarHistorialCount = document.getElementById("sidebarHistorialCount");
-  if (sidebarTicketCount) sidebarTicketCount.textContent = appState.tickets.length;
-  if (sidebarHistorialCount) sidebarHistorialCount.textContent = appState.historicalTickets.length;
+  const sidebarHistorialCount = document.getElementById(
+    "sidebarHistorialCount"
+  );
+  if (sidebarTicketCount)
+    sidebarTicketCount.textContent = appState.tickets.length;
+  if (sidebarHistorialCount)
+    sidebarHistorialCount.textContent = appState.historicalTickets.length;
 }
 
 function updateSidebarActiveState() {
-  const navItems = document.querySelectorAll('.nav-item[data-tab]');
-  navItems.forEach(item => {
-    if (item.dataset.tab === appState.activeTab) item.classList.add('active');
-    else item.classList.remove('active');
+  const navItems = document.querySelectorAll(".nav-item[data-tab]");
+  navItems.forEach((item) => {
+    if (item.dataset.tab === appState.activeTab) item.classList.add("active");
+    else item.classList.remove("active");
   });
 }
 
@@ -195,31 +217,43 @@ function updateStats() {
     if (totalUsers) totalUsers.textContent = "...";
     if (totalBudget) totalBudget.textContent = "...";
   } else {
-    const activeCount = appState.tickets.filter((t) => t.estado === "activo").length;
-    const budget = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto || 0), 0);
+    const activeCount = appState.tickets.filter(
+      (t) => t.estado === "activo"
+    ).length;
+    const budget = appState.tickets.reduce(
+      (sum, t) => sum + parseFloat(t.presupuesto || 0),
+      0
+    );
 
     if (totalTickets) totalTickets.textContent = appState.tickets.length;
     if (activeTickets) activeTickets.textContent = activeCount;
 
     // ===== ÚNICO CAMBIO: usar valor "total" del endpoint si está disponible =====
     const usersTotalValue =
-      typeof appState.usersTotal === "number" ? appState.usersTotal : appState.users.length;
+      typeof appState.usersTotal === "number"
+        ? appState.usersTotal
+        : appState.users.length;
     if (totalUsers) totalUsers.textContent = usersTotalValue;
 
     if (totalBudget) totalBudget.textContent = `Q${formatCurrency(budget)}`;
     if (ticketCount) ticketCount.textContent = appState.tickets.length;
-    if (historialCount) historialCount.textContent = appState.historicalTickets.length;
+    if (historialCount)
+      historialCount.textContent = appState.historicalTickets.length;
   }
   updateSidebarBadges();
 }
 
 function generateDashboardStats() {
-  const totalTicketsCreated = appState.tickets.length + appState.historicalTickets.length;
-  const totalBudgetAssigned = appState.tickets.reduce((sum, t) => sum + parseFloat(t.presupuesto || 0), 0);
-  const totalSpentAmount = [...appState.tickets, ...appState.historicalTickets].reduce(
-    (sum, t) => sum + parseFloat(t.gastado || 0),
+  const totalTicketsCreated =
+    appState.tickets.length + appState.historicalTickets.length;
+  const totalBudgetAssigned = appState.tickets.reduce(
+    (sum, t) => sum + parseFloat(t.presupuesto || 0),
     0
   );
+  const totalSpentAmount = [
+    ...appState.tickets,
+    ...appState.historicalTickets,
+  ].reduce((sum, t) => sum + parseFloat(t.gastado || 0), 0);
   const avgTicketBudget = totalBudgetAssigned / (appState.tickets.length || 1);
 
   return {
@@ -241,8 +275,8 @@ function updateMinisterioStats() {
 
   ministerioStats.innerHTML = ministerios
     .map((codigo) => {
-      const count = [...appState.tickets, ...appState.historicalTickets].filter((t) =>
-        String(t.id).startsWith(codigo)
+      const count = [...appState.tickets, ...appState.historicalTickets].filter(
+        (t) => String(t.id).startsWith(codigo)
       ).length;
       const percentage = total > 0 ? (count / total) * 100 : 0;
 
@@ -270,9 +304,12 @@ function updateDashboard() {
   const statusActive = document.getElementById("statusActive");
   const statusCompleted = document.getElementById("statusCompleted");
 
-  if (dashTotalTickets) dashTotalTickets.textContent = stats.totalTicketsCreated;
-  if (dashTotalSpent) dashTotalSpent.textContent = `Q${formatCurrency(stats.totalSpentAmount)}`;
-  if (dashAvgTicket) dashAvgTicket.textContent = `Q${formatCurrency(stats.avgTicketBudget)}`;
+  if (dashTotalTickets)
+    dashTotalTickets.textContent = stats.totalTicketsCreated;
+  if (dashTotalSpent)
+    dashTotalSpent.textContent = `Q${formatCurrency(stats.totalSpentAmount)}`;
+  if (dashAvgTicket)
+    dashAvgTicket.textContent = `Q${formatCurrency(stats.avgTicketBudget)}`;
   if (statusActive) statusActive.textContent = stats.activeTickets;
   if (statusCompleted) statusCompleted.textContent = stats.completedTickets;
 
@@ -289,11 +326,13 @@ async function searchUsersIncremental(query) {
   try {
     // ▶️ Usar /buscarUsuario con parámetro ?nombre=
     const response = await fetch(
-      `http://localhost:8080/admin/subordinados/buscarUsuario?nombre=${encodeURIComponent(query)}`,
+      `http://localhost:8080/admin/subordinados/buscarUsuario?nombre=${encodeURIComponent(
+        query
+      )}`,
       {
         method: "GET",
-        headers: { "Accept": "application/json" },
-        credentials: "include"
+        headers: { Accept: "application/json" },
+        credentials: "include",
       }
     );
 
@@ -317,11 +356,16 @@ async function searchUserById(userId) {
   }
 
   try {
-    const response = await fetch(`http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(userId)}`, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-      credentials: "include"
-    });
+    const response = await fetch(
+      `http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(
+        userId
+      )}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+      }
+    );
 
     if (response.ok) {
       const data = await response.json();
@@ -386,7 +430,9 @@ function handleUserSelect(userId, userData = null) {
   let user = userData;
   if (!user && userId) {
     // Si no se proporciona userData, buscar en searchResults
-    user = appState.searchResults.find((u) => String(u.id_usuario) === String(userId));
+    user = appState.searchResults.find(
+      (u) => String(u.id_usuario) === String(userId)
+    );
   }
 
   const userInfo = document.getElementById("userInfo");
@@ -405,7 +451,8 @@ function handleUserSelect(userId, userData = null) {
 
     if (ministerioSelect) {
       ministerioSelect.disabled = false;
-      ministerioSelect.innerHTML = '<option value="">Seleccionar ministerio...</option>';
+      ministerioSelect.innerHTML =
+        '<option value="">Seleccionar ministerio...</option>';
 
       // Como la API devuelve solo un ministerio por usuario, agregamos esa opción
       const option = document.createElement("option");
@@ -417,7 +464,8 @@ function handleUserSelect(userId, userData = null) {
     userInfo.classList.add("hidden");
     if (ministerioSelect) {
       ministerioSelect.disabled = true;
-      ministerioSelect.innerHTML = '<option value="">Primero selecciona un usuario</option>';
+      ministerioSelect.innerHTML =
+        '<option value="">Primero selecciona un usuario</option>';
     }
   }
 
@@ -425,7 +473,12 @@ function handleUserSelect(userId, userData = null) {
 }
 
 /* === Helper genérico para dropdown incremental en otros módulos === */
-function createIncrementalDropdown(dropdownId, results, inputElement, onSelect) {
+function createIncrementalDropdown(
+  dropdownId,
+  results,
+  inputElement,
+  onSelect
+) {
   // Remover dropdown existente con ese id
   const existing = document.getElementById(dropdownId);
   if (existing) existing.remove();
@@ -440,9 +493,13 @@ function createIncrementalDropdown(dropdownId, results, inputElement, onSelect) 
     left: 0;
     right: 0;
     margin-top: 6px;
-    background: ${appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"};
+    background: ${
+      appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"
+    };
     color: ${appState.isDark ? "#e5e7eb" : "#111827"};
-    border: 1px solid ${appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"};
+    border: 1px solid ${
+      appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"
+    };
     border-radius: 10px;
     max-height: 240px;
     overflow-y: auto;
@@ -461,8 +518,12 @@ function createIncrementalDropdown(dropdownId, results, inputElement, onSelect) 
     `;
     option.textContent = user.nombre;
 
-    option.addEventListener("mouseenter", () => { option.style.backgroundColor = "var(--hover-bg)"; });
-    option.addEventListener("mouseleave", () => { option.style.backgroundColor = "transparent"; });
+    option.addEventListener("mouseenter", () => {
+      option.style.backgroundColor = "var(--hover-bg)";
+    });
+    option.addEventListener("mouseleave", () => {
+      option.style.backgroundColor = "transparent";
+    });
     option.addEventListener("click", () => {
       onSelect(user);
       dropdown.remove();
@@ -503,9 +564,13 @@ function createUserDropdown(results, inputElement) {
     left: 0;
     right: 0;
     margin-top: 6px;
-    background: ${appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"};
+    background: ${
+      appState.isDark ? "rgba(17, 24, 39, 0.98)" : "rgba(255, 255, 255, 0.98)"
+    };
     color: ${appState.isDark ? "#e5e7eb" : "#111827"};
-    border: 1px solid ${appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"};
+    border: 1px solid ${
+      appState.isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(17, 24, 39, 0.12)"
+    };
     border-radius: 10px;
     max-height: 240px;
     overflow-y: auto;
@@ -524,8 +589,12 @@ function createUserDropdown(results, inputElement) {
     `;
     option.textContent = user.nombre;
 
-    option.addEventListener("mouseenter", () => { option.style.backgroundColor = "var(--hover-bg)"; });
-    option.addEventListener("mouseleave", () => { option.style.backgroundColor = "transparent"; });
+    option.addEventListener("mouseenter", () => {
+      option.style.backgroundColor = "var(--hover-bg)";
+    });
+    option.addEventListener("mouseleave", () => {
+      option.style.backgroundColor = "transparent";
+    });
     option.addEventListener("click", () => {
       const hiddenId = document.getElementById("usuarioSelect");
       if (inputElement) inputElement.value = user.nombre || "";
@@ -577,10 +646,10 @@ async function onGestNameInput() {
   appState.gestSearchTimeout = setTimeout(async () => {
     const raw = await searchUsersIncremental(query);
     // === filtro progresivo por tokens (prefijos)
-    const filtered = raw.filter(u => tokensPrefixMatch(query, u.nombre));
+    const filtered = raw.filter((u) => tokensPrefixMatch(query, u.nombre));
     createIncrementalDropdown("gestNameDropdown", filtered, input, (user) => {
       input.value = user.nombre;
-      gestCriteria.nameQuery = user.nombre;     // usamos el nombre seleccionado
+      gestCriteria.nameQuery = user.nombre; // usamos el nombre seleccionado
       updateTicketsTab();
     });
   }, 300);
@@ -605,10 +674,10 @@ async function onHistNameInput() {
   appState.histSearchTimeout = setTimeout(async () => {
     const raw = await searchUsersIncremental(query);
     // === filtro progresivo por tokens (prefijos)
-    const filtered = raw.filter(u => tokensPrefixMatch(query, u.nombre));
+    const filtered = raw.filter((u) => tokensPrefixMatch(query, u.nombre));
     createIncrementalDropdown("histNameDropdown", filtered, input, (user) => {
       input.value = user.nombre;
-      histAdvCriteria.nameQuery = user.nombre;  // usamos el nombre seleccionado
+      histAdvCriteria.nameQuery = user.nombre; // usamos el nombre seleccionado
       updateHistorialTab();
     });
   }, 300);
@@ -640,7 +709,7 @@ async function onUserSearchInput() {
   appState.searchTimeout = setTimeout(async () => {
     const raw = await searchUsersIncremental(query);
     // === filtro progresivo por tokens (prefijos) para “Crear”
-    const results = raw.filter(u => tokensPrefixMatch(query, u.nombre));
+    const results = raw.filter((u) => tokensPrefixMatch(query, u.nombre));
     createUserDropdown(results, input);
   }, 300);
 }
@@ -685,7 +754,9 @@ async function onUserIdSearchClick() {
   // guardar en cache para que el recuadro lo encuentre
   appState.searchResults = [
     user,
-    ...appState.searchResults.filter(u => String(u.id_usuario) !== String(user.id_usuario))
+    ...appState.searchResults.filter(
+      (u) => String(u.id_usuario) !== String(user.id_usuario)
+    ),
   ];
 
   updateCreateButton();
@@ -710,11 +781,13 @@ function lockUserSelectionFields(lock = true) {
 
 function getUserByIdSafe(id) {
   // Buscar primero en searchResults (datos más recientes de la API)
-  const fromSearch = appState.searchResults.find(u => String(u.id_usuario) === String(id));
+  const fromSearch = appState.searchResults.find(
+    (u) => String(u.id_usuario) === String(id)
+  );
   if (fromSearch) return fromSearch;
-  
+
   // Fallback a users (si existe)
-  return appState.users.find(u => String(u.id) === String(id)) || null;
+  return appState.users.find((u) => String(u.id) === String(id)) || null;
 }
 
 function showSelectedUserBox(userId) {
@@ -743,7 +816,9 @@ function showSelectedUserBox(userId) {
 }
 
 function removeUserFromList(uid) {
-  const i = appState.selectedUsersIds.findIndex(x => String(x) === String(uid));
+  const i = appState.selectedUsersIds.findIndex(
+    (x) => String(x) === String(uid)
+  );
   if (i !== -1) {
     appState.selectedUsersIds.splice(i, 1);
     renderSelectedUsersBox();
@@ -765,15 +840,15 @@ function renderSelectedUsersList() {
 
   // ====== Ajuste de estilo SOLO para la lista según el tema actual ======
   const isDark = appState.isDark;
-  const cardBg = isDark ? 'rgba(31,41,55,0.9)' : '#ddd6fe';      // oscuro vs violeta claro (violet-200)
-  const borderCol = isDark ? 'rgba(148,163,184,0.25)' : '#c4b5fd'; // slate-300-ish vs violet-300
-  const trashColor = isDark ? '#ffffff' : '#4c1d95';              // blanco en dark, violeta oscuro en light
+  const cardBg = isDark ? "rgba(31,41,55,0.9)" : "#ddd6fe"; // oscuro vs violeta claro (violet-200)
+  const borderCol = isDark ? "rgba(148,163,184,0.25)" : "#c4b5fd"; // slate-300-ish vs violet-300
+  const trashColor = isDark ? "#ffffff" : "#4c1d95"; // blanco en dark, violeta oscuro en light
 
   const items = appState.selectedUsersIds.map((uid, idx) => {
     const u = getUserByIdSafe(uid);
     const nombre = u ? u.nombre : `Usuario ${uid}`;
-    const cargo  = u ? (u.rol || u.cargo || "") : "";
-    const idTxt  = u ? (u.id_usuario || u.id) : uid;
+    const cargo = u ? u.rol || u.cargo || "" : "";
+    const idTxt = u ? u.id_usuario || u.id : uid;
 
     // Tarjeta de cada usuario + ícono de basurero (inline SVG)
     return `
@@ -783,11 +858,15 @@ function renderSelectedUsersList() {
         border-radius:10px;background:${cardBg};
         backdrop-filter:blur(6px);
       ">
-        <div style="display:flex;gap:10px;align-items:center;color:${isDark ? '#e5e7eb' : '#1f2937'};">
+        <div style="display:flex;gap:10px;align-items:center;color:${
+          isDark ? "#e5e7eb" : "#1f2937"
+        };">
           <div style="
             width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-            font-weight:600;border:1px solid ${borderCol}; color:${isDark ? '#e5e7eb' : '#1f2937'};
-            background:${isDark ? 'rgba(17,24,39,0.6)' : '#ede9fe'};
+            font-weight:600;border:1px solid ${borderCol}; color:${
+      isDark ? "#e5e7eb" : "#1f2937"
+    };
+            background:${isDark ? "rgba(17,24,39,0.6)" : "#ede9fe"};
           ">${idx + 1}</div>
           <div>
             <div style="font-weight:600;">${nombre}</div>
@@ -809,7 +888,9 @@ function renderSelectedUsersList() {
     `;
   });
 
-  listEl.innerHTML = items.join("") || `<li class="selected-user-item empty">No hay usuarios en la lista</li>`;
+  listEl.innerHTML =
+    items.join("") ||
+    `<li class="selected-user-item empty">No hay usuarios en la lista</li>`;
 }
 
 function renderSelectedUsersBox() {
@@ -817,23 +898,30 @@ function renderSelectedUsersBox() {
   const listBlock = document.getElementById("selectedUsersBlock");
   if (!box) return;
 
-  if (!appState.currentUserCandidateId && appState.selectedUsersIds.length === 0) {
+  if (
+    !appState.currentUserCandidateId &&
+    appState.selectedUsersIds.length === 0
+  ) {
     box.classList.add("hidden");
     if (listBlock) listBlock.classList.add("hidden");
     // No bloqueo de campos
     lockUserSelectionFields(false);
     return;
   }
-  
+
   box.classList.remove("hidden");
-  
+
   if (appState.selectedUsersIds.length > 0) {
     if (listBlock) {
       listBlock.classList.remove("hidden");
       // pequeño “recuadro” visual para la lista (violeta claro en modo claro)
       listBlock.style.cssText = `
-        margin-top:10px;padding:12px;border:1px solid ${appState.isDark ? 'rgba(148,163,184,0.25)' : '#c4b5fd'};
-        border-radius:12px;background:${appState.isDark ? 'rgba(2,6,23,0.55)' : '#ede9fe'};
+        margin-top:10px;padding:12px;border:1px solid ${
+          appState.isDark ? "rgba(148,163,184,0.25)" : "#c4b5fd"
+        };
+        border-radius:12px;background:${
+          appState.isDark ? "rgba(2,6,23,0.55)" : "#ede9fe"
+        };
         box-shadow:0 8px 20px rgba(0,0,0,.15)
       `;
     }
@@ -881,7 +969,7 @@ function changeUserSelection() {
   // Ocultar el recuadro de usuario seleccionado pero mantener la lista
   const box = document.getElementById("selectedUserCard");
   if (box) box.classList.add("hidden");
-  
+
   renderSelectedUsersBox();
 }
 
@@ -937,8 +1025,12 @@ function renderCrearUserFields() {
 }
 
 function handleMinisterioSelect(ministerioId) {
-  const user = appState.users.find((u) => u.id === appState.ticketForm.usuario_id);
-  const ministerio = user?.ministerios_asignados.find((m) => m.id === ministerioId);
+  const user = appState.users.find(
+    (u) => u.id === appState.ticketForm.usuario_id
+  );
+  const ministerio = user?.ministerios_asignados.find(
+    (m) => m.id === ministerioId
+  );
   const ministerioInfo = document.getElementById("ministerioInfo");
   const generatedId = document.getElementById("generatedId");
 
@@ -989,7 +1081,7 @@ async function createTicket() {
   const anyUser =
     appState.selectedUsersIds.length > 0
       ? true
-      : (appState.currentUserCandidateId || appState.ticketForm.usuario_id);
+      : appState.currentUserCandidateId || appState.ticketForm.usuario_id;
 
   if (
     !anyUser ||
@@ -1045,9 +1137,15 @@ async function createTicket() {
     updateTicketsTab();
 
     if (createdIds.length === 1) {
-      showNotification(`Ticket ${createdIds[0]} creado exitosamente!`, "success");
+      showNotification(
+        `Ticket ${createdIds[0]} creado exitosamente!`,
+        "success"
+      );
     } else {
-      showNotification(`Se crearon ${createdIds.length} tickets: ${createdIds.join(", ")}`, "success");
+      showNotification(
+        `Se crearon ${createdIds.length} tickets: ${createdIds.join(", ")}`,
+        "success"
+      );
     }
   } catch (err) {
     console.error("Error creando ticket:", err);
@@ -1097,7 +1195,8 @@ function clearTicketForm() {
   if (ministerioSelect) {
     ministerioSelect.value = "";
     ministerioSelect.disabled = true;
-    ministerioSelect.innerHTML = '<option value="">Primero selecciona un usuario</option>';
+    ministerioSelect.innerHTML =
+      '<option value="">Primero selecciona un usuario</option>';
   }
   if (monedaSelect) monedaSelect.value = "Q";
 
@@ -1115,12 +1214,12 @@ function createTicketCard(ticket) {
   const gastado = parseFloat(ticket.gastado || 0);
 
   const usedRatio = presupuesto > 0 ? gastado / presupuesto : 0;
-  const usedPct = isFinite(usedRatio) ? (usedRatio * 100) : 0;
+  const usedPct = isFinite(usedRatio) ? usedRatio * 100 : 0;
 
   const available = Math.max(0, presupuesto - gastado);
   const excess = Math.max(0, gastado - presupuesto);
   const excessRatio = presupuesto > 0 ? excess / presupuesto : 0;
-  const excessPct = isFinite(excessRatio) ? (excessRatio * 100) : 0;
+  const excessPct = isFinite(excessRatio) ? excessRatio * 100 : 0;
 
   return `
     <div class="ticket-card">
@@ -1130,7 +1229,9 @@ function createTicketCard(ticket) {
           <p class="ticket-ministry">${ticket.ministerio}</p>
           <p class="ticket-assigned">Asignado a: ${ticket.usuario_asignado}</p>
         </div>
-        <span class="ticket-status ${ticket.estado === "activo" ? "status-active" : "status-completed"}">
+        <span class="ticket-status ${
+          ticket.estado === "activo" ? "status-active" : "status-completed"
+        }">
           ${ticket.estado === "activo" ? "Activo" : "Completado"}
         </span>
       </div>
@@ -1140,32 +1241,58 @@ function createTicketCard(ticket) {
       <div class="ticket-budget">
         <div class="budget-row">
           <span class="budget-label">Presupuesto</span>
-          <span class="budget-amount budget-total">Q${formatCurrency(presupuesto)}</span>
+          <span class="budget-amount budget-total">Q${formatCurrency(
+            presupuesto
+          )}</span>
         </div>
         <div class="budget-row">
           <span class="budget-label">Gastado</span>
-          <span class="budget-amount budget-spent">Q${formatCurrency(gastado)}</span>
+          <span class="budget-amount budget-spent">Q${formatCurrency(
+            gastado
+          )}</span>
         </div>
         <div class="budget-row">
-          <span class="budget-label">${excess > 0 ? "Exceso" : "Disponible"}</span>
-          <span class="budget-amount ${excess > 0 ? "savings-negative" : "budget-available"}">
-            ${excess > 0 ? `Q${formatCurrency(excess)}` : `Q${formatCurrency(available)}`}
+          <span class="budget-label">${
+            excess > 0 ? "Exceso" : "Disponible"
+          }</span>
+          <span class="budget-amount ${
+            excess > 0 ? "savings-negative" : "budget-available"
+          }">
+            ${
+              excess > 0
+                ? `Q${formatCurrency(excess)}`
+                : `Q${formatCurrency(available)}`
+            }
           </span>
         </div>
 
         <div class="budget-progress" title="Uso del presupuesto">
-          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}%"></div>
+          <div class="budget-fill" style="width: ${Math.min(
+            usedPct,
+            100
+          )}%"></div>
         </div>
         <p class="budget-percentage">
-          ${isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"}% utilizado
+          ${
+            isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"
+          }% utilizado
         </p>
 
-        ${excess > 0 ? `
+        ${
+          excess > 0
+            ? `
           <div class="excess-progress" title="Exceso sobre el presupuesto">
-            <div class="excess-fill" style="width: ${Math.min(excessPct, 100)}%"></div>
+            <div class="excess-fill" style="width: ${Math.min(
+              excessPct,
+              100
+            )}%"></div>
           </div>
-          <p class="excess-text">Exceso: Q${formatCurrency(excess)} (${excessPct.toFixed(1)}%)</p>
-        ` : ``}
+          <p class="excess-text">Exceso: Q${formatCurrency(
+            excess
+          )} (${excessPct.toFixed(1)}%)</p>
+        `
+            : ``
+        }
       </div>
 
       <div class="ticket-dates">
@@ -1174,9 +1301,15 @@ function createTicketCard(ticket) {
       </div>
 
       <div class="ticket-actions">
-        <button class="action-btn secondary" onclick="editTicket('${ticket.id}')">Editar</button>
-        <button class="action-btn primary" onclick="viewExpenses('${ticket.id}')">Ver Gastos</button>
-        <button class="action-btn danger" onclick="deleteTicket('${ticket.id}')">Eliminar</button>
+        <button class="action-btn secondary" onclick="editTicket('${
+          ticket.id
+        }')">Editar</button>
+        <button class="action-btn primary" onclick="viewExpenses('${
+          ticket.id
+        }')">Ver Gastos</button>
+        <button class="action-btn danger" onclick="deleteTicket('${
+          ticket.id
+        }')">Eliminar</button>
       </div>
     </div>
   `;
@@ -1197,17 +1330,19 @@ function updateTicketsTab() {
   let end = null;
   if (to) {
     end = new Date(to);
-    end.setHours(23,59,59,999);
+    end.setHours(23, 59, 59, 999);
   }
 
   if (mode === "nombre") {
     const q = (gestCriteria.nameQuery || "").toLowerCase();
     if (q) {
-      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(q));
+      list = list.filter((t) =>
+        (t.usuario_asignado || "").toLowerCase().includes(q)
+      );
     }
     // aplicar fecha si viene
     if (from || end) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const dt = ddmmy_to_Date(t.fecha_creacion);
         if (!dt) return false;
         if (from && dt < from) return false;
@@ -1218,7 +1353,7 @@ function updateTicketsTab() {
   } else if (mode === "id") {
     const idQ = parseInt(gestCriteria.idQuery, 10);
     if (!isNaN(idQ)) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const n = Number(t.id);
         return Number.isFinite(n) && n === idQ;
       });
@@ -1227,7 +1362,7 @@ function updateTicketsTab() {
     }
     // aplicar fecha si viene
     if (from || end) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const dt = ddmmy_to_Date(t.fecha_creacion);
         if (!dt) return false;
         if (from && dt < from) return false;
@@ -1238,7 +1373,7 @@ function updateTicketsTab() {
   } else if (mode === "id-ticket") {
     const idQ = parseInt(gestCriteria.idQuery, 10);
     if (!isNaN(idQ)) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const n = Number(t.id);
         return Number.isFinite(n) && n === idQ;
       });
@@ -1275,12 +1410,12 @@ function createHistorialCard(ticket) {
   const gastado = parseFloat(ticket.gastado || 0);
 
   const usedRatio = presupuesto > 0 ? gastado / presupuesto : 0;
-  const usedPct = isFinite(usedRatio) ? (usedRatio * 100) : 0;
+  const usedPct = isFinite(usedRatio) ? usedRatio * 100 : 0;
 
   const difference = presupuesto - gastado; // + ahorro, - exceso
   const excess = Math.max(0, -difference);
   const excessRatio = presupuesto > 0 ? excess / presupuesto : 0;
-  const excessPct = isFinite(excessRatio) ? (excessRatio * 100) : 0;
+  const excessPct = isFinite(excessRatio) ? excessRatio * 100 : 0;
 
   return `
     <div class="historical-card">
@@ -1298,30 +1433,52 @@ function createHistorialCard(ticket) {
       <div class="ticket-budget">
         <div class="budget-row">
           <span class="budget-label">Presupuesto asignado</span>
-          <span class="budget-amount budget-total">Q${formatCurrency(presupuesto)}</span>
+          <span class="budget-amount budget-total">Q${formatCurrency(
+            presupuesto
+          )}</span>
         </div>
         <div class="budget-row">
           <span class="budget-label">Total gastado</span>
-          <span class="budget-amount budget-spent">Q${formatCurrency(gastado)}</span>
+          <span class="budget-amount budget-spent">Q${formatCurrency(
+            gastado
+          )}</span>
         </div>
         <div class="budget-row">
-          <span class="budget-label">${difference > 0 ? "Ahorro" : "Exceso"}</span>
-          <span class="budget-amount ${difference > 0 ? "savings-positive" : "savings-negative"}">
+          <span class="budget-label">${
+            difference > 0 ? "Ahorro" : "Exceso"
+          }</span>
+          <span class="budget-amount ${
+            difference > 0 ? "savings-positive" : "savings-negative"
+          }">
             Q${formatCurrency(Math.abs(difference))}
           </span>
         </div>
 
         <div class="budget-progress" title="Uso del presupuesto">
-          <div class="budget-fill" style="width: ${Math.min(usedPct, 100)}%"></div>
+          <div class="budget-fill" style="width: ${Math.min(
+            usedPct,
+            100
+          )}%"></div>
         </div>
-        <p class="budget-percentage">${Math.min(usedPct, 100).toFixed(1)}% del presupuesto</p>
+        <p class="budget-percentage">${Math.min(usedPct, 100).toFixed(
+          1
+        )}% del presupuesto</p>
 
-        ${difference < 0 ? `
+        ${
+          difference < 0
+            ? `
           <div class="excess-progress" title="Exceso sobre el presupuesto">
-            <div class="excess-fill" style="width: ${Math.min((Math.abs(difference)/presupuesto)*100, 100)}%"></div>
+            <div class="excess-fill" style="width: ${Math.min(
+              (Math.abs(difference) / presupuesto) * 100,
+              100
+            )}%"></div>
           </div>
-          <p class="excess-text">Exceso: Q${formatCurrency(Math.abs(difference))} (${((Math.abs(difference)/presupuesto)*100).toFixed(1)}%)</p>
-        ` : ``}
+          <p class="excess-text">Exceso: Q${formatCurrency(
+            Math.abs(difference)
+          )} (${((Math.abs(difference) / presupuesto) * 100).toFixed(1)}%)</p>
+        `
+            : ``
+        }
       </div>
 
       <div class="historical-dates">
@@ -1335,13 +1492,19 @@ function createHistorialCard(ticket) {
         </div>
         <div class="date-item">
           <span class="date-label">Completado</span>
-          <span class="date-value date-completed">${ticket.fecha_completado}</span>
+          <span class="date-value date-completed">${
+            ticket.fecha_completado
+          }</span>
         </div>
       </div>
 
       <div class="ticket-actions">
-        <button class="action-btn primary" onclick="viewDetails('${ticket.id}')">Ver Detalles</button>
-        <button class="action-btn secondary" onclick="openReopenModal('${ticket.id}')">Reabrir</button>
+        <button class="action-btn primary" onclick="viewDetails('${
+          ticket.id
+        }')">Ver Detalles</button>
+        <button class="action-btn secondary" onclick="openReopenModal('${
+          ticket.id
+        }')">Reabrir</button>
       </div>
     </div>
   `;
@@ -1356,20 +1519,22 @@ function updateHistorialTab() {
   // ====== Sistema de búsqueda (solo avanzado, igual a Gestionar) ======
   const hMode = (histAdvCriteria.mode || "").trim();
   const hFrom = histAdvCriteria.from ? new Date(histAdvCriteria.from) : null;
-  const hTo   = histAdvCriteria.to   ? new Date(histAdvCriteria.to)   : null;
+  const hTo = histAdvCriteria.to ? new Date(histAdvCriteria.to) : null;
   let hEnd = null;
   if (hTo) {
     hEnd = new Date(hTo);
-    hEnd.setHours(23,59,59,999);
+    hEnd.setHours(23, 59, 59, 999);
   }
 
   if (hMode === "nombre") {
     const q = (histAdvCriteria.nameQuery || "").toLowerCase();
     if (q) {
-      list = list.filter(t => (t.usuario_asignado || "").toLowerCase().includes(q));
+      list = list.filter((t) =>
+        (t.usuario_asignado || "").toLowerCase().includes(q)
+      );
     }
     if (hFrom || hEnd) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const dt = ddmmy_to_Date(t.fecha_completado);
         if (!dt) return false;
         if (hFrom && dt < hFrom) return false;
@@ -1380,12 +1545,12 @@ function updateHistorialTab() {
   } else if (hMode === "id") {
     const idQ = parseInt(histAdvCriteria.idQuery, 10);
     if (!isNaN(idQ)) {
-      list = list.filter(t => Number(t.id) === idQ);
+      list = list.filter((t) => Number(t.id) === idQ);
     } else {
       list = [];
     }
     if (hFrom || hEnd) {
-      list = list.filter(t => {
+      list = list.filter((t) => {
         const dt = ddmmy_to_Date(t.fecha_completado);
         if (!dt) return false;
         if (hFrom && dt < hFrom) return false;
@@ -1396,7 +1561,7 @@ function updateHistorialTab() {
   } else if (hMode === "id-ticket") {
     const idQ = parseInt(histAdvCriteria.idQuery, 10);
     if (!isNaN(idQ)) {
-      list = list.filter(t => Number(t.id) === idQ);
+      list = list.filter((t) => Number(t.id) === idQ);
     } else {
       list = [];
     }
@@ -1414,7 +1579,9 @@ function updateHistorialTab() {
   if (noHistorial) noHistorial.classList.add("hidden");
   if (historialContainer) {
     historialContainer.classList.remove("hidden");
-    historialContainer.innerHTML = list.map((t) => createHistorialCard(t)).join("");
+    historialContainer.innerHTML = list
+      .map((t) => createHistorialCard(t))
+      .join("");
   }
 }
 
@@ -1423,7 +1590,9 @@ async function deleteTicket(ticketId) {
   if (!confirm("¿Estás seguro de eliminar este ticket?")) return;
 
   try {
-    appState.tickets = appState.tickets.filter((t) => String(t.id) !== String(ticketId));
+    appState.tickets = appState.tickets.filter(
+      (t) => String(t.id) !== String(ticketId)
+    );
     updateStats();
     updateDashboard();
     updateTicketsTab();
@@ -1480,11 +1649,16 @@ function reopenTicketSubmit(e) {
   const reason = document.getElementById("reopenReason")?.value?.trim();
 
   if (!vencIso || !reason) {
-    showNotification("Completa la nueva fecha de vencimiento y la razón de reapertura", "error");
+    showNotification(
+      "Completa la nueva fecha de vencimiento y la razón de reapertura",
+      "error"
+    );
     return;
   }
 
-  const idx = appState.historicalTickets.findIndex(t => String(t.id) === String(reopeningTicketId));
+  const idx = appState.historicalTickets.findIndex(
+    (t) => String(t.id) === String(reopeningTicketId)
+  );
   if (idx === -1) {
     showNotification("No se encontró el ticket en historial", "error");
     return;
@@ -1526,8 +1700,8 @@ async function handleLogout() {
     await fetch("/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({} ),
-      credentials: "include"
+      body: JSON.stringify({}),
+      credentials: "include",
     });
   }
 }
@@ -1553,7 +1727,7 @@ function switchTab(tabName) {
   updateSidebarActiveState();
 
   if (tabName === "crear") {
-    renderCrearUserFields();   // muestra el modo elegido y respeta recuadro si ya existía
+    renderCrearUserFields(); // muestra el modo elegido y respeta recuadro si ya existía
     updateUserForm();
     updateCreateButton();
   } else if (tabName === "gestionar") {
@@ -1561,8 +1735,8 @@ function switchTab(tabName) {
     setupGestionarDynamicFields();
     updateTicketsTab();
   } else if (tabName === "historial") {
-    populateUserFilters();           // también para historial
-    setupHistorialDynamicFields();   // sistema avanzado
+    populateUserFilters(); // también para historial
+    setupHistorialDynamicFields(); // sistema avanzado
     updateHistorialTab();
   } else if (tabName === "usuarios-asignados") {
     // Mantener comportamiento existente: cargar y renderizar tabla
@@ -1583,8 +1757,8 @@ async function loadAdminData() {
     /* ========= ÚNICO GET requerido: total de usuarios ========= */
     const resp = await fetch("http://localhost:8080/admin/subordinados", {
       method: "GET",
-      headers: { "Accept": "application/json" },
-      credentials: "include"
+      headers: { Accept: "application/json" },
+      credentials: "include",
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -1620,19 +1794,19 @@ function ddmmyyyy_to_iso(dmy) {
   if (!dmy) return "";
   const [d, m, y] = dmy.split("/");
   if (!d || !m || !y) return "";
-  return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 function iso_to_ddmmyyyy(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
   if (!y || !m || !d) return "";
-  return `${d.padStart(2,"0")}/${m.padStart(2,"0")}/${y}`;
+  return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
 }
 
 let editingTicketId = null;
 
 function openEditModal(ticketId) {
-  const t = appState.tickets.find(x => String(x.id) === String(ticketId));
+  const t = appState.tickets.find((x) => String(x.id) === String(ticketId));
   if (!t) {
     showNotification("No se encontró el ticket a editar", "error");
     return;
@@ -1683,11 +1857,16 @@ function saveEditModal(e) {
     return;
   }
   if (new Date(fVen) < new Date(fCre)) {
-    showNotification("La fecha de vencimiento no puede ser anterior a la fecha de creación", "error");
+    showNotification(
+      "La fecha de vencimiento no puede ser anterior a la fecha de creación",
+      "error"
+    );
     return;
   }
 
-  const idx = appState.tickets.findIndex(x => String(x.id) === String(editingTicketId));
+  const idx = appState.tickets.findIndex(
+    (x) => String(x.id) === String(editingTicketId)
+  );
   if (idx === -1) {
     showNotification("No se pudo actualizar el ticket", "error");
     return;
@@ -1721,7 +1900,7 @@ function populateUserFilters() {
       <option value="id">ID</option>
       <option value="id-ticket">ID Ticket</option>
     `;
-    if ([...gestUserFilter.options].some(o => o.value === current)) {
+    if ([...gestUserFilter.options].some((o) => o.value === current)) {
       gestUserFilter.value = current;
     }
   }
@@ -1736,7 +1915,7 @@ function populateUserFilters() {
       <option value="id">ID</option>
       <option value="id-ticket">ID Ticket</option>
     `;
-    if ([...histUserFilter.options].some(o => o.value === currentH)) {
+    if ([...histUserFilter.options].some((o) => o.value === currentH)) {
       histUserFilter.value = currentH;
     }
   }
@@ -1750,7 +1929,13 @@ function setupGestionarDynamicFields() {
   renderGestionarFields();
 
   modeSelect.onchange = () => {
-    gestCriteria = { mode: modeSelect.value, nameQuery: "", idQuery: "", from: "", to: "" };
+    gestCriteria = {
+      mode: modeSelect.value,
+      nameQuery: "",
+      idQuery: "",
+      from: "",
+      to: "",
+    };
     renderGestionarFields();
     updateTicketsTab();
   };
@@ -1772,36 +1957,37 @@ function renderGestionarFields() {
         <button id="gestNameClearBtn" class="pagination-btn" type="button">Borrar</button>
       </div>
     `;
-    const inp  = document.getElementById("gestNameInput");
-    const f1   = document.getElementById("gestFromDate");
-    const f2   = document.getElementById("gestToDate");
+    const inp = document.getElementById("gestNameInput");
+    const f1 = document.getElementById("gestFromDate");
+    const f2 = document.getElementById("gestToDate");
     const btnS = document.getElementById("gestNameSearchBtn");
     const btnC = document.getElementById("gestNameClearBtn");
 
     if (inp) inp.value = gestCriteria.nameQuery || "";
-    if (f1)  f1.value  = gestCriteria.from || "";
-    if (f2)  f2.value  = gestCriteria.to || "";
+    if (f1) f1.value = gestCriteria.from || "";
+    if (f2) f2.value = gestCriteria.to || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      gestCriteria.nameQuery = inp?.value || "";
-      gestCriteria.from = f1?.value || "";
-      gestCriteria.to   = f2?.value || "";
-      updateTicketsTab();
-    });
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        gestCriteria.nameQuery = inp?.value || "";
+        gestCriteria.from = f1?.value || "";
+        gestCriteria.to = f2?.value || "";
+        updateTicketsTab();
+      });
 
-    if (btnC) btnC.addEventListener("click", () => {
-      if (inp) inp.value = "";
-      if (f1) f1.value = "";
-      if (f2) f2.value = "";
-      gestCriteria.nameQuery = "";
-      gestCriteria.from = "";
-      gestCriteria.to   = "";
-      updateTicketsTab();
-    });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (inp) inp.value = "";
+        if (f1) f1.value = "";
+        if (f2) f2.value = "";
+        gestCriteria.nameQuery = "";
+        gestCriteria.from = "";
+        gestCriteria.to = "";
+        updateTicketsTab();
+      });
 
     // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
     if (inp) inp.addEventListener("input", onGestNameInput);
-
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0%;">
@@ -1813,31 +1999,32 @@ function renderGestionarFields() {
       </div>
     `;
     const idInp = document.getElementById("gestIdInput");
-    const f1    = document.getElementById("gestFromDate");
-    const f2    = document.getElementById("gestToDate");
-    const btnS  = document.getElementById("gestIdSearchBtn");
-    const btnC  = document.getElementById("gestIdClearBtn");
+    const f1 = document.getElementById("gestFromDate");
+    const f2 = document.getElementById("gestToDate");
+    const btnS = document.getElementById("gestIdSearchBtn");
+    const btnC = document.getElementById("gestIdClearBtn");
 
     if (idInp) idInp.value = gestCriteria.idQuery || "";
-    if (f1)    f1.value   = gestCriteria.from || "";
-    if (f2)    f2.value   = gestCriteria.to || "";
+    if (f1) f1.value = gestCriteria.from || "";
+    if (f2) f2.value = gestCriteria.to || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      gestCriteria.idQuery = idInp?.value || "";
-      gestCriteria.from    = f1?.value    || "";
-      gestCriteria.to      = f2?.value    || "";
-      updateTicketsTab();
-    });
-    if (btnC) btnC.addEventListener("click", () => {
-      if(idInp) idInp.value = "";
-      if(f1) f1.value = "";
-      if(f2) f2.value = "";
-      gestCriteria.idQuery = "";
-      gestCriteria.from    = "";
-      gestCriteria.to      = "";
-      updateTicketsTab();
-    });
-
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        gestCriteria.idQuery = idInp?.value || "";
+        gestCriteria.from = f1?.value || "";
+        gestCriteria.to = f2?.value || "";
+        updateTicketsTab();
+      });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (idInp) idInp.value = "";
+        if (f1) f1.value = "";
+        if (f2) f2.value = "";
+        gestCriteria.idQuery = "";
+        gestCriteria.from = "";
+        gestCriteria.to = "";
+        updateTicketsTab();
+      });
   } else if (mode === "id-ticket") {
     // *** SIN FECHAS: solo campo ID Ticket + botones Buscar y Borrar ***
     fieldsBox.innerHTML = `
@@ -1848,26 +2035,27 @@ function renderGestionarFields() {
       </div>
     `;
     const idInp = document.getElementById("gestIdInput");
-    const btnS  = document.getElementById("gestIdSearchBtn");
-    const btnC  = document.getElementById("gestIdClearBtn");
+    const btnS = document.getElementById("gestIdSearchBtn");
+    const btnC = document.getElementById("gestIdClearBtn");
 
     if (idInp) idInp.value = gestCriteria.idQuery || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      gestCriteria.idQuery = idInp?.value || "";
-      // limpiar fechas por si quedaron de otro modo
-      gestCriteria.from = "";
-      gestCriteria.to   = "";
-      updateTicketsTab();
-    });
-    if (btnC) btnC.addEventListener("click", () => {
-      if(idInp) idInp.value = "";
-      gestCriteria.idQuery = "";
-      gestCriteria.from = "";
-      gestCriteria.to   = "";
-      updateTicketsTab();
-    });
-
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        gestCriteria.idQuery = idInp?.value || "";
+        // limpiar fechas por si quedaron de otro modo
+        gestCriteria.from = "";
+        gestCriteria.to = "";
+        updateTicketsTab();
+      });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (idInp) idInp.value = "";
+        gestCriteria.idQuery = "";
+        gestCriteria.from = "";
+        gestCriteria.to = "";
+        updateTicketsTab();
+      });
   } else {
     fieldsBox.innerHTML = "";
   }
@@ -1882,7 +2070,13 @@ function setupHistorialDynamicFields() {
   renderHistorialFields();
 
   modeSelect.onchange = () => {
-    histAdvCriteria = { mode: modeSelect.value, nameQuery: "", idQuery: "", from: "", to: "" };
+    histAdvCriteria = {
+      mode: modeSelect.value,
+      nameQuery: "",
+      idQuery: "",
+      from: "",
+      to: "",
+    };
     renderHistorialFields();
     updateHistorialTab();
   };
@@ -1903,36 +2097,37 @@ function renderHistorialFields() {
         <button id="histNameClearBtnAdv" class="pagination-btn" type="button">Borrar</button>
       </div>
     `;
-    const inp  = document.getElementById("histNameInputAdv");
-    const f1   = document.getElementById("histFromDateAdv");
-    const f2   = document.getElementById("histToDateAdv");
+    const inp = document.getElementById("histNameInputAdv");
+    const f1 = document.getElementById("histFromDateAdv");
+    const f2 = document.getElementById("histToDateAdv");
     const btnS = document.getElementById("histNameSearchBtnAdv");
     const btnC = document.getElementById("histNameClearBtnAdv");
 
     if (inp) inp.value = histAdvCriteria.nameQuery || "";
-    if (f1)  f1.value  = histAdvCriteria.from || "";
-    if (f2)  f2.value  = histAdvCriteria.to || "";
+    if (f1) f1.value = histAdvCriteria.from || "";
+    if (f2) f2.value = histAdvCriteria.to || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      histAdvCriteria.nameQuery = inp?.value || "";
-      histAdvCriteria.from = f1?.value || "";
-      histAdvCriteria.to   = f2?.value || "";
-      updateHistorialTab();
-    });
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        histAdvCriteria.nameQuery = inp?.value || "";
+        histAdvCriteria.from = f1?.value || "";
+        histAdvCriteria.to = f2?.value || "";
+        updateHistorialTab();
+      });
 
-    if (btnC) btnC.addEventListener("click", () => {
-      if (inp) inp.value = "";
-      if (f1) f1.value = "";
-      if (f2) f2.value = "";
-      histAdvCriteria.nameQuery = "";
-      histAdvCriteria.from = "";
-      histAdvCriteria.to   = "";
-      updateHistorialTab();
-    });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (inp) inp.value = "";
+        if (f1) f1.value = "";
+        if (f2) f2.value = "";
+        histAdvCriteria.nameQuery = "";
+        histAdvCriteria.from = "";
+        histAdvCriteria.to = "";
+        updateHistorialTab();
+      });
 
     // === CONEXIÓN BÚSQUEDA PROGRESIVA (prefijos por tokens)
     if (inp) inp.addEventListener("input", onHistNameInput);
-
   } else if (mode === "id") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
@@ -1944,31 +2139,32 @@ function renderHistorialFields() {
       </div>
     `;
     const idInp = document.getElementById("histIdInputAdv");
-    const f1    = document.getElementById("histFromDateAdv");
-    const f2    = document.getElementById("histToDateAdv");
-    const btnS  = document.getElementById("histIdSearchBtnAdv");
-    const btnC  = document.getElementById("histIdClearBtnAdv");
+    const f1 = document.getElementById("histFromDateAdv");
+    const f2 = document.getElementById("histToDateAdv");
+    const btnS = document.getElementById("histIdSearchBtnAdv");
+    const btnC = document.getElementById("histIdClearBtnAdv");
 
     if (idInp) idInp.value = histAdvCriteria.idQuery || "";
-    if (f1)    f1.value   = histAdvCriteria.from || "";
-    if (f2)    f2.value   = histAdvCriteria.to || "";
+    if (f1) f1.value = histAdvCriteria.from || "";
+    if (f2) f2.value = histAdvCriteria.to || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      histAdvCriteria.idQuery = idInp?.value || "";
-      histAdvCriteria.from    = f1?.value    || "";
-      histAdvCriteria.to      = f2?.value    || "";
-      updateHistorialTab();
-    });
-    if (btnC) btnC.addEventListener("click", () => {
-      if(idInp) idInp.value = "";
-      if(f1) f1.value = "";
-      if(f2) f2.value = "";
-      histAdvCriteria.idQuery = "";
-      histAdvCriteria.from    = "";
-      histAdvCriteria.to      = "";
-      updateHistorialTab();
-    });
-
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        histAdvCriteria.idQuery = idInp?.value || "";
+        histAdvCriteria.from = f1?.value || "";
+        histAdvCriteria.to = f2?.value || "";
+        updateHistorialTab();
+      });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (idInp) idInp.value = "";
+        if (f1) f1.value = "";
+        if (f2) f2.value = "";
+        histAdvCriteria.idQuery = "";
+        histAdvCriteria.from = "";
+        histAdvCriteria.to = "";
+        updateHistorialTab();
+      });
   } else if (mode === "id-ticket") {
     fieldsBox.innerHTML = `
       <div class="filters-row" style="gap:.5rem;margin-bottom:0;">
@@ -1978,25 +2174,26 @@ function renderHistorialFields() {
       </div>
     `;
     const idInp = document.getElementById("histIdInputAdv");
-    const btnS  = document.getElementById("histIdSearchBtnAdv");
-    const btnC  = document.getElementById("histIdClearBtnAdv");
+    const btnS = document.getElementById("histIdSearchBtnAdv");
+    const btnC = document.getElementById("histIdClearBtnAdv");
 
     if (idInp) idInp.value = histAdvCriteria.idQuery || "";
 
-    if (btnS) btnS.addEventListener("click", () => {
-      histAdvCriteria.idQuery = idInp?.value || "";
-      histAdvCriteria.from = "";
-      histAdvCriteria.to   = "";
-      updateHistorialTab();
-    });
-    if (btnC) btnC.addEventListener("click", () => {
-      if(idInp) idInp.value = "";
-      histAdvCriteria.idQuery = "";
-      histAdvCriteria.from = "";
-      histAdvCriteria.to   = "";
-      updateHistorialTab();
-    });
-
+    if (btnS)
+      btnS.addEventListener("click", () => {
+        histAdvCriteria.idQuery = idInp?.value || "";
+        histAdvCriteria.from = "";
+        histAdvCriteria.to = "";
+        updateHistorialTab();
+      });
+    if (btnC)
+      btnC.addEventListener("click", () => {
+        if (idInp) idInp.value = "";
+        histAdvCriteria.idQuery = "";
+        histAdvCriteria.from = "";
+        histAdvCriteria.to = "";
+        updateHistorialTab();
+      });
   } else {
     fieldsBox.innerHTML = "";
   }
@@ -2012,8 +2209,8 @@ async function fetchAndRenderAssignedUsers() {
   try {
     const resp = await fetch("http://localhost:8080/admin/subordinados", {
       method: "GET",
-      headers: { "Accept": "application/json" },
-      credentials: "include"
+      headers: { Accept: "application/json" },
+      credentials: "include",
     });
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
@@ -2037,7 +2234,7 @@ function renderAssignedUsersTable(items) {
   }
   if (empty) empty.classList.add("hidden");
 
-  const rows = items.map(u => {
+  const rows = items.map((u) => {
     const nombre = u?.nombre ?? "";
     const id = u?.id_usuario ?? "";
     const correo = u?.correo ?? "";
@@ -2066,15 +2263,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // TEMA (compat: si existe el botón en esta página)
   const themeToggle = document.getElementById("themeToggle");
-  if (themeToggle) themeToggle.addEventListener("click", () => { appState.isDark = !appState.isDark; updateTheme(); });
+  if (themeToggle)
+    themeToggle.addEventListener("click", () => {
+      appState.isDark = !appState.isDark;
+      updateTheme();
+    });
 
   // PERFIL
   const profileToggle = document.getElementById("profileToggle");
   const profileDropdown = document.getElementById("profileDropdown");
   if (profileToggle && profileDropdown) {
-    profileToggle.addEventListener("click", () => profileDropdown.classList.toggle("hidden"));
+    profileToggle.addEventListener("click", () =>
+      profileDropdown.classList.toggle("hidden")
+    );
     document.addEventListener("click", (e) => {
-      if (!profileDropdown.contains(e.target) && !profileToggle.contains(e.target)) {
+      if (
+        !profileDropdown.contains(e.target) &&
+        !profileToggle.contains(e.target)
+      ) {
         profileDropdown.classList.add("hidden");
       }
     });
@@ -2089,13 +2295,20 @@ document.addEventListener("DOMContentLoaded", () => {
   if (ticketForm) {
     ticketForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      appState.ticketForm.usuario_id        = document.getElementById("usuarioSelect")?.value || "";
-      appState.ticketForm.ministerio_id     = document.getElementById("ministerioSelect")?.value || "";
-      appState.ticketForm.descripcion       = document.getElementById("descripcionInput")?.value?.trim() || "";
-      appState.ticketForm.presupuesto       = document.getElementById("presupuestoInput")?.value || "";
-      appState.ticketForm.fecha_inicio      = document.getElementById("fechaInicioInput")?.value || "";
-      appState.ticketForm.fecha_vencimiento = document.getElementById("fechaVencimientoInput")?.value || "";
-      appState.ticketForm.moneda            = document.getElementById("monedaSelect")?.value || "Q";
+      appState.ticketForm.usuario_id =
+        document.getElementById("usuarioSelect")?.value || "";
+      appState.ticketForm.ministerio_id =
+        document.getElementById("ministerioSelect")?.value || "";
+      appState.ticketForm.descripcion =
+        document.getElementById("descripcionInput")?.value?.trim() || "";
+      appState.ticketForm.presupuesto =
+        document.getElementById("presupuestoInput")?.value || "";
+      appState.ticketForm.fecha_inicio =
+        document.getElementById("fechaInicioInput")?.value || "";
+      appState.ticketForm.fecha_vencimiento =
+        document.getElementById("fechaVencimientoInput")?.value || "";
+      appState.ticketForm.moneda =
+        document.getElementById("monedaSelect")?.value || "Q";
       createTicket();
     });
   }
@@ -2111,7 +2324,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Listener para inputs que afectan validación
-  ["descripcionInput","presupuestoInput","fechaInicioInput","fechaVencimientoInput"].forEach((id) => {
+  [
+    "descripcionInput",
+    "presupuestoInput",
+    "fechaInicioInput",
+    "fechaVencimientoInput",
+  ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("input", updateCreateButton);
   });
@@ -2153,8 +2371,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const reopenModalBackdrop = document.getElementById("reopenModalBackdrop");
 
   if (reopenForm) reopenForm.addEventListener("submit", reopenTicketSubmit);
-  if (reopenCloseBtn) reopenCloseBtn.addEventListener("click", closeReopenModal);
-  if (reopenCancelBtn) reopenCancelBtn.addEventListener("click", closeReopenModal);
+  if (reopenCloseBtn)
+    reopenCloseBtn.addEventListener("click", closeReopenModal);
+  if (reopenCancelBtn)
+    reopenCancelBtn.addEventListener("click", closeReopenModal);
   if (reopenModalBackdrop) {
     reopenModalBackdrop.addEventListener("click", (e) => {
       if (e.target === reopenModalBackdrop) closeReopenModal();
@@ -2162,6 +2382,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // INIT
-  updateTheme();      // asegura que la lista se pinte acorde al tema actual
+  updateTheme(); // asegura que la lista se pinte acorde al tema actual
   loadAdminData();
 });

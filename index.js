@@ -49,8 +49,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(express.static(path.resolve(__dirname, "./public")));
-
 // 1) Bloquear solo HTML
 app.use("/public", (req, res, next) => {
   if (req.path.endsWith(".html")) {
@@ -76,7 +74,6 @@ app.use((req, _res, next) => {
 
 // sendFile will go here
 app.use("/", homeRouter);
-
 
 app.use("/login", loginRouter);
 

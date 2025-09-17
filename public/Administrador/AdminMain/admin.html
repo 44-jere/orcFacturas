@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,17 +8,18 @@
 
     <!-- Anti-flash: fija el tema antes del primer pintado -->
     <script>
-    !function(){
-      try{
-        var t = localStorage.getItem("automatix.theme");
-        var cls = (t === "light") ? "light-theme" : "dark-theme"; // default: dark
-        document.documentElement.classList.add(cls);
-      }catch(e){}
-    }();
+        !function () {
+            try {
+                var t = localStorage.getItem("automatix.theme");
+                var cls = (t === "light") ? "light-theme" : "dark-theme"; // default: dark
+                document.documentElement.classList.add(cls);
+            } catch (e) { }
+        }();
     </script>
 
-    <link rel="stylesheet" href="adminStyles.css">
+    <link rel="stylesheet" href="/public/Administrador/AdminMain/adminStyles.css">
 </head>
+
 <body class="dark-theme" id="body">
     <!-- Header -->
     <header class="header" id="header">
@@ -26,54 +28,52 @@
                 <div class="header-brand">
                     <div class="brand-icon">
                         <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 12l2 2 4-4" />
                         </svg>
                     </div>
-                    <div class="brand-text"> 
+                    <div class="brand-text">
                         <h1 class="brand-title">Panel Administrador</h1>
                         <p class="brand-subtitle">Gestión de tickets de viáticos</p>
                     </div>
                 </div>
-                
+
                 <div class="header-controls">
                     <div class="quick-links">
-                        <a id="btnDashGeneral"
-                           class="quick-btn"
-                           href="#"
-                           onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
-                           title="Ir a Dashboard general" role="button">
-                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <a id="btnDashGeneral" class="quick-btn" href="#"
+                            onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
+                            title="Ir a Dashboard general" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
                             </svg>
                             <span class="btn-label">Dashboard general</span>
                         </a>
 
                         <!-- NUEVO: Botón Buscar imágenes -->
-                        <a id="btnBuscarImagenes"
-                           class="quick-btn"
-                           href="#"
-                           onclick="window.location.assign('__ROUTE_BUSCAR_IMAGENES__'); return false;"
-                           title="Buscar imágenes" role="button">
-                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <a id="btnBuscarImagenes" class="quick-btn" href="#"
+                            onclick="window.location.assign('__ROUTE_BUSCAR_IMAGENES__'); return false;"
+                            title="Buscar imágenes" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M4 5a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2h-7l-4 4v-4H6a2 2 0 01-2-2V5z" />
+                                    d="M4 5a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2h-7l-4 4v-4H6a2 2 0 01-2-2V5z" />
                                 <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"></circle>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M21 12l-4.5-4.5L10 14l-2-2L3 17" />
+                                    d="M21 12l-4.5-4.5L10 14l-2-2L3 17" />
                             </svg>
                             <span class="btn-label">Buscar imágenes</span>
                         </a>
 
-                        <a id="btnDescargarFacturas"
-                           class="quick-btn"
-                           href="#"
-                           onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
-                           title="Ir a Descargar facturas" role="button">
-                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <a id="btnDescargarFacturas" class="quick-btn" href="#"
+                            onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
+                            title="Ir a Descargar facturas" role="button">
+                            <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+                                    d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
                             </svg>
                             <span class="btn-label">Descargar facturas</span>
                         </a>
@@ -84,7 +84,8 @@
                     <div class="profile-container">
                         <button id="profileToggle" class="profile-btn" title="Ver perfil">
                             <svg class="profile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </button>
 
@@ -94,10 +95,8 @@
                                 <p class="profile-email">admin@gobierno.gob.gt</p>
                                 <span class="profile-role">Administrador</span>
                             </div>
-                            <button class="dropdown-item"
-                                    id="viewProfileItem"
-                                    type="button"
-                                    onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
+                            <button class="dropdown-item" id="viewProfileItem" type="button"
+                                onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
                                 Ver perfil
                             </button>
                             <button class="dropdown-item">Configuración</button>
@@ -117,7 +116,8 @@
                 <div class="stat-content">
                     <div class="stat-icon blue">
                         <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
                     </div>
                     <div class="stat-info">
@@ -131,7 +131,8 @@
                 <div class="stat-content">
                     <div class="stat-icon green">
                         <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <div class="stat-info">
@@ -145,7 +146,8 @@
                 <div class="stat-content">
                     <div class="stat-icon purple">
                         <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 009.288 0M15 7a3 3 0 11-6 0 3 0 06 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 009.288 0M15 7a3 3 0 11-6 0 3 0 06 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
                     <div class="stat-info">
@@ -159,7 +161,8 @@
                 <div class="stat-content">
                     <div class="stat-icon yellow">
                         <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                         </svg>
                     </div>
                     <div class="stat-info">
@@ -174,7 +177,8 @@
             <div class="tabs-container">
                 <div class="tabs-nav">
                     <button class="tab-btn active" data-tab="crear">Crear Ticket</button>
-                    <button class="tab-btn" data-tab="gestionar">Gestionar Tickets (<span id="ticketCount">0</span>)</button>
+                    <button class="tab-btn" data-tab="gestionar">Gestionar Tickets (<span
+                            id="ticketCount">0</span>)</button>
                     <button class="tab-btn" data-tab="historial">Historial (<span id="historialCount">0</span>)</button>
                     <!-- NUEVO BOTÓN: Usuarios Asignados -->
                     <button class="tab-btn" data-tab="usuarios-asignados">Usuarios Asignados</button>
@@ -182,7 +186,7 @@
 
                 <div id="crear-tab" class="tab-content active">
                     <h2 class="tab-title">Crear Nuevo Ticket</h2>
-                    
+
                     <form id="ticketForm" class="ticket-form">
                         <div class="form-row">
                             <!-- ===== Columna: Asignar usuario (buscadores) ===== -->
@@ -191,8 +195,8 @@
 
                                 <!-- Selector de modo de búsqueda (Nombre / ID) -->
                                 <select id="crearUserSearchMode" class="filter-select" title="Buscar por">
-                                  <option value="nombre" selected>Nombre</option>
-                                  <option value="id">ID</option>
+                                    <option value="nombre" selected>Nombre</option>
+                                    <option value="id">ID</option>
                                 </select>
 
                                 <!-- Contenedor dinámico para el modo seleccionado -->
@@ -205,7 +209,8 @@
                                 <div id="userInfo" class="user-info hidden" style="margin-top:.5rem;">
                                     <p class="user-detail"><strong>Email:</strong> <span id="userEmail"></span></p>
                                     <p class="user-detail"><strong>Cargo:</strong> <span id="userCargo"></span></p>
-                                    <p class="user-detail"><strong>Ministerios disponibles:</strong> <span id="userMinisterios"></span></p>
+                                    <p class="user-detail"><strong>Ministerios disponibles:</strong> <span
+                                            id="userMinisterios"></span></p>
                                 </div>
                             </div>
 
@@ -217,22 +222,29 @@
                                         <h3 class="user-selected-title">Usuario seleccionado</h3>
                                     </div>
                                     <div class="user-selected-body">
-                                        <p class="user-detail"><strong>Nombre:</strong> <span id="selectedUserName"></span></p>
-                                        <p class="user-detail"><strong>Cargo:</strong> <span id="selectedUserCargo"></span></p>
-                                        <p class="user-detail"><strong>ID:</strong> <span id="selectedUserId"></span></p>
+                                        <p class="user-detail"><strong>Nombre:</strong> <span
+                                                id="selectedUserName"></span></p>
+                                        <p class="user-detail"><strong>Cargo:</strong> <span
+                                                id="selectedUserCargo"></span></p>
+                                        <p class="user-detail"><strong>ID:</strong> <span id="selectedUserId"></span>
+                                        </p>
                                     </div>
                                     <div class="user-selected-actions">
-                                        <button id="changeUserBtn" type="button" class="action-btn secondary">Cambiar usuario</button>
-                                        <button id="addUserBtn" type="button" class="action-btn primary">Agregar usuario</button>
+                                        <button id="changeUserBtn" type="button" class="action-btn secondary">Cambiar
+                                            usuario</button>
+                                        <button id="addUserBtn" type="button" class="action-btn primary">Agregar
+                                            usuario</button>
                                     </div>
                                     <p id="selectedUserHint" class="hint-text">Puedes agregar hasta 5 usuarios.</p>
                                 </div>
 
                                 <!-- Lista de usuarios agregados al ticket -->
-                                <div id="selectedUsersBlock" class="selected-users-block hidden" style="margin-top:.75rem;">
+                                <div id="selectedUsersBlock" class="selected-users-block hidden"
+                                    style="margin-top:.75rem;">
                                     <h4 class="selected-users-title">Usuarios para este ticket</h4>
                                     <ul id="selectedUsersList" class="selected-users-list"></ul>
-                                    <p id="selectedUsersLimitMsg" class="hint-text hidden">Has alcanzado el máximo de 5 usuarios.</p>
+                                    <p id="selectedUsersLimitMsg" class="hint-text hidden">Has alcanzado el máximo de 5
+                                        usuarios.</p>
                                 </div>
                             </div>
                         </div>
@@ -245,58 +257,41 @@
                                         <option value="Q">Q</option>
                                         <option value="$">$</option>
                                     </select>
-                                    <input
-                                        type="number"
-                                        id="presupuestoInput"
-                                        class="budget-amount"
-                                        placeholder="0.00"
-                                        step="0.01"
-                                        min="0"
-                                        required
-                                    />
+                                    <input type="number" id="presupuestoInput" class="budget-amount" placeholder="0.00"
+                                        step="0.01" min="0" required />
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Fecha de inicio *</label>
-                                <input
-                                    type="date"
-                                    id="fechaInicioInput"
-                                    class="form-input"
-                                    required
-                                />
+                                <input type="date" id="fechaInicioInput" class="form-input" required />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Fecha de vencimiento *</label>
-                                <input
-                                    type="date"
-                                    id="fechaVencimientoInput"
-                                    class="form-input"
-                                    required
-                                />
+                                <input type="date" id="fechaVencimientoInput" class="form-input" required />
                             </div>
                         </div>
 
                         <div class="form-group full-width">
                             <label class="form-label">Descripción de la tarea/viaje *</label>
-                            <textarea
-                                id="descripcionInput"
-                                class="form-textarea"
-                                rows="4"
-                                placeholder="Describe el propósito del viáticos..."
-                                required
-                            ></textarea>
+                            <textarea id="descripcionInput" class="form-textarea" rows="4"
+                                placeholder="Describe el propósito del viáticos..." required></textarea>
                         </div>
 
                         <div class="form-actions">
                             <button type="submit" id="createTicketBtn" class="create-btn">
-                                <svg id="createIcon" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                <svg id="createIcon" class="btn-icon" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
                                 </svg>
                                 <svg id="createLoadingIcon" class="btn-icon hidden" fill="none" viewBox="0 0 24 24">
-                                    <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="spinner-path" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="spinner-path" fill="currentColor"
+                                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
                                 </svg>
                                 <span id="createBtnText">Crear Ticket</span>
                             </button>
@@ -318,11 +313,12 @@
 
                         <div id="gestModeFields" class="filters-row" style="margin-bottom:0;"></div>
                     </div>
-                    
+
                     <div id="noTickets" class="no-data">
                         <div class="no-data-icon">
                             <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
                         <p class="no-data-text">No hay tickets creados</p>
@@ -350,7 +346,8 @@
                     <div id="noHistorial" class="no-data">
                         <div class="no-data-icon">
                             <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <p class="no-data-text">No hay tickets completados</p>
@@ -389,7 +386,8 @@
                         <div id="noUsuariosAsignados" class="no-data hidden">
                             <div class="no-data-icon">
                                 <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
                             <p class="no-data-text">No hay usuarios asignados</p>
@@ -406,73 +404,77 @@
         <div class="loading-spinner">
             <svg class="spinner" fill="none" viewBox="0 0 24 24">
                 <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="spinner-path" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path class="spinner-path" fill="currentColor"
+                    d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
             </svg>
             <p class="loading-text">Cargando...</p>
         </div>
     </div>
 
-    <script src="adminScript.js"></script>
+    <script src="/public/Administrador/AdminMain/adminScript.js"></script>
 
     <!-- ===== Modal Editar Ticket ===== -->
     <div id="editModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 class="modal-title">Editar ticket <span id="editTicketId"></span></h3>
-          <button class="modal-close" id="editCloseBtn" title="Cerrar">&times;</button>
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar ticket <span id="editTicketId"></span></h3>
+                <button class="modal-close" id="editCloseBtn" title="Cerrar">&times;</button>
+            </div>
+
+            <form id="editForm" class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Presupuesto (Q) *</label>
+                    <input type="number" id="editPresupuesto" class="form-input" step="0.01" min="0" required />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Fecha creado *</label>
+                        <input type="date" id="editFechaCreacion" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha vence *</label>
+                        <input type="date" id="editFechaVencimiento" class="form-input" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="action-btn secondary" id="editCancelBtn">Cancelar</button>
+                    <button type="submit" class="action-btn primary" id="editSaveBtn">Guardar cambios</button>
+                </div>
+            </form>
         </div>
-
-        <form id="editForm" class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Presupuesto (Q) *</label>
-            <input type="number" id="editPresupuesto" class="form-input" step="0.01" min="0" required />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Fecha creado *</label>
-              <input type="date" id="editFechaCreacion" class="form-input" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fecha vence *</label>
-              <input type="date" id="editFechaVencimiento" class="form-input" required />
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="action-btn secondary" id="editCancelBtn">Cancelar</button>
-            <button type="submit" class="action-btn primary" id="editSaveBtn">Guardar cambios</button>
-          </div>
-        </form>
-      </div>
     </div>
 
     <!-- ===== Modal Reabrir Ticket (Historial) ===== -->
     <div id="reopenModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 class="modal-title">Reabrir ticket <span id="reopenTicketId"></span></h3>
-          <button class="modal-close" id="reopenCloseBtn" title="Cerrar">&times;</button>
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Reabrir ticket <span id="reopenTicketId"></span></h3>
+                <button class="modal-close" id="reopenCloseBtn" title="Cerrar">&times;</button>
+            </div>
+
+            <form id="reopenForm" class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nueva fecha de vencimiento *</label>
+                    <input type="date" id="reopenFechaVenc" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Razón de reapertura *</label>
+                    <textarea id="reopenReason" class="form-textarea" rows="4"
+                        placeholder="Describe por qué se reabre..." required></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="action-btn secondary" id="reopenCancelBtn">Cancelar</button>
+                    <button type="submit" class="action-btn primary" id="reopenSubmitBtn">Reabrir</button>
+                </div>
+            </form>
         </div>
-
-        <form id="reopenForm" class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Nueva fecha de vencimiento *</label>
-            <input type="date" id="reopenFechaVenc" class="form-input" required />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Razón de reapertura *</label>
-            <textarea id="reopenReason" class="form-textarea" rows="4" placeholder="Describe por qué se reabre..." required></textarea>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="action-btn secondary" id="reopenCancelBtn">Cancelar</button>
-            <button type="submit" class="action-btn primary" id="reopenSubmitBtn">Reabrir</button>
-          </div>
-        </form>
-      </div>
     </div>
 
 </body>
+
 </html>

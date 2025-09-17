@@ -17,6 +17,17 @@ function denegarNoEmpleados({ res, role }) {
     return true;
   }
 }
+
+mainFacturasRouter.get("/", (req, res) => {
+  try {
+    const id_ticket = parseInt(req.params.id);
+    if (!id_ticket) return res.redirect("/usermain");
+    const { id, role } = protegerRuta({ req, res });
+    if (denegarNoEmpleados({ res, role })) return;
+  } catch (e) {
+    return res.redirect("/usermain");
+  }
+});
 mainFacturasRouter.get("/:id", (req, res) => {
   try {
     const id_ticket = parseInt(req.params.id);
