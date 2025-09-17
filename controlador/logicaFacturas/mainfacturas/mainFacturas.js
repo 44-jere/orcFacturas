@@ -8,7 +8,7 @@ import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mainFacturasRouter = Router
+export const mainFacturasRouter = Router()
 const allowedRoles = [3];
 //3=empleados
 function denegarNoEmpleados({ res, role }) {
