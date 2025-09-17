@@ -1049,23 +1049,44 @@ function updateCreateButton() {
   const createBtnText = document.getElementById("createBtnText");
   const createIcon = document.getElementById("createIcon");
   const createLoadingIcon = document.getElementById("createLoadingIcon");
-
   if (!createBtn) return;
 
+  // === Lee valores actuales del DOM ===
+  const desc = (
+    document.getElementById("descripcionInput")?.value || ""
+  ).trim();
+  const presRaw = document.getElementById("presupuestoInput")?.value ?? "";
+  const fi = document.getElementById("fechaInicioInput")?.value || "";
+  const fv = document.getElementById("fechaVencimientoInput")?.value || "";
+  const hiddenUid = document.getElementById("usuarioSelect")?.value || "";
+
+  // si permites desc vacía, pon const hasDesc = true; (o deja la regla estricta)
+  const hasDesc = true; // <- cambia a `(desc.length > 0)` si quieres obligatoria
+
+  const presOk =
+    presRaw !== "" && !isNaN(Number(presRaw)) && Number(presRaw) >= 0;
   const anyUser =
-    appState.selectedUsersIds.length > 0 ||
-    appState.ticketForm.usuario_id ||
-    appState.currentUserCandidateId;
+    (appState.selectedUsersIds && appState.selectedUsersIds.length > 0) ||
+    !!appState.currentUserCandidateId ||
+    !!hiddenUid;
 
-  const isValid =
-    anyUser &&
-    appState.ticketForm.descripcion &&
-    appState.ticketForm.presupuesto &&
-    appState.ticketForm.fecha_inicio &&
-    appState.ticketForm.fecha_vencimiento;
+  const isValid = anyUser && hasDesc && presOk && !!fi && !!fv;
 
+  // === Habilita/Deshabilita de verdad el botón ===
   createBtn.disabled = !isValid || appState.creating;
 
+  // “fuerza” visual por si el CSS no respeta :disabled
+  if (createBtn.disabled) {
+    createBtn.classList.add("btn-disabled");
+    createBtn.setAttribute("aria-disabled", "true");
+    createBtn.style.pointerEvents = "none";
+  } else {
+    createBtn.classList.remove("btn-disabled");
+    createBtn.removeAttribute("aria-disabled");
+    createBtn.style.pointerEvents = "";
+  }
+
+  // loading / iconos
   if (appState.creating) {
     if (createBtnText) createBtnText.textContent = "Creando...";
     if (createIcon) createIcon.classList.add("hidden");
@@ -1078,6 +1099,7 @@ function updateCreateButton() {
 }
 
 async function createTicket() {
+  // Validación mínima de formulario
   const anyUser =
     appState.selectedUsersIds.length > 0
       ? true
@@ -1085,12 +1107,11 @@ async function createTicket() {
 
   if (
     !anyUser ||
-    !appState.ticketForm.descripcion ||
-    !appState.ticketForm.presupuesto ||
-    !appState.ticketForm.fecha_inicio ||
-    !appState.ticketForm.fecha_vencimiento
+    !appState.ticketForm.presupuesto || // → monto_presupuestado
+    !appState.ticketForm.fecha_inicio || // → fecha_inicio (YYYY-MM-DD)
+    !appState.ticketForm.fecha_vencimiento // → fecha_fin (YYYY-MM-DD)
   ) {
-    showNotification("Por favor completa todos los campos requeridos", "error");
+    showNotification("Completa los campos requeridos", "error");
     return;
   }
 
@@ -1098,7 +1119,7 @@ async function createTicket() {
   updateCreateButton();
 
   try {
-    // Determinar a quiénes crearles ticket:
+    // Determinar a quién crearle el/los ticket(s)
     let targetUserIds = [];
     if (appState.selectedUsersIds.length > 0) {
       targetUserIds = [...appState.selectedUsersIds];
@@ -1108,48 +1129,77 @@ async function createTicket() {
       targetUserIds = [appState.ticketForm.usuario_id];
     }
 
-    const createdIds = [];
+    const createdLocally = [];
 
+    // Un POST por cada usuario (tu backend solo acepta uno por uno)
     for (const uid of targetUserIds) {
-      const selectedUser = getUserByIdSafe(uid);
-      if (!selectedUser) continue;
+      const payload = {
+        id_usuario_beneficiario: Number(uid),
+        monto_presupuestado: Number(appState.ticketForm.presupuesto),
+        total_gastado: 0, // o Number(appState.ticketForm.total_gastado) si luego agregas ese campo al form
+        fecha_inicio: appState.ticketForm.fecha_inicio, // "YYYY-MM-DD"
+        fecha_fin: appState.ticketForm.fecha_vencimiento, // "YYYY-MM-DD"
+        descripcion_ticket: (appState.ticketForm.descripcion ?? "")
+          .toString()
+          .trim(), // puede ser ""
+      };
 
-      const newTicketId = getNextTicketId();
-      const newTicket = {
-        id: newTicketId,
-        usuario_asignado: selectedUser.nombre,
-        ministerio: selectedUser.ministerio || "",
-        descripcion: appState.ticketForm.descripcion,
-        presupuesto: appState.ticketForm.presupuesto,
-        gastado: "0.00",
+      const resp = await fetch("http://localhost:8080/admin/crearTicket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => "");
+        throw new Error(
+          `Error al crear ticket para usuario ${uid}: HTTP ${resp.status} ${errText}`
+        );
+      }
+
+      // Estructura de respuesta: ajusta según lo que devuelva tu API.
+      // Ejemplos posibles:
+      //   { item: { id_ticket, ... } }  ó  { id_ticket: 123, ... }
+      const data = await resp.json().catch(() => ({}));
+      const idTicket =
+        data?.item?.id_ticket ?? data?.id_ticket ?? getNextTicketId(); // fallback si no viene
+
+      // Pinta tarjeta local (UI) — campos que usa tu frontend
+      const selectedUser = getUserByIdSafe(uid);
+      createdLocally.push({
+        id: idTicket, // <- tu UI usa 'id'
+        usuario_asignado: selectedUser?.nombre || `ID ${uid}`,
+        ministerio: selectedUser?.ministerio || "",
+        descripcion: appState.ticketForm.descripcion || "",
+        presupuesto: Number(appState.ticketForm.presupuesto),
+        gastado: 0,
         fecha_creacion: new Date().toLocaleDateString("es-GT"),
         fecha_inicio: appState.ticketForm.fecha_inicio,
         fecha_vencimiento: appState.ticketForm.fecha_vencimiento,
         estado: "activo",
-      };
-      appState.tickets.push(newTicket);
-      createdIds.push(newTicketId);
+      });
     }
 
+    // Actualiza estado/UI
+    for (const t of createdLocally) appState.tickets.push(t);
     clearTicketForm();
     updateStats();
     updateDashboard();
     updateTicketsTab();
 
-    if (createdIds.length === 1) {
-      showNotification(
-        `Ticket ${createdIds[0]} creado exitosamente!`,
-        "success"
-      );
-    } else {
-      showNotification(
-        `Se crearon ${createdIds.length} tickets: ${createdIds.join(", ")}`,
-        "success"
-      );
-    }
+    showNotification(
+      createdLocally.length === 1
+        ? `Ticket ${createdLocally[0].id} creado exitosamente`
+        : `Se crearon ${createdLocally.length} tickets`,
+      "success"
+    );
   } catch (err) {
-    console.error("Error creando ticket:", err);
-    showNotification("Error al crear el ticket. Intenta nuevamente.", "error");
+    console.error(err);
+    showNotification(err.message || "Error al crear el/los ticket(s)", "error");
   } finally {
     appState.creating = false;
     updateCreateButton();
