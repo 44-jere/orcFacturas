@@ -542,11 +542,13 @@ function renderTickets() {
 
                 <!-- Botones de acción -->
                 <div class="ticket-actions">
-                    <button class="action-btn primary" ${
-                      isCompleted ? "disabled" : ""
-                    }>
+                    <form action="http://localhost:8080/mainfacturas/${
+                      ticket.id
+                    }">
+  <button class="action-btn primary" ${isCompleted ? "disabled" : ""}>
                         Agregar Gasto
                     </button>
+</form>
                     <button class="action-btn secondary">
                         Ver Detalles
                     </button>

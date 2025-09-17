@@ -5,6 +5,7 @@ export async function crearTicket({
   fecha_fin,
   monto_presupuestado,
   total_gastado = 0,
+  descripcion_ticket,
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
@@ -20,8 +21,9 @@ export async function crearTicket({
         monto_presupuestado,
         total_gastado,
         creado_en,
-        actualizado_en
-      ) VALUES ($1,$2,$3,$4,$5,$6,now(),now())
+        actualizado_en,
+        descripcion
+      ) VALUES ($1,$2,$3,$4,$5,$6,now(),now(),$7)
       RETURNING id_ticket, creado_en, actualizado_en
       `,
       [
@@ -31,6 +33,7 @@ export async function crearTicket({
         fecha_fin,
         monto_presupuestado,
         total_gastado,
+        descripcion_ticket,
       ]
     );
 

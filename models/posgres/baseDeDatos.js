@@ -62,3 +62,5 @@ import "./administrador/get/get.js";
 import "./administrador/patch/patch.js";
 
 import "./mainFacturas/post/post.js";
+
+import "./usermain/get/get.js";

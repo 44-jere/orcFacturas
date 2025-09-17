@@ -8,7 +8,7 @@ import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mainFacturasRouter = Router()
+export const mainFacturasRouter = Router();
 const allowedRoles = [3];
 //3=empleados
 function denegarNoEmpleados({ res, role }) {
@@ -17,14 +17,17 @@ function denegarNoEmpleados({ res, role }) {
     return true;
   }
 }
-mainFacturasRouter.get("/", (req, res) => {
+mainFacturasRouter.get("/:id", (req, res) => {
   try {
-    const id_ticket = req.params.id
-    if(!id_ticket) return res.redirect("/usermain");
+    const id_ticket = parseInt(req.params.id);
+    if (!id_ticket) return res.redirect("/usermain");
     const { id, role } = protegerRuta({ req, res });
     const db = req.db;
-    const usuarioPosee = db.userMainUsuarioPoseeTicket({ id_usuario:id, id_ticket })
-    if(!usuarioPosee) return res.redirect("/usermain");
+    const usuarioPosee = db.userMainUsuarioPoseeTicket({
+      id_usuario: id,
+      id_ticket,
+    });
+    if (!usuarioPosee) return res.redirect("/usermain");
 
     if (denegarNoEmpleados({ res, role })) return;
     res.sendFile(
@@ -40,7 +43,7 @@ mainFacturasRouter.get("/", (req, res) => {
       )
     );
   } catch (e) {
-    loginRedirecter({ req, res });
+    return res.redirect("/usermain");
   }
 });
 

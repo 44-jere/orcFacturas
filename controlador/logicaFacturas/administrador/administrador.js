@@ -99,14 +99,23 @@ adminRouter.patch("/actualizarTicket", async (req, res) => {
     if (!decoded) return;
     if (!allowOrRedirect(decoded, res)) return;
 
-    const { id_ticket, fecha_inicio, fecha_fin, monto_presupuestado } =
-      req.body;
+    const {
+      id_ticket,
+      fecha_inicio,
+      fecha_fin,
+      monto_presupuestado,
+      descripcion_ticket,
+    } = req.body;
+
+    if (descripcion_ticket.length > 200)
+      return res.status(401).send("descripcion muy larga");
 
     const resultado = await req.db.administradorActualizarTicket({
       id_ticket,
       fecha_inicio,
       fecha_fin,
       monto_presupuestado,
+      descripcion_ticket,
     });
 
     res.json(resultado);

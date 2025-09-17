@@ -151,7 +151,7 @@ export async function buscarUsuarios({ id, nombre, idSuperior }) {
       ORDER BY u.nombre ASC, u.id_usuario ASC
       LIMIT ${LIMIT}
       `,
-      [pattern,]Number(idSuperior)
+      [pattern, Number(idSuperior)]
     );
 
     return {
