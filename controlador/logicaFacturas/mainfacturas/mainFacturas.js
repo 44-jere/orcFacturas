@@ -19,7 +19,13 @@ function denegarNoEmpleados({ res, role }) {
 }
 mainFacturasRouter.get("/", (req, res) => {
   try {
+    const id_ticket = req.params.id
+    if(!id_ticket) return res.redirect("/usermain");
     const { id, role } = protegerRuta({ req, res });
+    const db = req.db;
+    const usuarioPosee = db.userMainUsuarioPoseeTicket({ id_usuario:id, id_ticket })
+    if(!usuarioPosee) return res.redirect("/usermain");
+
     if (denegarNoEmpleados({ res, role })) return;
     res.sendFile(
       path.join(

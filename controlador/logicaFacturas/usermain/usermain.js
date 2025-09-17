@@ -14,7 +14,7 @@ const allowedRoles = [3];
 function allowOrRedirect(decoded, res) {
   const role = allowedRoles.indexOf(decoded.role);
   if (role === -1) {
-    res.redirect("/perfil");
+    res.redirect("/admins");
     return false;
   }
   return true;
