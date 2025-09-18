@@ -2,6 +2,8 @@
    Panel Administrador – Automatix Solutions
    Archivo: admin-script.js (SIN MODO DEMO)
    ========================================================================= */
+   // ==== BASE DE LA API ====
+const API_BASE = "http://localhost:8080/admin";
 
 /* ====================== Tema (detectar desde LocalStorage/DOM) ====================== */
 function getInitialIsDark() {
@@ -326,9 +328,7 @@ async function searchUsersIncremental(query) {
   try {
     // ▶️ Usar /buscarUsuario con parámetro ?nombre=
     const response = await fetch(
-      `http://localhost:8080/admin/subordinados/buscarUsuario?nombre=${encodeURIComponent(
-        query
-      )}`,
+      `${API_BASE}/subordinados/buscarUsuario?nombre=${encodeURIComponent(query)}`,
       {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -351,15 +351,11 @@ async function searchUsersIncremental(query) {
 }
 
 async function searchUserById(userId) {
-  if (!userId || isNaN(parseInt(userId))) {
-    return null;
-  }
+  if (!userId || isNaN(parseInt(userId))) return null;
 
   try {
     const response = await fetch(
-      `http://localhost:8080/admin/subordinados/buscarUsuario?id=${encodeURIComponent(
-        userId
-      )}`,
+      `${API_BASE}/subordinados/buscarUsuario?id=${encodeURIComponent(userId)}`,
       {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -1144,7 +1140,7 @@ async function createTicket() {
           .trim(), // puede ser ""
       };
 
-      const resp = await fetch("/crearTicket/", {
+      const resp = await fetch(`${API_BASE}/crearTicket`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1805,7 +1801,7 @@ async function loadAdminData() {
 
   try {
     /* ========= ÚNICO GET requerido: total de usuarios ========= */
-    const resp = await fetch("/subordinados/", {
+    const resp = await fetch(`${API_BASE}/subordinados`, {
       method: "GET",
       headers: { Accept: "application/json" },
       credentials: "include",
@@ -2257,7 +2253,7 @@ async function fetchAndRenderAssignedUsers() {
   if (empty) empty.classList.add("hidden");
 
   try {
-    const resp = await fetch("/subordinados/", {
+    const resp = await fetch(`${API_BASE}/subordinados`, {
       method: "GET",
       headers: { Accept: "application/json" },
       credentials: "include",
