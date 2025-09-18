@@ -89,5 +89,12 @@ app.use("/mainfacturas", mainFacturasRouter);
 
 app.use("/usermain", userMainRouter);
 
+app.get("/test", (req, res) => {
+  const db = req.db;
+  const params = req.query;
+
+  db.administradorTestQuery({ params });
+});
+
 app.listen(port, "0.0.0.0");
 console.log("Server started at http://localhost:" + port);

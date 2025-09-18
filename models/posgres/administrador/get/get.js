@@ -227,6 +227,244 @@ export async function traerTicketsPorUsuarioPaginado({
   }
 }
 
+export async function buscarTicketsActivos({
+  id,
+  idTicket,
+  nombre,
+  fechaInicio,
+  fechaFin,
+  idSuperior, // 👈 nuevo (obligatorio)
+}) {
+  const { baseDeDatos } = await import("../../baseDeDatos.js");
+  const client = await baseDeDatos.conectar();
+
+  // Normalización
+  const hasIdTicket =
+    idTicket !== undefined &&
+    idTicket !== null &&
+    Number.isInteger(Number(idTicket)) &&
+    Number(idTicket) > 0;
+
+  const hasIdUsuario =
+    id !== undefined &&
+    id !== null &&
+    Number.isInteger(Number(id)) &&
+    Number(id) > 0;
+
+  const nameTrim = typeof nombre === "string" ? nombre.trim() : "";
+  const hasNombre = nameTrim.length > 0;
+
+  const hasFechas =
+    typeof fechaInicio === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(fechaInicio.trim()) &&
+    typeof fechaFin === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(fechaFin.trim());
+
+  const hasSuperior =
+    idSuperior !== undefined &&
+    idSuperior !== null &&
+    Number.isInteger(Number(idSuperior)) &&
+    Number(idSuperior) > 0;
+
+  if (!hasSuperior) {
+    return { error: true, message: "Debe indicar 'idSuperior'." };
+  }
+
+  const LIMIT = 20;
+
+  try {
+    // 1) Buscar por idTicket (prioridad absoluta)
+    if (hasIdTicket) {
+      const params = [Number(idTicket)];
+      let whereParts = ["t.id_ticket = $1"];
+
+      let idx = 2;
+
+      if (hasFechas) {
+        params.push(fechaInicio, fechaFin);
+        whereParts.push(
+          `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
+        );
+      }
+
+      const supIdx = idx;
+      params.push(Number(idSuperior));
+      whereParts.push(
+        `(uc.id_superior = $${supIdx} OR ub.id_superior = $${supIdx})`
+      );
+
+      const { rows } = await client.query(
+        `
+        SELECT
+          t.id_ticket,
+          t.id_usuario_creador,
+          t.id_usuario_beneficiario,
+          t.fecha_inicio,
+          t.fecha_fin,
+          t.monto_presupuestado,
+          t.total_gastado,
+          t.creado_en,
+          t.actualizado_en,
+          t.descripcion,
+          uc.nombre AS nombre_creador,
+          ub.nombre AS nombre_beneficiario
+        FROM viaticos.tickets t
+        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+        WHERE ${whereParts.join(" AND ")}
+        LIMIT ${LIMIT}
+        `,
+        params
+      );
+
+      return {
+        items: rows,
+        criteria: {
+          by: "idTicket",
+          value: Number(idTicket),
+          fechaInicio,
+          fechaFin,
+          idSuperior: Number(idSuperior),
+        },
+        limit: LIMIT,
+      };
+    }
+
+    // 2) Buscar por idUsuario (segunda prioridad)
+    if (hasIdUsuario) {
+      const params = [Number(id)];
+      let whereParts = [
+        "(t.id_usuario_creador = $1 OR t.id_usuario_beneficiario = $1)",
+      ];
+
+      let idx = 2;
+
+      if (hasFechas) {
+        params.push(fechaInicio, fechaFin);
+        whereParts.push(
+          `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
+        );
+      }
+
+      const supIdx = idx;
+      params.push(Number(idSuperior));
+      whereParts.push(
+        `(uc.id_superior = $${supIdx} OR ub.id_superior = $${supIdx})`
+      );
+
+      const { rows } = await client.query(
+        `
+        SELECT
+          t.id_ticket,
+          t.id_usuario_creador,
+          t.id_usuario_beneficiario,
+          t.fecha_inicio,
+          t.fecha_fin,
+          t.monto_presupuestado,
+          t.total_gastado,
+          t.creado_en,
+          t.actualizado_en,
+          t.descripcion,
+          uc.nombre AS nombre_creador,
+          ub.nombre AS nombre_beneficiario
+        FROM viaticos.tickets t
+        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+        WHERE ${whereParts.join(" AND ")}
+        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
+        LIMIT ${LIMIT}
+        `,
+        params
+      );
+
+      return {
+        items: rows,
+        criteria: {
+          by: "idUsuario",
+          value: Number(id),
+          fechaInicio,
+          fechaFin,
+          idSuperior: Number(idSuperior),
+        },
+        limit: LIMIT,
+      };
+    }
+
+    // 3) Filtros opcionales (nombre + rango de fechas) SIEMPRE filtrando por idSuperior
+    const params = [];
+    let idx = 1;
+    const whereParts = [];
+
+    if (hasFechas) {
+      params.push(fechaInicio, fechaFin);
+      whereParts.push(
+        `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
+      );
+    }
+
+    if (hasNombre) {
+      params.push(`%${nameTrim}%`);
+      whereParts.push(`(uc.nombre ILIKE $${idx} OR ub.nombre ILIKE $${idx})`);
+      idx++;
+    }
+
+    // filtro por superior (obligatorio)
+    params.push(Number(idSuperior));
+    whereParts.push(`(uc.id_superior = $${idx} OR ub.id_superior = $${idx})`);
+
+    const whereSql = `WHERE ${whereParts.join(" AND ")}`;
+
+    const { rows } = await client.query(
+      `
+      SELECT
+        t.id_ticket,
+        t.id_usuario_creador,
+        t.id_usuario_beneficiario,
+        t.fecha_inicio,
+        t.fecha_fin,
+        t.monto_presupuestado,
+        t.total_gastado,
+        t.creado_en,
+        t.actualizado_en,
+        t.descripcion,
+        uc.nombre AS nombre_creador,
+        ub.nombre AS nombre_beneficiario
+      FROM viaticos.tickets t
+      JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+      JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+      ${whereSql}
+      ORDER BY t.fecha_fin ASC, t.id_ticket ASC
+      LIMIT ${LIMIT}
+      `,
+      params
+    );
+
+    return {
+      items: rows,
+      criteria: {
+        by: hasNombre ? "nombre" : "rangoFechas",
+        value: hasNombre ? nameTrim : "all",
+        fechaInicio,
+        fechaFin,
+        idSuperior: Number(idSuperior),
+      },
+      limit: LIMIT,
+    };
+  } catch (err) {
+    console.error("❌ Error en buscarTicketsActivos:", err.message);
+    return { error: true, message: err.message };
+  }
+}
+
+async function testQuery({}) {
+  try {
+    const { baseDeDatos } = await import("../../baseDeDatos.js");
+    const client = await baseDeDatos.conectar();
+
+    const { rows } = await client.query("$2 , $1", [param1, param2]);
+  } catch (e) {}
+}
+
 async function asignarMetodos() {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   baseDeDatos.administradorTraerUsuariosPorSuperior =
@@ -234,5 +472,7 @@ async function asignarMetodos() {
   baseDeDatos.administradorTraerTicketsPorUsuario =
     traerTicketsPorUsuarioPaginado;
   baseDeDatos.administradorBuscarUsuarios = buscarUsuarios;
+  baseDeDatos.administradorBuscarTicketsActivos = buscarTicketsActivos;
+  baseDeDatos.administradorTestQuery = testQuery;
 }
 asignarMetodos();

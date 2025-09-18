@@ -278,3 +278,24 @@ adminRouter.get("/verGastosTicket", (req, res) => {
     )
   );
 });
+
+adminRouter.get("/buscarTicketsActivos", (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+
+  const db = req.db;
+  const { id, idTicket, nombre, fechaInicio, fechaFin } = req.query;
+  console.log({ id, idTicket, nombre, fechaInicio, fechaFin });
+  const norm = (v) =>
+    typeof v === "string" && v.trim() === "" ? undefined : v;
+  const response = db.administradorBuscarTicketsActivos({
+    id: norm(id),
+    idTicket: norm(idTicket),
+    nombre: norm(nombre),
+    fechaInicio: norm(fechaInicio),
+    fechaFin: norm(fechaFin),
+    idSuperior: norm(decoded.id), // ← obligatorio
+  });
+  res.send(response);
+});
