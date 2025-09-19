@@ -227,13 +227,14 @@ export async function traerTicketsPorUsuarioPaginado({
   }
 }
 
-export async function buscarTicketsActivos({
-  id,
-  idTicket,
-  nombre,
-  fechaInicio,
-  fechaFin,
-  idSuperior, // 👈 nuevo (obligatorio)
+// controllers/db/consultas/tickets/buscarTicketsActivos.js
+async function buscarTicketsActivos({
+  id, // id del beneficiario
+  idTicket, // id del ticket
+  nombre, // nombre del beneficiario
+  fechaInicio, // "YYYY-MM-DD"
+  fechaFin, // "YYYY-MM-DD"
+  idSuperior, // obligatorio
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
@@ -244,22 +245,18 @@ export async function buscarTicketsActivos({
     idTicket !== null &&
     Number.isInteger(Number(idTicket)) &&
     Number(idTicket) > 0;
-
-  const hasIdUsuario =
+  const hasIdBenf =
     id !== undefined &&
     id !== null &&
     Number.isInteger(Number(id)) &&
     Number(id) > 0;
-
   const nameTrim = typeof nombre === "string" ? nombre.trim() : "";
   const hasNombre = nameTrim.length > 0;
-
   const hasFechas =
     typeof fechaInicio === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(fechaInicio.trim()) &&
     typeof fechaFin === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(fechaFin.trim());
-
   const hasSuperior =
     idSuperior !== undefined &&
     idSuperior !== null &&
@@ -272,26 +269,26 @@ export async function buscarTicketsActivos({
 
   const LIMIT = 20;
 
+  // Helper condición de “activo”
+  const activoDentroRangoSQL = (startIdx, endIdx) =>
+    `t.fecha_inicio >= $${startIdx}::date AND t.fecha_fin <= $${endIdx}::date`;
+  const activoHoySQL = `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
+
   try {
-    // 1) Buscar por idTicket (prioridad absoluta)
+    // 1) Prioridad absoluta: por idTicket (ignora el resto)
     if (hasIdTicket) {
-      const params = [Number(idTicket)];
-      let whereParts = ["t.id_ticket = $1"];
-
-      let idx = 2;
-
+      // Orden de params: [idTicket, idSuperior, (fechaInicio, fechaFin)?]
+      const params = [Number(idTicket), Number(idSuperior)];
+      const where = [
+        "t.id_ticket = $1",
+        "(uc.id_superior = $2 OR ub.id_superior = $2)", // subordinación obligatoria (creador o beneficiario)
+      ];
       if (hasFechas) {
-        params.push(fechaInicio, fechaFin);
-        whereParts.push(
-          `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
-        );
+        params.push(fechaInicio, fechaFin); // $3, $4
+        where.push(activoDentroRangoSQL(3, 4));
+      } else {
+        where.push(activoHoySQL);
       }
-
-      const supIdx = idx;
-      params.push(Number(idSuperior));
-      whereParts.push(
-        `(uc.id_superior = $${supIdx} OR ub.id_superior = $${supIdx})`
-      );
 
       const { rows } = await client.query(
         `
@@ -311,7 +308,7 @@ export async function buscarTicketsActivos({
         FROM viaticos.tickets t
         JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${whereParts.join(" AND ")}
+        WHERE ${where.join(" AND ")}
         LIMIT ${LIMIT}
         `,
         params
@@ -330,27 +327,20 @@ export async function buscarTicketsActivos({
       };
     }
 
-    // 2) Buscar por idUsuario (segunda prioridad)
-    if (hasIdUsuario) {
-      const params = [Number(id)];
-      let whereParts = [
-        "(t.id_usuario_creador = $1 OR t.id_usuario_beneficiario = $1)",
+    // 2) Segunda prioridad: por id de beneficiario (ignora 'nombre' si vino)
+    if (hasIdBenf) {
+      // Orden de params: [idBeneficiario, idSuperior, (fechaInicio, fechaFin)?]
+      const params = [Number(id), Number(idSuperior)];
+      const where = [
+        "t.id_usuario_beneficiario = $1", // SOLO beneficiario
+        "ub.id_superior = $2", // subordinación del beneficiario
       ];
-
-      let idx = 2;
-
       if (hasFechas) {
-        params.push(fechaInicio, fechaFin);
-        whereParts.push(
-          `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
-        );
+        params.push(fechaInicio, fechaFin); // $3, $4
+        where.push(activoDentroRangoSQL(3, 4));
+      } else {
+        where.push(activoHoySQL);
       }
-
-      const supIdx = idx;
-      params.push(Number(idSuperior));
-      whereParts.push(
-        `(uc.id_superior = $${supIdx} OR ub.id_superior = $${supIdx})`
-      );
 
       const { rows } = await client.query(
         `
@@ -370,7 +360,7 @@ export async function buscarTicketsActivos({
         FROM viaticos.tickets t
         JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${whereParts.join(" AND ")}
+        WHERE ${where.join(" AND ")}
         ORDER BY t.fecha_fin ASC, t.id_ticket ASC
         LIMIT ${LIMIT}
         `,
@@ -380,7 +370,7 @@ export async function buscarTicketsActivos({
       return {
         items: rows,
         criteria: {
-          by: "idUsuario",
+          by: "idBeneficiario",
           value: Number(id),
           fechaInicio,
           fechaFin,
@@ -390,66 +380,110 @@ export async function buscarTicketsActivos({
       };
     }
 
-    // 3) Filtros opcionales (nombre + rango de fechas) SIEMPRE filtrando por idSuperior
-    const params = [];
-    let idx = 1;
-    const whereParts = [];
-
-    if (hasFechas) {
-      params.push(fechaInicio, fechaFin);
-      whereParts.push(
-        `t.fecha_inicio >= $${idx++}::date AND t.fecha_fin <= $${idx++}::date`
-      );
-    }
-
+    // 3) Tercera prioridad: por nombre (del beneficiario)
     if (hasNombre) {
-      params.push(`%${nameTrim}%`);
-      whereParts.push(`(uc.nombre ILIKE $${idx} OR ub.nombre ILIKE $${idx})`);
-      idx++;
+      // Orden de params: [nombreLike, idSuperior, (fechaInicio, fechaFin)?]
+      const params = [`%${nameTrim}%`, Number(idSuperior)];
+      const where = [
+        "ub.nombre ILIKE $1", // SOLO nombre del beneficiario
+        "ub.id_superior = $2", // subordinación del beneficiario
+      ];
+      if (hasFechas) {
+        params.push(fechaInicio, fechaFin); // $3, $4
+        where.push(activoDentroRangoSQL(3, 4));
+      } else {
+        where.push(activoHoySQL);
+      }
+
+      const { rows } = await client.query(
+        `
+        SELECT
+          t.id_ticket,
+          t.id_usuario_creador,
+          t.id_usuario_beneficiario,
+          t.fecha_inicio,
+          t.fecha_fin,
+          t.monto_presupuestado,
+          t.total_gastado,
+          t.creado_en,
+          t.actualizado_en,
+          t.descripcion,
+          uc.nombre AS nombre_creador,
+          ub.nombre AS nombre_beneficiario
+        FROM viaticos.tickets t
+        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+        WHERE ${where.join(" AND ")}
+        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
+        LIMIT ${LIMIT}
+        `,
+        params
+      );
+
+      return {
+        items: rows,
+        criteria: {
+          by: "nombreBeneficiario",
+          value: nameTrim,
+          fechaInicio,
+          fechaFin,
+          idSuperior: Number(idSuperior),
+        },
+        limit: LIMIT,
+      };
     }
 
-    // filtro por superior (obligatorio)
-    params.push(Number(idSuperior));
-    whereParts.push(`(uc.id_superior = $${idx} OR ub.id_superior = $${idx})`);
+    // 4) Sin idTicket, sin id, sin nombre → activos de los subordinados del superior (creador o beneficiario)
+    {
+      // Orden de params: [idSuperior, (fechaInicio, fechaFin)?]
+      const params = [Number(idSuperior)];
+      const where = [
+        "(uc.id_superior = $1 OR ub.id_superior = $1)", // subordinación en cualquiera
+      ];
+      if (hasFechas) {
+        params.push(fechaInicio, fechaFin); // $2, $3
+        where.push(activoDentroRangoSQL(2, 3));
+      } else {
+        where.push(activoHoySQL);
+      }
 
-    const whereSql = `WHERE ${whereParts.join(" AND ")}`;
+      const { rows } = await client.query(
+        `
+        SELECT
+          t.id_ticket,
+          t.id_usuario_creador,
+          t.id_usuario_beneficiario,
+          t.fecha_inicio,
+          t.fecha_fin,
+          t.monto_presupuestado,
+          t.total_gastado,
+          t.creado_en,
+          t.actualizado_en,
+          t.descripcion,
+          uc.nombre AS nombre_creador,
+          ub.nombre AS nombre_beneficiario
+        FROM viaticos.tickets t
+        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+        WHERE ${where.join(" AND ")}
+        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
+        LIMIT ${LIMIT}
+        `,
+        params
+      );
 
-    const { rows } = await client.query(
-      `
-      SELECT
-        t.id_ticket,
-        t.id_usuario_creador,
-        t.id_usuario_beneficiario,
-        t.fecha_inicio,
-        t.fecha_fin,
-        t.monto_presupuestado,
-        t.total_gastado,
-        t.creado_en,
-        t.actualizado_en,
-        t.descripcion,
-        uc.nombre AS nombre_creador,
-        ub.nombre AS nombre_beneficiario
-      FROM viaticos.tickets t
-      JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
-      JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-      ${whereSql}
-      ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-      LIMIT ${LIMIT}
-      `,
-      params
-    );
-
-    return {
-      items: rows,
-      criteria: {
-        by: hasNombre ? "nombre" : "rangoFechas",
-        value: hasNombre ? nameTrim : "all",
-        fechaInicio,
-        fechaFin,
-        idSuperior: Number(idSuperior),
-      },
-      limit: LIMIT,
-    };
+      return {
+        items: rows,
+        criteria: {
+          by: "subordinadosActivos",
+          value: "all",
+          fechaInicio,
+          fechaFin,
+          idSuperior: Number(idSuperior),
+        },
+        limit: LIMIT,
+      };
+    }
   } catch (err) {
     console.error("❌ Error en buscarTicketsActivos:", err.message);
     return { error: true, message: err.message };

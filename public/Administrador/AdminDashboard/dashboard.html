@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Administrativo - Sistema de Gestión</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-  <link rel="stylesheet" href="dashboardstyles.css">
+  <link rel="stylesheet" href="/public/Administrador/AdminDashboard/dashboardstyles.css">
 </head>
+
 <body id="body" class="dark">
   <!-- Loading State -->
   <div id="loadingState" class="hidden">
@@ -32,10 +34,9 @@
       </div>
 
       <!-- Botón Menu -->
-      <button id="btnMenu"
-              class="btn btn-secondary"
-              onclick="window.location.assign('http://localhost:8080/adminmain/admin.html'); return false;"
-              title="Ir al menú principal">
+      <button id="btnMenu" class="btn btn-secondary"
+        onclick="window.location.assign('http://localhost:8080/adminmain/admin.html'); return false;"
+        title="Ir al menú principal">
         Menu
       </button>
 
@@ -272,6 +273,7 @@
     </div>
   </main>
 
-  <script src="dashboardscript.js"></script>
+  <script src="/public/Administrador/AdminDashboard/dashboardscript.js"></script>
 </body>
+
 </html>

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Supervisor - Automatix Solutions</title>
-  <link rel="stylesheet" href="supervisorStyles.css"/>
+  <link rel="stylesheet" href="/public/Supervisor/SupervisorMain/supervisorStyles.css" />
 </head>
+
 <body class="dark-theme" id="body">
   <!-- Header -->
   <header class="header" id="header">
@@ -15,7 +17,7 @@
           <div class="brand-icon">
             <svg class="brand-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div class="brand-text">
@@ -28,21 +30,21 @@
           <!-- Atajos -->
           <div class="quick-links">
             <a class="quick-btn" href="#"
-               onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
-               title="Ir al Dashboard general" role="button">
+              onclick="window.location.assign('http://localhost:8080/dashboard/dashboard.html'); return false;"
+              title="Ir al Dashboard general" role="button">
               <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
               </svg>
               <span class="btn-label">Dashboard general</span>
             </a>
 
             <a class="quick-btn" href="#"
-               onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;"
-               title="Descargar facturas" role="button">
+              onclick="window.location.assign('__ROUTE_DESCARGAR_FACTURAS__'); return false;" title="Descargar facturas"
+              role="button">
               <svg class="quick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
               </svg>
               <span class="btn-label">Descargar facturas</span>
             </a>
@@ -52,11 +54,11 @@
           <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
             <svg id="moonIcon" class="theme-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
             <svg id="sunIcon" class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
           </button>
 
@@ -65,7 +67,7 @@
             <button id="profileToggle" class="profile-btn" title="Ver perfil">
               <svg class="profile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </button>
 
@@ -76,7 +78,7 @@
                 <span class="profile-role">Supervisor</span>
               </div>
               <button class="dropdown-item" type="button"
-                      onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
+                onclick="document.getElementById('profileDropdown')?.classList.add('hidden'); window.location.assign('http://localhost:8080/perfil/PerfilIndex.html');">
                 Ver perfil
               </button>
               <button class="dropdown-item">Configuración</button>
@@ -98,7 +100,7 @@
           <div class="stat-icon purple">
             <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
             </svg>
           </div>
           <div class="stat-info">
@@ -111,8 +113,7 @@
         <div class="stat-content">
           <div class="stat-icon indigo">
             <svg class="stat-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 7h18M3 12h18M3 17h18"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
             </svg>
           </div>
           <div class="stat-info">
@@ -192,14 +193,15 @@
               <option value="">Todos los administradores</option>
             </select>
 
-            <input id="ticketsSearchInput" class="filter-input" type="search" placeholder="Buscar por ID o descripción"/>
+            <input id="ticketsSearchInput" class="filter-input" type="search"
+              placeholder="Buscar por ID o descripción" />
           </div>
 
           <div id="ticketsEmpty" class="no-data hidden">
             <div class="no-data-icon">
               <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <p class="no-data-text">No hay tickets activos</p>
@@ -226,14 +228,15 @@
               <option value="">Todos los administradores</option>
             </select>
 
-            <input id="historySearchInput" class="filter-input" type="search" placeholder="Buscar por ID o descripción"/>
+            <input id="historySearchInput" class="filter-input" type="search"
+              placeholder="Buscar por ID o descripción" />
           </div>
 
           <div id="historyEmpty" class="no-data hidden">
             <div class="no-data-icon">
               <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <p class="no-data-text">Sin tickets en historial</p>
@@ -249,7 +252,8 @@
 
           <!-- NUEVO: buscador por nombre -->
           <div class="filters-row">
-            <input id="adminsSearchInput" class="filter-input" type="search" placeholder="Buscar administrador por nombre"/>
+            <input id="adminsSearchInput" class="filter-input" type="search"
+              placeholder="Buscar administrador por nombre" />
           </div>
 
           <div id="adminsContainer" class="people-grid"></div>
@@ -257,7 +261,7 @@
             <div class="no-data-icon">
               <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <p class="no-data-text">Sin administradores</p>
@@ -283,14 +287,14 @@
               <option value="__none__">Sin administrador</option>
             </select>
 
-            <input id="searchInput" class="filter-input" type="search" placeholder="Buscar por nombre o correo"/>
+            <input id="searchInput" class="filter-input" type="search" placeholder="Buscar por nombre o correo" />
           </div>
           <div id="usersContainer" class="people-grid"></div>
           <div id="noUsers" class="no-data hidden">
             <div class="no-data-icon">
               <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <p class="no-data-text">Sin usuarios</p>
@@ -309,14 +313,15 @@
               <option value="MA">Ministerio de Agricultura</option>
               <option value="EC">Ministerio de Economía</option>
             </select>
-            <input id="sinAdminSearchInput" class="filter-input" type="search" placeholder="Buscar por nombre o correo"/>
+            <input id="sinAdminSearchInput" class="filter-input" type="search"
+              placeholder="Buscar por nombre o correo" />
           </div>
           <div id="sinAdminUsersContainer" class="people-grid"></div>
           <div id="noSinAdminUsers" class="no-data hidden">
             <div class="no-data-icon">
               <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <p class="no-data-text">Todos los usuarios tienen administrador asignado</p>
@@ -383,7 +388,8 @@
             </div>
 
             <p class="csv-hint">
-              Formato CSV: <code>role,nombre,email,titulo,ministerio,cui</code> · <em>role</em>=<code>admin|user</code> ·
+              Formato CSV: <code>role,nombre,email,titulo,ministerio,cui</code> · <em>role</em>=<code>admin|user</code>
+              ·
               <em>ministerio</em>=<code>ME|MS|MA|EC</code> · <em>cui</em> (opcional)
             </p>
 
@@ -393,18 +399,20 @@
               </button>
               <input type="file" id="csvInput" accept=".csv" class="hidden" />
 
-              <button type="button" id="downloadCsvTemplateBtn" class="action-btn secondary" title="Descargar plantilla CSV">
+              <button type="button" id="downloadCsvTemplateBtn" class="action-btn secondary"
+                title="Descargar plantilla CSV">
                 Descargar plantilla CSV
               </button>
 
               <button type="submit" id="createBtn" class="create-btn" style="margin-left:auto;">
                 <svg id="createIcon" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 <svg id="createLoadingIcon" class="btn-icon hidden" fill="none" viewBox="0 0 24 24">
                   <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="spinner-path" fill="currentColor"
-                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
                 </svg>
                 <span id="createBtnText">Crear</span>
               </button>
@@ -429,7 +437,7 @@
           <div class="no-data-icon">
             <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <p class="no-data-text">Este administrador aún no tiene usuarios asignados.</p>
@@ -449,14 +457,16 @@
         <button class="modal-close" id="reopenCloseBtn" title="Cerrar" type="button">&times;</button>
       </div>
       <form id="reopenForm" class="modal-body">
-        <p class="form-hint">El ticket volverá al estado <strong>abierto</strong>. Indica la nueva fecha límite y la razón.</p>
+        <p class="form-hint">El ticket volverá al estado <strong>abierto</strong>. Indica la nueva fecha límite y la
+          razón.</p>
         <div class="form-group">
           <label class="form-label">Nueva fecha de vencimiento *</label>
           <input type="date" id="reopenDueDate" class="form-input" required />
         </div>
         <div class="form-group">
           <label class="form-label">Razón de reapertura *</label>
-          <textarea id="reopenReason" class="form-textarea" rows="3" placeholder="Describe por qué se reabre..." required></textarea>
+          <textarea id="reopenReason" class="form-textarea" rows="3" placeholder="Describe por qué se reabre..."
+            required></textarea>
         </div>
         <div class="modal-footer">
           <button type="button" class="action-btn secondary" id="reopenCancelBtn">Cancelar</button>
@@ -472,12 +482,13 @@
       <svg class="spinner" fill="none" viewBox="0 0 24 24">
         <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="spinner-path" fill="currentColor"
-          d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
       </svg>
       <p class="loading-text">Cargando...</p>
     </div>
   </div>
 
-  <script src="supervisorScript.js"></script>
+  <script src="/public/Supervisor/SupervisorMain/supervisorScript.js"></script>
 </body>
+
 </html>
