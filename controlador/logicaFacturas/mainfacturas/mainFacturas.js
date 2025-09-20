@@ -5,6 +5,8 @@ import { fileURLToPath } from "url";
 import { loginRedirecter } from "../redirigirAlLogin.js";
 import { modeloIA } from "../../../modelosIA/gemini/gemini.js";
 import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
+import crypto from "node:crypto";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -67,6 +69,11 @@ mainFacturasRouter.post(
       if (!id_ticket) return res.redirect("/usermain");
       const { id, role } = protegerRuta({ req, res });
       if (denegarNoEmpleados({ res, role })) return;
+      const usuarioPosee = db.userMainUsuarioPoseeTicket({
+        id_usuario: id,
+        id_ticket,
+      });
+      if (!usuarioPosee) return res.redirect("/usermain");
 
       if (!req.files?.length) {
         return res.status(400).json({ error: "No se enviaron imágenes" });
@@ -98,65 +105,82 @@ mainFacturasRouter.post(
   handleMulter(uploadImages),
   async (req, res, next) => {
     try {
-      const id_ticket = parseInt(req.params.id);
-      if (!id_ticket) return res.redirect("/usermain");
-      const { id, role } = protegerRuta({ req, res });
+      const { id, role } = protegerRuta({ req, res }); // id_usuario
       const db = req.db;
       if (denegarNoEmpleados({ res, role })) return;
+
+      const usuarioPosee = db.userMainUsuarioPoseeTicket({
+        id_usuario: id,
+        id_ticket,
+      });
+      if (!usuarioPosee) return res.redirect("/usermain");
 
       if (!req.files?.length) {
         return res.status(400).json({ error: "No se enviaron imágenes" });
       }
 
-      const {
-        proveedor,
-        serie,
-        numero_factura,
-        fecha_emision,
-        nit_emisor,
-        nit_receptor,
-        total,
-        descripcion,
-        comida,
-        moneda,
-        tipo_de_gasto,
-        tipo_de_comida,
-        creado_en,
-        actualizado_en,
-      } = req.body;
+      // ✅ id_ticket viene de la URL
+      const id_ticket = Number.parseInt(req.params.id, 10);
+      if (!Number.isInteger(id_ticket) || id_ticket <= 0) {
+        return res.status(400).json({ error: "id_ticket inválido" });
+      }
+
+      // Parsear arrays JSON alineados con req.files
+      let userDataPerFile = [];
+      let iaFrozenPerFile = [];
+      try {
+        userDataPerFile = JSON.parse(req.body.userDataPerFile || "[]");
+      } catch {}
+      try {
+        iaFrozenPerFile = JSON.parse(req.body.iaFrozenPerFile || "[]");
+      } catch {}
+
+      if (!Array.isArray(userDataPerFile) || !Array.isArray(iaFrozenPerFile)) {
+        return res
+          .status(400)
+          .json({ error: "userDataPerFile/iaFrozenPerFile inválidos" });
+      }
+      if (
+        userDataPerFile.length !== req.files.length ||
+        iaFrozenPerFile.length !== req.files.length
+      ) {
+        return res.status(400).json({
+          error:
+            "La cantidad de userDataPerFile/iaFrozenPerFile debe coincidir con la de imágenes",
+          esperado: req.files.length,
+          userDataPerFile: userDataPerFile.length,
+          iaFrozenPerFile: iaFrozenPerFile.length,
+        });
+      }
 
       const resultados = await Promise.allSettled(
-        req.files.map(async (file) => {
-          // ================================
-          // 📌 AQUÍ VA TU CÓDIGO DE BUCKET:
-          // const bucketUrl = await bucketClient.save(file.buffer, file.originalname);
-          // const imagen_factura_url = bucketUrl;
-          // falta renombrar las imagenes con algun criptoUUID
-          // codigo que verifica que cada imagen tiene su respectivo archivo con datos extraidos
-          // ================================
-
-          // Mientras no hay bucket, usamos un URL fijo que me pases:
+        req.files.map(async (file, i) => {
+          // 1) Guardar imagen en bucket
+          const safeName = `${crypto.randomUUID()}-${file.originalname.replace(
+            /[^a-zA-Z0-9._-]/g,
+            "_"
+          )}`;
+          // const imagen_factura_url = await bucketClient.save(file.buffer, safeName);
           const imagen_factura_url =
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSukUO-lYmQ0JQXIyl19hauLoYZTCdfVYNvPw&s"; // 👈 reemplaza por tu URL random
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSukUO-lYmQ0JQXIyl19hauLoYZTCdfVYNvPw&s"; // 👈 reemplaza por tu URL rando
 
+          // 2) Emparejar editable y congelado
+          const userEditable = userDataPerFile[i] || {};
+          const iaFrozen = iaFrozenPerFile[i] || {};
+
+          // ⚠️ Excluir campos no permitidos (motivo, creado_en, actualizado_en)
+          const { motivo, creado_en, actualizado_en, ...userEditableSafe } =
+            userEditable;
+
+          // 3) Payload para crearComprobante
           const payload = {
-            id_usuario: id,
-            id_ticket,
-            proveedor,
-            serie,
-            numero_factura,
-            fecha_emision,
-            nit_emisor,
-            nit_receptor,
-            total,
-            descripcion,
-            imagen_factura_url, // requerido por crearComprobante
-            comida,
-            moneda,
-            tipo_de_gasto,
-            tipo_de_comida,
-            ...(creado_en ? { creado_en } : {}),
-            ...(actualizado_en ? { actualizado_en } : {}),
+            userData: {
+              ...userEditableSafe,
+              id_usuario: id, // SIEMPRE desde la sesión
+              id_ticket, // desde la URL
+              imagen_factura_url, // generado en backend
+            },
+            iaData: iaFrozen,
           };
 
           const out = await db.mainFacturasCrearComprobante(payload);
