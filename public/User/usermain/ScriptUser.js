@@ -19,13 +19,14 @@ function normalizeTicket(raw) {
     ministerio: raw.ministerio || "-", // si no lo tienes, placeholder
     monto: parseFloat(raw.monto_presupuestado || 0),
     moneda: raw.moneda || "Q", // fija tu símbolo
-    fechaCreacion: raw.creado_en, // lo que espera tu UI
-    fechaVencimiento: raw.fecha_fin,
+    fechaCreacion: new Date(raw.creado_en), // lo que espera tu UI
+    fechaVencimiento: new Date(raw.fecha_fin),
     estado,
     gastado: parseFloat(raw.total_gastado || 0),
-    administrador: raw.administrador || "-", // si no lo tienes aún
+    descripcion: raw.descripcion,
+    administrador: raw.creador || "-", // si no lo tienes aún
     // extras que podrías necesitar luego:
-    // beneficiario: raw.beneficiario,
+    beneficiario: raw.beneficiario,
     // fechaInicio: raw.fecha_inicio,
     // actualizadoEn: raw.actualizado_en,
   };
@@ -37,11 +38,11 @@ function normalizeTicket(raw) {
 const API_BASE = "http://localhost:8080"; // opcional, ej. "http://localhost:8080"
 const ENDPOINTS = {
   // GET: lista de tickets del usuario autenticado
-  tickets: "/viaticos/tickets",
+  tickets: "/viaticos/tickets/",
   // GET: descarga archivo de facturas (zip/csv/pdf). Devuelve binario.
-  descargarFacturas: "/viaticos/facturas/descargar",
+  descargarFacturas: "/viaticos/facturas/descargar/",
   // GET: info de usuario (opcional si ya la tienes)
-  me: "/perfil/userData",
+  me: "/perfil/userData/",
 };
 
 async function apiFetch(path, opts = {}) {
@@ -218,14 +219,14 @@ async function downloadInvoices() {
 // ==============================
 function renderStats() {
   const activosCount = TICKETS.filter((t) => t.estado === "activo").length;
-  const totalMonto = TICKETS.reduce(
-    (sum, t) => sum + parseFloat(t.monto || 0),
-    0
-  );
-  const totalGastado = TICKETS.reduce(
-    (sum, t) => sum + parseFloat(t.gastado || 0),
-    0
-  );
+  const totalMonto = TICKETS.reduce((sum, t) => {
+    const monto =
+      new Date(t.fechaVencimiento) > new Date().getTime() ? t.monto : 0;
+    return sum + parseFloat(monto);
+  }, 0);
+  const totalGastado = TICKETS.reduce((sum, t) => {
+    return sum + parseFloat(t.gastado || 0);
+  }, 0);
   const proximosVencer = TICKETS.filter(
     (t) => t.estado === "proximo_vencer"
   ).length;
@@ -486,10 +487,7 @@ function renderTickets() {
                 <!-- Header del ticket -->
                 <div class="ticket-header">
                     <div>
-                        <h3 class="ticket-title">${ticket.id || "-"}</h3>
-                        <p class="ticket-ministry">${
-                          ticket.ministerio || "-"
-                        }</p>
+                        <h3 class="ticket-title">ID: ${ticket.id || "-"}</h3>
                         <p class="ticket-ministry">Administrador: ${
                           ticket.administrador || "-"
                         }</p>
@@ -500,7 +498,9 @@ function renderTickets() {
                 </div>
 
                 <!-- Descripción -->
-                <p class="ticket-description">${ticket.descripcion || "-"}</p>
+                <p class="ticket-description">${
+                  ticket.descripcion || "Descripcion: -"
+                }</p>
 
                 <!-- Información financiera -->
                 <div class="ticket-budget">
@@ -536,15 +536,17 @@ function renderTickets() {
 
                 <!-- Fechas -->
                 <div class="ticket-dates">
-                    <span>Creado: ${ticket.fechaCreacion || "-"}</span>
-                    <span>Vence: ${ticket.fechaVencimiento || "-"}</span>
+                    <span>Creado: ${
+                      ticket.fechaCreacion.toLocaleString("es-GT") || "-"
+                    }</span>
+                    <span>Vence: ${
+                      ticket.fechaVencimiento.toLocaleString("es-GT") || "-"
+                    }</span>
                 </div>
 
                 <!-- Botones de acción -->
                 <div class="ticket-actions">
-                    <form action="http://localhost:8080/mainfacturas/${
-                      ticket.id
-                    }">
+                    <form action="/mainfacturas/${ticket.id}">
   <button class="action-btn primary" ${isCompleted ? "disabled" : ""}>
                         Agregar Gasto
                     </button>

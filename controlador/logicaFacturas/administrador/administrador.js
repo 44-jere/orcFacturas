@@ -140,6 +140,7 @@ adminRouter.post("/crearTicket", async (req, res) => {
       fecha_fin,
       monto_presupuestado,
       total_gastado,
+      descripcion_ticket,
     } = req.body;
 
     const resultado = await req.db.administradorCrearTicket({
@@ -149,6 +150,7 @@ adminRouter.post("/crearTicket", async (req, res) => {
       fecha_fin,
       monto_presupuestado,
       total_gastado,
+      descripcion_ticket,
     });
 
     res.json(resultado);

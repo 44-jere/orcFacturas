@@ -202,8 +202,12 @@ export async function traerTicketsPorUsuarioPaginado({
         t.total_gastado,
         t.creado_en,
         t.actualizado_en,
+        t.descripcion,
+        u_creador.nombre AS creador,
         u.nombre AS beneficiario
       FROM viaticos.tickets t
+      JOIN viaticos.usuarios u_creador
+        ON t.id_usuario_creador = u_creador.id_usuario
       JOIN viaticos.usuarios u
         ON t.id_usuario_beneficiario = u.id_usuario
       WHERE t.id_usuario_creador = $1

@@ -69,6 +69,7 @@ mainFacturasRouter.post(
       if (!id_ticket) return res.redirect("/usermain");
       const { id, role } = protegerRuta({ req, res });
       if (denegarNoEmpleados({ res, role })) return;
+      const db = req.db;
       const usuarioPosee = db.userMainUsuarioPoseeTicket({
         id_usuario: id,
         id_ticket,
