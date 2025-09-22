@@ -21,6 +21,8 @@ function normalizeTicket(raw) {
     moneda: raw.moneda || "Q", // fija tu símbolo
     fechaCreacion: new Date(raw.creado_en), // lo que espera tu UI
     fechaVencimiento: new Date(raw.fecha_fin),
+    // === NUEVO: incluir fecha de inicio desde el backend ===
+    fechaInicio: new Date(raw.fecha_inicio),
     estado,
     gastado: parseFloat(raw.total_gastado || 0),
     descripcion: raw.descripcion,
@@ -449,8 +451,9 @@ function renderTickets() {
       completedSearchMode === "fecha" &&
       (completedStartDate || completedEndDate)
     ) {
+      // === CAMBIO: usar fecha de INICIO para el rango de búsqueda en "Completados" ===
       filteredTickets = filteredTickets.filter((t) =>
-        inDateRange(t.fechaCreacion, completedStartDate, completedEndDate)
+        inDateRange(t.fechaInicio, completedStartDate, completedEndDate)
       );
     }
   }
@@ -536,6 +539,9 @@ function renderTickets() {
 
                 <!-- Fechas -->
                 <div class="ticket-dates">
+                    <span>Inicio: ${
+                      ticket.fechaInicio?.toLocaleString("es-GT") || "-"
+                    }</span>
                     <span>Creado: ${
                       ticket.fechaCreacion.toLocaleString("es-GT") || "-"
                     }</span>
