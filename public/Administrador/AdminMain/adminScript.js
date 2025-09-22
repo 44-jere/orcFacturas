@@ -2,7 +2,7 @@
    Panel Administrador – Automatix Solutions
    Archivo: admin-script.js (SIN MODO DEMO)
    ========================================================================= */
-   // ==== BASE DE LA API ====
+// ==== BASE DE LA API ====
 const API_BASE = "http://localhost:8080/admin";
 
 /* ====================== Tema (detectar desde LocalStorage/DOM) ====================== */
@@ -51,6 +51,15 @@ let appState = {
   gestSearchTimeout: null, // debounce para "Gestionar → Nombre"
   histSearchTimeout: null, // debounce para "Historial → Nombre"            // timeout para debounce de búsqueda
   searchResults: [], // resultados de búsqueda incremental
+
+  /* ====== NUEVO: soporte de “Gestionar” remoto ====== */
+  gestionar: {
+    // Últimos 6 tickets (por defecto) de /ticketsAsignados cuando “Buscar por” está vacío
+    lastSixAssigned: [],
+    lastSixLoaded: false,
+    // Resultados remotos de /buscarTicketsActivos
+    remoteResults: [],
+  },
 };
 
 /* ====== Filtros Gestionar ====== */
@@ -135,6 +144,38 @@ function getNextTicketId() {
     return Number.isFinite(n) ? Math.max(mx, n) : mx;
   }, 0);
   return maxId + 1;
+}
+
+/* ====================== Fechas (helpers para gestionar) ====================== */
+function isoToDmyFromZ(iso) {
+  if (!iso) return "";
+  try {
+    // Acepta "2025-09-21T06:00:00.000Z" u otros ISO
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = String(d.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
+  } catch {
+    return "";
+  }
+}
+
+function dmyToDate(dmy) {
+  if (!dmy) return null;
+  const [d, m, y] = dmy.split("/");
+  if (!d || !m || !y) return null;
+  return new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+}
+
+function isNowBetweenDates(dmyStart, dmyEnd) {
+  const start = dmyToDate(dmyStart);
+  const end = dmyToDate(dmyEnd);
+  if (!start || !end) return false;
+  const now = new Date();
+  // normalizamos fin al final del día
+  end.setHours(23, 59, 59, 999);
+  return now >= start && now <= end;
 }
 
 /* ====================== Tema ====================== */
@@ -1173,10 +1214,18 @@ async function createTicket() {
         descripcion: appState.ticketForm.descripcion || "",
         presupuesto: Number(appState.ticketForm.presupuesto),
         gastado: 0,
+        // MOSTRAR (pero NO usar para estado)
         fecha_creacion: new Date().toLocaleDateString("es-GT"),
-        fecha_inicio: appState.ticketForm.fecha_inicio,
-        fecha_vencimiento: appState.ticketForm.fecha_vencimiento,
-        estado: "activo",
+        // NUEVO: guardar inicio/fin (UI usa dd/mm/yyyy)
+        fecha_inicio: iso_to_ddmmyyyy(appState.ticketForm.fecha_inicio),
+        fecha_fin: iso_to_ddmmyyyy(appState.ticketForm.fecha_vencimiento),
+        // LÓGICA DE ESTADO BASADA EN RANGO
+        estado: isNowBetweenDates(
+          iso_to_ddmmyyyy(appState.ticketForm.fecha_inicio),
+          iso_to_ddmmyyyy(appState.ticketForm.fecha_vencimiento)
+        )
+          ? "activo"
+          : "completado",
       });
     }
 
@@ -1255,9 +1304,39 @@ function clearTicketForm() {
 }
 
 /* ====================== Gestión de Tickets ====================== */
+/* === NUEVO: mapeo de API → objeto UI (usar fecha_inicio/fecha_fin para estado) === */
+function mapApiItemToUiTicket(api) {
+  const inicioDmy = isoToDmyFromZ(api?.fecha_inicio);
+  const finDmy = isoToDmyFromZ(api?.fecha_fin);
+  const creadoDmy = isoToDmyFromZ(api?.creado_en);
+
+  const estado =
+    isNowBetweenDates(inicioDmy, finDmy) ? "activo" : "completado";
+
+  return {
+    id: api?.id_ticket,
+    usuario_asignado: api?.beneficiario || api?.nombre_beneficiario || "",
+    ministerio: "", // no viene en estos endpoints; se conserva vacío
+    descripcion: api?.descripcion ?? "",
+    presupuesto: Number(api?.monto_presupuestado || 0),
+    gastado: Number(api?.total_gastado || 0),
+    // Mostrar (informativo)
+    fecha_creacion: creadoDmy, // NO se usa para lógica
+    // NUEVO: se muestran y se usan para estado
+    fecha_inicio: inicioDmy,
+    fecha_fin: finDmy,
+    estado,
+  };
+}
+
+/* === Tarjeta: usar Inicio/Fin para estado y mostrar también Creado (solo visual) === */
 function createTicketCard(ticket) {
   const presupuesto = parseFloat(ticket.presupuesto || 0);
   const gastado = parseFloat(ticket.gastado || 0);
+
+  // Recalcular estado por si viene de UI local
+  const isActive = isNowBetweenDates(ticket.fecha_inicio, ticket.fecha_fin);
+  const estadoActual = isActive ? "activo" : "completado";
 
   const usedRatio = presupuesto > 0 ? gastado / presupuesto : 0;
   const usedPct = isFinite(usedRatio) ? usedRatio * 100 : 0;
@@ -1272,17 +1351,17 @@ function createTicketCard(ticket) {
       <div class="ticket-header">
         <div>
           <h3 class="ticket-title">${ticket.id}</h3>
-          <p class="ticket-ministry">${ticket.ministerio}</p>
+          <p class="ticket-ministry">${ticket.ministerio || ""}</p>
           <p class="ticket-assigned">Asignado a: ${ticket.usuario_asignado}</p>
         </div>
         <span class="ticket-status ${
-          ticket.estado === "activo" ? "status-active" : "status-completed"
+          estadoActual === "activo" ? "status-active" : "status-completed"
         }">
-          ${ticket.estado === "activo" ? "Activo" : "Completado"}
+          ${estadoActual === "activo" ? "Activo" : "Completado"}
         </span>
       </div>
 
-      <p class="ticket-description">${ticket.descripcion}</p>
+      <p class="ticket-description">${ticket.descripcion || ""}</p>
 
       <div class="ticket-budget">
         <div class="budget-row">
@@ -1319,9 +1398,7 @@ function createTicketCard(ticket) {
           )}%"></div>
         </div>
         <p class="budget-percentage">
-          ${
-            isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"
-          }% utilizado
+          ${isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"}% utilizado
         </p>
 
         ${
@@ -1342,8 +1419,9 @@ function createTicketCard(ticket) {
       </div>
 
       <div class="ticket-dates">
-        <span>Creado: ${ticket.fecha_creacion}</span>
-        <span>Vence: ${ticket.fecha_vencimiento}</span>
+        <span>Inicio: ${ticket.fecha_inicio || "-"}</span>
+        <span>Fin: ${ticket.fecha_fin || "-"}</span>
+        <span>Creado: ${ticket.fecha_creacion || "-"}</span>
       </div>
 
       <div class="ticket-actions">
@@ -1361,88 +1439,6 @@ function createTicketCard(ticket) {
   `;
 }
 
-function updateTicketsTab() {
-  const noTickets = document.getElementById("noTickets");
-  const ticketsContainer = document.getElementById("ticketsContainer");
-
-  let list = [...appState.tickets];
-
-  // ===== Lógica de filtro Gestionar =====
-  const mode = (gestCriteria.mode || "").trim();
-
-  // Rango de fechas (opcional) integrado en modos que lo usan
-  const from = gestCriteria.from ? new Date(gestCriteria.from) : null;
-  const to = gestCriteria.to ? new Date(gestCriteria.to) : null;
-  let end = null;
-  if (to) {
-    end = new Date(to);
-    end.setHours(23, 59, 59, 999);
-  }
-
-  if (mode === "nombre") {
-    const q = (gestCriteria.nameQuery || "").toLowerCase();
-    if (q) {
-      list = list.filter((t) =>
-        (t.usuario_asignado || "").toLowerCase().includes(q)
-      );
-    }
-    // aplicar fecha si viene
-    if (from || end) {
-      list = list.filter((t) => {
-        const dt = ddmmy_to_Date(t.fecha_creacion);
-        if (!dt) return false;
-        if (from && dt < from) return false;
-        if (end && dt > end) return false;
-        return true;
-      });
-    }
-  } else if (mode === "id") {
-    const idQ = parseInt(gestCriteria.idQuery, 10);
-    if (!isNaN(idQ)) {
-      list = list.filter((t) => {
-        const n = Number(t.id);
-        return Number.isFinite(n) && n === idQ;
-      });
-    } else {
-      list = [];
-    }
-    // aplicar fecha si viene
-    if (from || end) {
-      list = list.filter((t) => {
-        const dt = ddmmy_to_Date(t.fecha_creacion);
-        if (!dt) return false;
-        if (from && dt < from) return false;
-        if (end && dt > end) return false;
-        return true;
-      });
-    }
-  } else if (mode === "id-ticket") {
-    const idQ = parseInt(gestCriteria.idQuery, 10);
-    if (!isNaN(idQ)) {
-      list = list.filter((t) => {
-        const n = Number(t.id);
-        return Number.isFinite(n) && n === idQ;
-      });
-    } else {
-      list = [];
-    }
-    // IMPORTANTE: En "ID Ticket" NO se aplican filtros de fecha.
-  } else {
-    // modo vacío: sin filtros adicionales
-  }
-
-  if (list.length === 0) {
-    if (noTickets) noTickets.classList.remove("hidden");
-    if (ticketsContainer) ticketsContainer.classList.add("hidden");
-    return;
-  }
-
-  if (noTickets) noTickets.classList.add("hidden");
-  if (ticketsContainer) {
-    ticketsContainer.classList.remove("hidden");
-    ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
-  }
-}
 /* ====================== Historial ====================== */
 function ddmmy_to_Date(ddmmyyyy) {
   if (!ddmmyyyy) return null;
@@ -1451,6 +1447,158 @@ function ddmmy_to_Date(ddmmyyyy) {
   return new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
 }
 
+/* ====================== Gestionar (Remoto + Render) ====================== */
+/* === NUEVO: cargar últimos 6 de /ticketsAsignados (una sola vez) === */
+async function ensureLastSixAssignedLoaded() {
+  if (appState.gestionar.lastSixLoaded) return;
+  try {
+    const resp = await fetch(`${API_BASE}/ticketsAsignados`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    // servidor ya envía ordenado (más nuevo primero) → tomar primeros 6
+    const top6 = items.slice(0, 6).map(mapApiItemToUiTicket);
+    appState.gestionar.lastSixAssigned = top6;
+    appState.gestionar.lastSixLoaded = true;
+  } catch (e) {
+    console.error("Error cargando últimos 6 asignados:", e);
+    appState.gestionar.lastSixAssigned = [];
+    appState.gestionar.lastSixLoaded = true; // evitar reintentos continuos
+  }
+}
+
+/* === NUEVO: buscar activos en /buscarTicketsActivos con params === */
+async function fetchActiveTicketsRemote(params) {
+  // params: { id, idTicket, nombre, fechaInicio, fechaFin }
+  const qs = new URLSearchParams();
+  if (params?.id) qs.set("id", params.id);
+  if (params?.idTicket) qs.set("idTicket", params.idTicket);
+  if (params?.nombre) qs.set("nombre", params.nombre);
+  if (params?.fechaInicio) qs.set("fechaInicio", params.fechaInicio); // YYYY-MM-DD
+  if (params?.fechaFin) qs.set("fechaFin", params.fechaFin); // YYYY-MM-DD
+
+  try {
+    const resp = await fetch(`${API_BASE}/buscarTicketsActivos?${qs.toString()}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    appState.gestionar.remoteResults = items.map(mapApiItemToUiTicket);
+  } catch (e) {
+    console.error("Error en buscarTicketsActivos:", e);
+    appState.gestionar.remoteResults = [];
+  }
+}
+
+/* ====== Render listado Gestionar (usa remoto o local según “Buscar por”) ====== */
+function updateTicketsTab() {
+  const noTickets = document.getElementById("noTickets");
+  const ticketsContainer = document.getElementById("ticketsContainer");
+
+  // Si el modo está vacío → “Buscar por” (mostrar últimos 6 remotos)
+  if (!gestCriteria.mode) {
+    // Cargar si hace falta y luego pintar
+    ensureLastSixAssignedLoaded().then(() => {
+      const list = [...appState.gestionar.lastSixAssigned];
+      if (!list.length) {
+        if (noTickets) noTickets.classList.remove("hidden");
+        if (ticketsContainer) ticketsContainer.classList.add("hidden");
+        return;
+      }
+      if (noTickets) noTickets.classList.add("hidden");
+      if (ticketsContainer) {
+        ticketsContainer.classList.remove("hidden");
+        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+      }
+    });
+    return;
+  }
+
+  // ===== MODO CON FILTROS (Nombre / ID / ID Ticket) usando remoto =====
+  let list = [];
+  const mode = (gestCriteria.mode || "").trim();
+
+  if (mode === "nombre") {
+    // Convertir fechas UI a YYYY-MM-DD para API
+    const fromISO = (document.getElementById("gestFromDate")?.value || "").trim();
+    const toISO = (document.getElementById("gestToDate")?.value || "").trim();
+
+    // Disparar búsqueda remota y render
+    fetchActiveTicketsRemote({
+      nombre: gestCriteria.nameQuery || "",
+      fechaInicio: fromISO || "",
+      fechaFin: toISO || "",
+    }).then(() => {
+      list = [...appState.gestionar.remoteResults];
+      if (!list.length) {
+        if (noTickets) noTickets.classList.remove("hidden");
+        if (ticketsContainer) ticketsContainer.classList.add("hidden");
+        return;
+      }
+      if (noTickets) noTickets.classList.add("hidden");
+      if (ticketsContainer) {
+        ticketsContainer.classList.remove("hidden");
+        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+      }
+    });
+    return;
+  } else if (mode === "id") {
+    const idQ = parseInt(gestCriteria.idQuery, 10);
+    const fromISO = (document.getElementById("gestFromDate")?.value || "").trim();
+    const toISO = (document.getElementById("gestToDate")?.value || "").trim();
+
+    fetchActiveTicketsRemote({
+      id: !isNaN(idQ) ? String(idQ) : "",
+      fechaInicio: fromISO || "",
+      fechaFin: toISO || "",
+    }).then(() => {
+      list = [...appState.gestionar.remoteResults];
+      if (!list.length) {
+        if (noTickets) noTickets.classList.remove("hidden");
+        if (ticketsContainer) ticketsContainer.classList.add("hidden");
+        return;
+      }
+      if (noTickets) noTickets.classList.add("hidden");
+      if (ticketsContainer) {
+        ticketsContainer.classList.remove("hidden");
+        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+      }
+    });
+    return;
+  } else if (mode === "id-ticket") {
+    const idQ = parseInt(gestCriteria.idQuery, 10);
+
+    fetchActiveTicketsRemote({
+      idTicket: !isNaN(idQ) ? String(idQ) : "",
+    }).then(() => {
+      list = [...appState.gestionar.remoteResults];
+      if (!list.length) {
+        if (noTickets) noTickets.classList.remove("hidden");
+        if (ticketsContainer) ticketsContainer.classList.add("hidden");
+        return;
+      }
+      if (noTickets) noTickets.classList.add("hidden");
+      if (ticketsContainer) {
+        ticketsContainer.classList.remove("hidden");
+        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+      }
+    });
+    return;
+  } else {
+    // modo desconocido: sin resultados
+    if (noTickets) noTickets.classList.remove("hidden");
+    if (ticketsContainer) ticketsContainer.classList.add("hidden");
+    return;
+  }
+}
+/* ====================== Historial ====================== */
 function createHistorialCard(ticket) {
   const presupuesto = parseFloat(ticket.presupuesto || 0);
   const gastado = parseFloat(ticket.gastado || 0);
