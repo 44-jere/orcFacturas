@@ -298,6 +298,5 @@ adminRouter.get("/buscarTicketsActivos", async (req, res) => {
     fechaFin: norm(fechaFin),
     idSuperior: norm(decoded.id), // ← obligatorio
   });
-  console.log(response);
   res.send(response);
 });

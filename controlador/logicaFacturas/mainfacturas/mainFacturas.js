@@ -93,7 +93,7 @@ mainFacturasRouter.post(
         };
       });
 
-      const result = await modeloIA.analizarImagenes(req.files);
+      const result = await modeloIA.analizarImagenes(files);
       res.json(result);
     } catch (e) {
       next(e); // deja que el handler global formatee
