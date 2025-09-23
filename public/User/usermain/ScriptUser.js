@@ -1,3 +1,6 @@
+// ==============================
+// Normalización de ticket
+// ==============================
 function normalizeTicket(raw) {
   // --- calcular estado a partir de la fecha_fin ---
   let estado = "activo";
@@ -45,6 +48,8 @@ const ENDPOINTS = {
   descargarFacturas: "/viaticos/facturas/descargar/",
   // GET: info de usuario (opcional si ya la tienes)
   me: "/perfil/userData/",
+  // NUEVO (para viñeta "Llenar solicitud"):
+  crearSolicitud: "/viaticos/solicitudes/crear/",
 };
 
 async function apiFetch(path, opts = {}) {
@@ -299,6 +304,8 @@ function renderFilters() {
       label: "Completados",
       count: TICKETS.filter((t) => t.estado === "completado").length,
     },
+    // NUEVO: viñeta "Llenar solicitud" sin contador
+    { key: "llenar", label: "Llenar solicitud", count: "" },
   ];
 
   filters.innerHTML = filterOptions
@@ -308,7 +315,9 @@ function renderFilters() {
           selectedFilter === filter.key ? "active" : ""
         }" 
                 data-filter="${filter.key}">
-            ${filter.label} (${filter.count})
+            ${filter.label}${
+        filter.count !== "" ? ` (${filter.count})` : ""
+      }
         </button>
     `
     )
@@ -425,6 +434,113 @@ function renderFilters() {
 }
 
 function renderTickets() {
+  // NUEVO: si está seleccionada la viñeta "Llenar solicitud", mostramos formulario y salimos
+  if (selectedFilter === "llenar") {
+    ticketsGrid.style.display = "block";
+    noData.style.display = "none";
+
+    ticketsGrid.innerHTML = `
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <div>
+            <h3 class="ticket-title">Nueva solicitud de viáticos</h3>
+            <p class="ticket-ministry">Complete los campos y envíe</p>
+          </div>
+          <span class="ticket-status status-active">Formulario</span>
+        </div>
+
+        <form id="solicitudForm" class="ticket-form">
+          <div class="budget-row">
+            <label class="budget-label" for="destino">Destino</label>
+            <input id="destino" name="destino" required
+                   style="flex:1;padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+          </div>
+
+          <div class="budget-row">
+            <label class="budget-label" for="motivo">Motivo</label>
+            <input id="motivo" name="motivo" required
+                   style="flex:1;padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+          </div>
+
+          <div class="budget-row">
+            <label class="budget-label" for="fecha_inicio">Fecha inicio</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" required
+                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+          </div>
+
+          <div class="budget-row">
+            <label class="budget-label" for="fecha_fin">Fecha fin</label>
+            <input type="date" id="fecha_fin" name="fecha_fin" required
+                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+          </div>
+
+          <div class="budget-row">
+            <label class="budget-label" for="moneda">Moneda</label>
+            <select id="moneda" name="moneda" required
+                    style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+              <option value="Q">Q</option>
+              <option value="$">$</option>
+            </select>
+          </div>
+
+          <div class="budget-row">
+            <label class="budget-label" for="monto_estimado">Monto estimado</label>
+            <input type="number" id="monto_estimado" name="monto_estimado" step="0.01" min="0" required
+                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+          </div>
+
+          <div class="ticket-actions" style="margin-top:16px;">
+            <button type="submit" class="action-btn primary">Enviar solicitud</button>
+            <button type="button" id="cancelSolicitudBtn" class="action-btn secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    // listeners del formulario
+    const form = document.getElementById("solicitudForm");
+    const cancelBtn = document.getElementById("cancelSolicitudBtn");
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        selectedFilter = "todos";
+        renderFilters();
+        renderTickets();
+      });
+    }
+
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+          destino: form.destino.value.trim(),
+          motivo: form.motivo.value.trim(),
+          fecha_inicio: form.fecha_inicio.value, // YYYY-MM-DD
+          fecha_fin: form.fecha_fin.value,       // YYYY-MM-DD
+          moneda: form.moneda.value,
+          monto_estimado: parseFloat(form.monto_estimado.value || 0),
+        };
+        try {
+          await apiFetch(ENDPOINTS.crearSolicitud, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          alert("Solicitud enviada correctamente.");
+          // opcional: recargar tickets si el backend crea uno
+          try {
+            await loadTickets();
+          } catch {}
+          selectedFilter = "todos";
+          renderFilters();
+          renderTickets();
+        } catch (err) {
+          alert("No se pudo enviar la solicitud. " + (err?.message || ""));
+        }
+      });
+    }
+    return; // importante: no sigas con el render de tickets
+  }
+
   // Filtrar por pestaña
   let filteredTickets = TICKETS.filter((ticket) => {
     if (selectedFilter === "todos") return true;
