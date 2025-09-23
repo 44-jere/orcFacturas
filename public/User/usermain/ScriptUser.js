@@ -54,6 +54,7 @@ const ENDPOINTS = {
 
 async function apiFetch(path, opts = {}) {
   const headers = new Headers(opts.headers || {});
+  // FIX: agregar paréntesis a headers.has(...)
   if (!headers.has("Content-Type") && !(opts.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
@@ -288,24 +289,26 @@ function renderStats() {
 
 function renderFilters() {
   const filterOptions = [
-    { key: "todos", label: "Todos", count: TICKETS.length },
+    // { key: "todos", label: "Todos", count: TICKETS.length }, // Eliminado según solicitud previa
     {
       key: "activos",
-      label: "Activos",
+      label: "Tickets Activos",
       count: TICKETS.filter((t) => t.estado === "activo").length,
     },
     {
       key: "proximo_vencer",
-      label: "Por vencer",
+      label: "Tickets por vencer",
       count: TICKETS.filter((t) => t.estado === "proximo_vencer").length,
     },
     {
       key: "completados",
-      label: "Completados",
+      label: "Tickets Completados",
       count: TICKETS.filter((t) => t.estado === "completado").length,
     },
-    // NUEVO: viñeta "Llenar solicitud" sin contador
-    { key: "llenar", label: "Llenar solicitud", count: "" },
+    { key: "estado_solicitudes", label: "Estado de solicitudes de viaticos", count: "" },
+    { key: "llenar", label: "Llenar solicitud de viaticos", count: "" },
+    { key: "enviar_aprobacion", label: "Enviar solicitud aprobación ticket", count: "" },
+    { key: "estados_aprobacion", label: "Estados de solicitud de aprobación ticket", count: "" },
   ];
 
   filters.innerHTML = filterOptions
@@ -315,9 +318,7 @@ function renderFilters() {
           selectedFilter === filter.key ? "active" : ""
         }" 
                 data-filter="${filter.key}">
-            ${filter.label}${
-        filter.count !== "" ? ` (${filter.count})` : ""
-      }
+            ${filter.label}${filter.count !== "" ? ` (${filter.count})` : ""}
         </button>
     `
     )
@@ -328,26 +329,18 @@ function renderFilters() {
     const extraControls = `
             <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                 <select id="completedSearchMode" style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--bg-tertiary);color:var(--text-tertiary);">
-                    <option value="id" ${
-                      completedSearchMode === "id" ? "selected" : ""
-                    }>Buscar por ID ticket</option>
-                    <option value="fecha" ${
-                      completedSearchMode === "fecha" ? "selected" : ""
-                    }>Buscar por fecha</option>
+                    <option value="id" ${completedSearchMode === "id" ? "selected" : ""}>Buscar por ID ticket</option>
+                    <option value="fecha" ${completedSearchMode === "fecha" ? "selected" : ""}>Buscar por fecha</option>
                 </select>
 
-                <div id="completedById" style="display:${
-                  completedSearchMode === "id" ? "flex" : "none"
-                };gap:8px;align-items:center;">
+                <div id="completedById" style="display:${completedSearchMode === "id" ? "flex" : "none"};gap:8px;align-items:center;">
                     <input type="number" id="completedIdInput" placeholder="ID (entero)" value="${completedIdQuery}"
                            style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);width:160px;">
                     <button id="completedIdSearchBtn" class="filter-btn">Buscar</button>
                     <button id="completedIdClearBtn" class="filter-btn">Borrar</button>
                 </div>
 
-                <div id="completedByDate" style="display:${
-                  completedSearchMode === "fecha" ? "flex" : "none"
-                };gap:8px;align-items:center;flex-wrap:wrap;">
+                <div id="completedByDate" style="display:${completedSearchMode === "fecha" ? "flex" : "none"};gap:8px;align-items:center;flex-wrap:wrap;">
                     <input type="date" id="completedStartDate" value="${completedStartDate}"
                            style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
                     <span style="color:var(--text-secondary);">a</span>
@@ -434,8 +427,8 @@ function renderFilters() {
 }
 
 function renderTickets() {
-  // NUEVO: si está seleccionada la viñeta "Llenar solicitud", mostramos formulario y salimos
-  if (selectedFilter === "llenar") {
+  // NUEVO: si está seleccionada la viñeta "Estado de solicitudes"
+  if (selectedFilter === "estado_solicitudes") {
     ticketsGrid.style.display = "block";
     noData.style.display = "none";
 
@@ -443,101 +436,53 @@ function renderTickets() {
       <div class="ticket-card">
         <div class="ticket-header">
           <div>
-            <h3 class="ticket-title">Nueva solicitud de viáticos</h3>
-            <p class="ticket-ministry">Complete los campos y envíe</p>
+            <h3 class="ticket-title">Estado de solicitudes</h3>
+            <p class="ticket-ministry">Consulta el estado de las solicitudes enviadas</p>
           </div>
-          <span class="ticket-status status-active">Formulario</span>
+          <span class="ticket-status status-active">Resumen</span>
         </div>
 
-        <form id="solicitudForm" class="ticket-form">
-          <div class="budget-row">
-            <label class="budget-label" for="destino">Destino</label>
-            <input id="destino" name="destino" required
-                   style="flex:1;padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
-          </div>
+        <p class="ticket-description">
+          Aún no se ha implementado la lógica para listar las solicitudes. 
+          Aquí puedes renderizar una tabla o tarjetas con los datos que entregue tu backend (por ejemplo: número de solicitud, fecha, monto, estado, observaciones).
+        </p>
+      </div>
+    `;
+    return; // importante: no sigas con el render de tickets
+  }
 
-          <div class="budget-row">
-            <label class="budget-label" for="motivo">Motivo</label>
-            <input id="motivo" name="motivo" required
-                   style="flex:1;padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
-          </div>
+  // NUEVO: si está seleccionada la viñeta "Llenar solicitud" -> botón que navega a otra vista
+  if (selectedFilter === "llenar") {
+    ticketsGrid.style.display = "block";
+    noData.style.display = "none";
 
-          <div class="budget-row">
-            <label class="budget-label" for="fecha_inicio">Fecha inicio</label>
-            <input type="date" id="fecha_inicio" name="fecha_inicio" required
-                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
+    // Solo el botón de inicio; NO se muestran campos ni formulario aquí
+    ticketsGrid.innerHTML = `
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <div>
+            <h3 class="ticket-title">Llenar solicitud de viáticos</h3>
+            <p class="ticket-ministry">Presiona el botón para iniciar el proceso</p>
           </div>
+          <span class="ticket-status status-active">Inicio</span>
+        </div>
 
-          <div class="budget-row">
-            <label class="budget-label" for="fecha_fin">Fecha fin</label>
-            <input type="date" id="fecha_fin" name="fecha_fin" required
-                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
-          </div>
-
-          <div class="budget-row">
-            <label class="budget-label" for="moneda">Moneda</label>
-            <select id="moneda" name="moneda" required
-                    style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
-              <option value="Q">Q</option>
-              <option value="$">$</option>
-            </select>
-          </div>
-
-          <div class="budget-row">
-            <label class="budget-label" for="monto_estimado">Monto estimado</label>
-            <input type="number" id="monto_estimado" name="monto_estimado" step="0.01" min="0" required
-                   style="padding:8px;border-radius:12px;border:1px solid var(--border-secondary);background:var(--input-bg);color:var(--text-primary);">
-          </div>
-
-          <div class="ticket-actions" style="margin-top:16px;">
-            <button type="submit" class="action-btn primary">Enviar solicitud</button>
-            <button type="button" id="cancelSolicitudBtn" class="action-btn secondary">Cancelar</button>
-          </div>
-        </form>
+        <div class="ticket-actions" style="margin-top:16px;">
+          <button id="startSolicitudBtn" class="action-btn primary">
+            Comenzar proceso de llenado de solicitud
+          </button>
+        </div>
       </div>
     `;
 
-    // listeners del formulario
-    const form = document.getElementById("solicitudForm");
-    const cancelBtn = document.getElementById("cancelSolicitudBtn");
-
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", () => {
-        selectedFilter = "todos";
-        renderFilters();
-        renderTickets();
+    // Al hacer clic, redirige a otra vista (ajusta la ruta si tu front usa otra)
+    const startBtn = document.getElementById("startSolicitudBtn");
+    if (startBtn) {
+      startBtn.addEventListener("click", () => {
+        window.location.href = "/viaticos/solicitudes/nueva";
       });
     }
 
-    if (form) {
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const payload = {
-          destino: form.destino.value.trim(),
-          motivo: form.motivo.value.trim(),
-          fecha_inicio: form.fecha_inicio.value, // YYYY-MM-DD
-          fecha_fin: form.fecha_fin.value,       // YYYY-MM-DD
-          moneda: form.moneda.value,
-          monto_estimado: parseFloat(form.monto_estimado.value || 0),
-        };
-        try {
-          await apiFetch(ENDPOINTS.crearSolicitud, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          alert("Solicitud enviada correctamente.");
-          // opcional: recargar tickets si el backend crea uno
-          try {
-            await loadTickets();
-          } catch {}
-          selectedFilter = "todos";
-          renderFilters();
-          renderTickets();
-        } catch (err) {
-          alert("No se pudo enviar la solicitud. " + (err?.message || ""));
-        }
-      });
-    }
     return; // importante: no sigas con el render de tickets
   }
 
@@ -607,9 +552,7 @@ function renderTickets() {
                 <div class="ticket-header">
                     <div>
                         <h3 class="ticket-title">ID: ${ticket.id || "-"}</h3>
-                        <p class="ticket-ministry">Administrador: ${
-                          ticket.administrador || "-"
-                        }</p>
+                        <p class="ticket-ministry">Administrador: ${ticket.administrador || "-"}</p>
                     </div>
                     <span class="ticket-status ${estadoClass}">
                         ${estadoTexto}
@@ -617,30 +560,22 @@ function renderTickets() {
                 </div>
 
                 <!-- Descripción -->
-                <p class="ticket-description">${
-                  ticket.descripcion || "Descripcion: -"
-                }</p>
+                <p class="ticket-description">${ticket.descripcion || "Descripcion: -"}</p>
 
                 <!-- Información financiera -->
                 <div class="ticket-budget">
                     <div class="budget-row">
                         <span class="budget-label">Presupuesto</span>
-                        <span class="budget-amount budget-total">${
-                          ticket.moneda || ""
-                        }${formatNumber(ticket.monto)}</span>
+                        <span class="budget-amount budget-total">${ticket.moneda || ""}${formatNumber(ticket.monto)}</span>
                     </div>
                     <div class="budget-row">
                         <span class="budget-label">Gastado</span>
-                        <span class="budget-amount budget-spent">${
-                          ticket.moneda || ""
-                        }${formatNumber(ticket.gastado)}</span>
+                        <span class="budget-amount budget-spent">${ticket.moneda || ""}${formatNumber(ticket.gastado)}</span>
                     </div>
                     <div class="budget-row">
                         <span class="budget-label">Disponible</span>
                         <span class="budget-amount budget-available">
-                            ${ticket.moneda || ""}${formatNumber(
-        disponible.toFixed(2)
-      )}
+                            ${ticket.moneda || ""}${formatNumber(disponible.toFixed(2))}
                         </span>
                     </div>
 
@@ -655,15 +590,9 @@ function renderTickets() {
 
                 <!-- Fechas -->
                 <div class="ticket-dates">
-                    <span>Inicio: ${
-                      ticket.fechaInicio?.toLocaleString("es-GT") || "-"
-                    }</span>
-                    <span>Creado: ${
-                      ticket.fechaCreacion.toLocaleString("es-GT") || "-"
-                    }</span>
-                    <span>Vence: ${
-                      ticket.fechaVencimiento.toLocaleString("es-GT") || "-"
-                    }</span>
+                    <span>Inicio: ${ticket.fechaInicio?.toLocaleString("es-GT") || "-"}</span>
+                    <span>Creado: ${ticket.fechaCreacion.toLocaleString("es-GT") || "-"}</span>
+                    <span>Vence: ${ticket.fechaVencimiento.toLocaleString("es-GT") || "-"}</span>
                 </div>
 
                 <!-- Botones de acción -->
