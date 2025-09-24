@@ -232,13 +232,14 @@ export async function traerTicketsPorUsuarioPaginado({
 }
 
 // controllers/db/consultas/tickets/buscarTicketsActivos.js
-async function buscarTicketsActivos({
+async function buscarTicketsActivosYNoActivos({
   id, // id del beneficiario
   idTicket, // id del ticket
   nombre, // nombre del beneficiario
   fechaInicio, // "YYYY-MM-DD"
   fechaFin, // "YYYY-MM-DD"
-  idSuperior, // obligatorio
+  idSuperior, // obligatorio,
+  inactivosOnly = false
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
@@ -276,7 +277,7 @@ async function buscarTicketsActivos({
   // Helper condición de “activo”
   const activoDentroRangoSQL = (startIdx, endIdx) =>
     `t.fecha_inicio >= $${startIdx}::date AND t.fecha_fin <= $${endIdx}::date`;
-  const activoHoySQL = `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
+  const activoHoySQL = inactivosOnly? "WHERE t.fecha_fin < NOW()" : `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
 
   try {
     // 1) Prioridad absoluta: por idTicket (ignora el resto)
@@ -489,7 +490,7 @@ async function buscarTicketsActivos({
       };
     }
   } catch (err) {
-    console.error("❌ Error en buscarTicketsActivos:", err.message);
+    console.error("❌ Error en buscarTicketsActivosYNoActivos:", err.message);
     return { error: true, message: err.message };
   }
 }
@@ -510,7 +511,7 @@ async function asignarMetodos() {
   baseDeDatos.administradorTraerTicketsPorUsuario =
     traerTicketsPorUsuarioPaginado;
   baseDeDatos.administradorBuscarUsuarios = buscarUsuarios;
-  baseDeDatos.administradorBuscarTicketsActivos = buscarTicketsActivos;
+  baseDeDatos.administradorBuscarTicketsActivosYNoActivos = buscarTicketsActivosYNoActivos;
   baseDeDatos.administradorTestQuery = testQuery;
 }
 asignarMetodos();

@@ -287,16 +287,17 @@ adminRouter.get("/buscarTicketsActivos", async (req, res) => {
   if (!allowOrRedirect(decoded, res)) return;
 
   const db = req.db;
-  const { id, idTicket, nombre, fechaInicio, fechaFin } = req.query;
+  const { id, idTicket, nombre, fechaInicio, fechaFin, inactivosOnly } = req.query;
   const norm = (v) =>
     typeof v === "string" && v.trim() === "" ? undefined : v;
-  const response = await db.administradorBuscarTicketsActivos({
+  const response = await db.administradorBuscarTicketsActivosYNoActivos({
     id: norm(id),
     idTicket: norm(idTicket),
     nombre: norm(nombre),
     fechaInicio: norm(fechaInicio),
     fechaFin: norm(fechaFin),
     idSuperior: norm(decoded.id), // ← obligatorio
+    inactivosOnly
   });
   res.send(response);
 });
