@@ -109,7 +109,7 @@ mainFacturasRouter.post(
       const { id, role } = protegerRuta({ req, res }); // id_usuario
       const db = req.db;
       if (denegarNoEmpleados({ res, role })) return;
-
+      const id_ticket = Number.parseInt(req.params.id, 10);
       const usuarioPosee = db.userMainUsuarioPoseeTicket({
         id_usuario: id,
         id_ticket,
@@ -121,7 +121,6 @@ mainFacturasRouter.post(
       }
 
       // ✅ id_ticket viene de la URL
-      const id_ticket = Number.parseInt(req.params.id, 10);
       if (!Number.isInteger(id_ticket) || id_ticket <= 0) {
         return res.status(400).json({ error: "id_ticket inválido" });
       }
@@ -135,7 +134,6 @@ mainFacturasRouter.post(
       try {
         iaFrozenPerFile = JSON.parse(req.body.iaFrozenPerFile || "[]");
       } catch {}
-
       if (!Array.isArray(userDataPerFile) || !Array.isArray(iaFrozenPerFile)) {
         return res
           .status(400)

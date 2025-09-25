@@ -566,6 +566,61 @@ function updateButtons() {
   if (removeAllBtn) removeAllBtn.disabled = appState.facturas.length === 0;
 }
 
+function makeGuardarFacturasHandler() {
+  let frozenCopy = null; // closure interna
+  let filesCopy = [];
+
+  // 1️⃣ Se llama desde extractWithMVC cuando llega el primer POST
+  function almacenarRespuesta(data, files) {
+    frozenCopy = Object.freeze(
+      Array.isArray(data) ? data.map((d) => ({ ...d })) : { ...data }
+    );
+    filesCopy = [...files];
+    console.log("📥 Respuesta congelada lista:", frozenCopy);
+  }
+
+  // 2️⃣ Se llama desde el listener de sendBtn
+  async function enviarRespuesta(id) {
+    if (!frozenCopy) {
+      console.warn("⚠️ No hay respuesta congelada para enviar");
+      return;
+    }
+
+    const formData = new FormData();
+
+    // ✅ Archivos de imagen
+    filesCopy.forEach((file) => formData.append("images", file));
+
+    // ✅ Datos editables de la UI (facturas)
+    formData.append("userDataPerFile", JSON.stringify(appState.facturas));
+
+    // ✅ Copia congelada de IA (array válido)
+    formData.append(
+      "iaFrozenPerFile",
+      JSON.stringify(Array.isArray(frozenCopy) ? frozenCopy : [frozenCopy])
+    );
+
+    const response = await fetch(`/mainfacturas/${id}/guardarFactura`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Error al guardar facturas: ${response.status} - ${errorText}`
+      );
+    }
+
+    const result = await response.json();
+    console.log("✅ Guardado en backend:", result);
+    return result;
+  }
+
+  return { almacenarRespuesta, enviarRespuesta };
+}
+
 // Funciones de eventos (globales para HTML)
 function removeTempFile(index) {
   appState.files = appState.files.filter((_, i) => i !== index);
@@ -626,6 +681,7 @@ async function extractAll() {
     const results = await extractWithMVC(appState.files);
 
     console.log("📥 Respuesta procesada:", results);
+    guardarFacturasHandler.almacenarRespuesta(results, appState.files);
 
     // Agregar nombres de archivo a cada factura
     results.forEach((factura, index) => {
@@ -654,6 +710,7 @@ async function extractAll() {
     updateButtons();
   }
 }
+const guardarFacturasHandler = makeGuardarFacturasHandler();
 
 // Inicialización
 function init() {
@@ -676,6 +733,14 @@ function init() {
   const downloadJsonBtn = document.getElementById("downloadJsonBtn");
   const downloadCsvBtn = document.getElementById("downloadCsvBtn");
   const removeAllBtn = document.getElementById("removeAllBtn");
+
+  const sendBtn = document.getElementById("sendBtn");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", async () => {
+      const id = window.location.pathname.split("/").filter(Boolean).pop();
+      await guardarFacturasHandler.enviarRespuesta(id);
+    });
+  }
 
   // Verificar elementos críticos
   if (!fileInput || !selectBtn || !dropzone) {
