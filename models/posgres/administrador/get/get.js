@@ -230,17 +230,28 @@ export async function traerTicketsPorUsuarioPaginado({
     return { error: true, message: err.message };
   }
 }
+// añade esto arriba, junto con las normalizaciones:
+const normBool = (v) => {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v === 1;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    return s === "true" || s === "1" || s === "yes" || s === "on";
+  }
+  return false;
+};
 
-// controllers/db/consultas/tickets/buscarTicketsActivos.js
 async function buscarTicketsActivosYNoActivos({
   id, // id del beneficiario
   idTicket, // id del ticket
   nombre, // nombre del beneficiario
   fechaInicio, // "YYYY-MM-DD"
   fechaFin, // "YYYY-MM-DD"
-  idSuperior, // obligatorio,
-  inactivosOnly = false
+  idSuperior, // obligatorio
+  inactivosOnly = false,
+  size = undefined, // <-- NUEVO
 }) {
+  inactivosOnly = normBool(inactivosOnly);
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
 
@@ -250,18 +261,22 @@ async function buscarTicketsActivosYNoActivos({
     idTicket !== null &&
     Number.isInteger(Number(idTicket)) &&
     Number(idTicket) > 0;
+
   const hasIdBenf =
     id !== undefined &&
     id !== null &&
     Number.isInteger(Number(id)) &&
     Number(id) > 0;
+
   const nameTrim = typeof nombre === "string" ? nombre.trim() : "";
   const hasNombre = nameTrim.length > 0;
+
   const hasFechas =
     typeof fechaInicio === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(fechaInicio.trim()) &&
     typeof fechaFin === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(fechaFin.trim());
+
   const hasSuperior =
     idSuperior !== undefined &&
     idSuperior !== null &&
@@ -272,21 +287,29 @@ async function buscarTicketsActivosYNoActivos({
     return { error: true, message: "Debe indicar 'idSuperior'." };
   }
 
-  const LIMIT = 20;
+  // LIMIT opcional (si no se envía size, no aplica LIMIT)
+  const parsedSize = Number(size);
+  const limit =
+    Number.isInteger(parsedSize) && parsedSize > 0
+      ? Math.min(parsedSize, 1000) // cap de seguridad
+      : null;
+  const limitSQL = limit ? `LIMIT ${limit}` : "";
 
   // Helper condición de “activo”
   const activoDentroRangoSQL = (startIdx, endIdx) =>
     `t.fecha_inicio >= $${startIdx}::date AND t.fecha_fin <= $${endIdx}::date`;
-  const activoHoySQL = inactivosOnly? "WHERE t.fecha_fin < NOW()" : `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
+
+  const activoHoySQL = inactivosOnly
+    ? "t.fecha_fin < NOW()"
+    : `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
 
   try {
     // 1) Prioridad absoluta: por idTicket (ignora el resto)
     if (hasIdTicket) {
-      // Orden de params: [idTicket, idSuperior, (fechaInicio, fechaFin)?]
       const params = [Number(idTicket), Number(idSuperior)];
       const where = [
         "t.id_ticket = $1",
-        "(uc.id_superior = $2 OR ub.id_superior = $2)", // subordinación obligatoria (creador o beneficiario)
+        "(uc.id_superior = $2 OR ub.id_superior = $2)",
       ];
       if (hasFechas) {
         params.push(fechaInicio, fechaFin); // $3, $4
@@ -314,7 +337,7 @@ async function buscarTicketsActivosYNoActivos({
         JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
         WHERE ${where.join(" AND ")}
-        LIMIT ${LIMIT}
+        ${limitSQL}
         `,
         params
       );
@@ -328,18 +351,14 @@ async function buscarTicketsActivosYNoActivos({
           fechaFin,
           idSuperior: Number(idSuperior),
         },
-        limit: LIMIT,
+        limit: limit ?? null,
       };
     }
 
-    // 2) Segunda prioridad: por id de beneficiario (ignora 'nombre' si vino)
+    // 2) Segunda prioridad: por id de beneficiario
     if (hasIdBenf) {
-      // Orden de params: [idBeneficiario, idSuperior, (fechaInicio, fechaFin)?]
       const params = [Number(id), Number(idSuperior)];
-      const where = [
-        "t.id_usuario_beneficiario = $1", // SOLO beneficiario
-        "ub.id_superior = $2", // subordinación del beneficiario
-      ];
+      const where = ["t.id_usuario_beneficiario = $1", "ub.id_superior = $2"];
       if (hasFechas) {
         params.push(fechaInicio, fechaFin); // $3, $4
         where.push(activoDentroRangoSQL(3, 4));
@@ -367,7 +386,7 @@ async function buscarTicketsActivosYNoActivos({
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
         WHERE ${where.join(" AND ")}
         ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        LIMIT ${LIMIT}
+        ${limitSQL}
         `,
         params
       );
@@ -381,18 +400,14 @@ async function buscarTicketsActivosYNoActivos({
           fechaFin,
           idSuperior: Number(idSuperior),
         },
-        limit: LIMIT,
+        limit: limit ?? null,
       };
     }
 
-    // 3) Tercera prioridad: por nombre (del beneficiario)
+    // 3) Tercera prioridad: por nombre (beneficiario)
     if (hasNombre) {
-      // Orden de params: [nombreLike, idSuperior, (fechaInicio, fechaFin)?]
       const params = [`%${nameTrim}%`, Number(idSuperior)];
-      const where = [
-        "ub.nombre ILIKE $1", // SOLO nombre del beneficiario
-        "ub.id_superior = $2", // subordinación del beneficiario
-      ];
+      const where = ["ub.nombre ILIKE $1", "ub.id_superior = $2"];
       if (hasFechas) {
         params.push(fechaInicio, fechaFin); // $3, $4
         where.push(activoDentroRangoSQL(3, 4));
@@ -420,7 +435,7 @@ async function buscarTicketsActivosYNoActivos({
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
         WHERE ${where.join(" AND ")}
         ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        LIMIT ${LIMIT}
+        ${limitSQL}
         `,
         params
       );
@@ -434,17 +449,14 @@ async function buscarTicketsActivosYNoActivos({
           fechaFin,
           idSuperior: Number(idSuperior),
         },
-        limit: LIMIT,
+        limit: limit ?? null,
       };
     }
 
-    // 4) Sin idTicket, sin id, sin nombre → activos de los subordinados del superior (creador o beneficiario)
+    // 4) Sin idTicket, sin id, sin nombre → activos/inactivos de subordinados del superior
     {
-      // Orden de params: [idSuperior, (fechaInicio, fechaFin)?]
       const params = [Number(idSuperior)];
-      const where = [
-        "(uc.id_superior = $1 OR ub.id_superior = $1)", // subordinación en cualquiera
-      ];
+      const where = ["(uc.id_superior = $1 OR ub.id_superior = $1)"];
       if (hasFechas) {
         params.push(fechaInicio, fechaFin); // $2, $3
         where.push(activoDentroRangoSQL(2, 3));
@@ -472,7 +484,7 @@ async function buscarTicketsActivosYNoActivos({
         JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
         WHERE ${where.join(" AND ")}
         ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        LIMIT ${LIMIT}
+        ${limitSQL}
         `,
         params
       );
@@ -486,7 +498,7 @@ async function buscarTicketsActivosYNoActivos({
           fechaFin,
           idSuperior: Number(idSuperior),
         },
-        limit: LIMIT,
+        limit: limit ?? null,
       };
     }
   } catch (err) {
@@ -511,7 +523,8 @@ async function asignarMetodos() {
   baseDeDatos.administradorTraerTicketsPorUsuario =
     traerTicketsPorUsuarioPaginado;
   baseDeDatos.administradorBuscarUsuarios = buscarUsuarios;
-  baseDeDatos.administradorBuscarTicketsActivosYNoActivos = buscarTicketsActivosYNoActivos;
+  baseDeDatos.administradorBuscarTicketsActivosYNoActivos =
+    buscarTicketsActivosYNoActivos;
   baseDeDatos.administradorTestQuery = testQuery;
 }
 asignarMetodos();
