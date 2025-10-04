@@ -27,12 +27,12 @@ const CSV_KEYS = [
   "nit_emisor",
   "nit_receptor",
   "total",
-  "tipo_gasto",
-  "comida",
+  "tipo_de_gasto",
+  "tipo_de_comida",
   "extras",
 ];
 
-const TIPO_GASTO_OPTIONS = [
+const tipo_de_gasto = [
   { value: "", label: "Seleccionar tipo de gasto" },
   { value: "hotel", label: "Hotel" },
   { value: "alimentacion", label: "Alimentación" },
@@ -43,7 +43,7 @@ const TIPO_GASTO_OPTIONS = [
   { value: "otros", label: "Otros" },
 ];
 
-const COMIDA_OPTIONS = [
+const tipo_de_comida_OPTIONS = [
   { value: "", label: "Ninguno" },
   { value: "desayuno", label: "Desayuno" },
   { value: "almuerzo", label: "Almuerzo" },
@@ -196,8 +196,8 @@ async function extractWithMVC(files) {
           nit_emisor: item.nit_emisor || "",
           nit_receptor: item.nit_receptor || "",
           total: item.total || "",
-          tipo_gasto: "",
-          comida: "",
+          tipo_de_gasto: "",
+          tipo_de_comida: "",
           extras: "",
           _archivo: item._archivo || "",
         };
@@ -216,8 +216,8 @@ async function extractWithMVC(files) {
           nit_emisor: processedData.nit_emisor || "",
           nit_receptor: processedData.nit_receptor || "",
           total: processedData.total || "",
-          tipo_gasto: "",
-          comida: "",
+          tipo_de_gasto: "",
+          tipo_de_comida: "",
           extras: "",
           _archivo: processedData._archivo || "",
         },
@@ -362,12 +362,12 @@ function updateFacturasList() {
     facturasContainer.innerHTML = appState.facturas
       .map((factura) => {
         const isSelected = appState.selectedId === factura.id;
-        const tipoGastoOption = TIPO_GASTO_OPTIONS.find(
-          (opt) => opt.value === factura.tipo_gasto
+        const tipoGastoOption = tipo_de_gasto.find(
+          (opt) => opt.value === factura.tipo_de_gasto
         );
         const tipoGastoLabel = tipoGastoOption
           ? tipoGastoOption.label
-          : factura.tipo_gasto;
+          : factura.tipo_de_gasto;
 
         return `
                 <div class="factura-card ${
@@ -392,7 +392,7 @@ function updateFacturasList() {
                                       "Proveedor no especificado"
                                     }</p>
                                     ${
-                                      factura.tipo_gasto
+                                      factura.tipo_de_gasto
                                         ? `
                                         <div class="factura-tag">
                                             <span class="tag">${tipoGastoLabel}</span>
@@ -495,16 +495,18 @@ function updateEditor() {
                         class="form-select"
                         onchange="updateField('${
                           selected.id
-                        }', 'tipo_gasto', this.value)"
+                        }', 'tipo_de_gasto', this.value)"
                     >
-                        ${TIPO_GASTO_OPTIONS.map(
-                          (option) =>
-                            `<option value="${option.value}" ${
-                              selected.tipo_gasto === option.value
-                                ? "selected"
-                                : ""
-                            }>${option.label}</option>`
-                        ).join("")}
+                        ${tipo_de_gasto
+                          .map(
+                            (option) =>
+                              `<option value="${option.value}" ${
+                                selected.tipo_de_gasto === option.value
+                                  ? "selected"
+                                  : ""
+                              }>${option.label}</option>`
+                          )
+                          .join("")}
                     </select>
                 </div>
                 <div>
@@ -514,16 +516,18 @@ function updateEditor() {
                             class="form-select"
                             onchange="updateField('${
                               selected.id
-                            }', 'comida', this.value)"
+                            }', 'tipo_de_comida', this.value)"
                         >
-                            ${COMIDA_OPTIONS.map(
-                              (option) =>
-                                `<option value="${option.value}" ${
-                                  selected.comida === option.value
-                                    ? "selected"
-                                    : ""
-                                }>${option.label}</option>`
-                            ).join("")}
+                            ${tipo_de_comida_OPTIONS
+                              .map(
+                                (option) =>
+                                  `<option value="${option.value}" ${
+                                    selected.tipo_de_comida === option.value
+                                      ? "selected"
+                                      : ""
+                                  }>${option.label}</option>`
+                              )
+                              .join("")}
                         </select>
                     </div>
                     <div class="form-group">

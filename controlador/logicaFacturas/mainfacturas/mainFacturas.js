@@ -80,21 +80,7 @@ mainFacturasRouter.post(
         return res.status(400).json({ error: "No se enviaron imágenes" });
       }
 
-      // Renombrar cada archivo con un UUID limpio (sin guiones)
-      const files = req.files.map((file) => {
-        const newName = crypto.randomUUID().split("-").join(""); // ej: 32 chars hex
-        return {
-          ...file,
-          originalname:
-            newName +
-            (file.originalname.includes(".")
-              ? file.originalname.substring(file.originalname.lastIndexOf("."))
-              : ""),
-        };
-      });
-
-      const result = await modeloIA.analizarImagenes(files);
-      console.log(result);
+      const result = await modeloIA.analizarImagenes(req.files);
       res.json(result);
     } catch (e) {
       next(e); // deja que el handler global formatee
@@ -184,6 +170,8 @@ mainFacturasRouter.post(
           };
 
           const out = await db.mainFacturasCrearComprobante(payload);
+          console.log(payload);
+          console.log(out);
 
           return {
             archivo: file.originalname,

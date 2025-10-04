@@ -4,7 +4,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const prompt =
-  "Tienes N imágenes de facturas. Devuelve SOLO un **arreglo JSON** donde cada elemento corresponde a una imagen en el mismo orden de entrada. Cada elemento debe tener exactamente estas claves: proveedor, numero_factura, fecha_emision (DD/MM/AAAA), moneda (Q|$), nit_emisor, nit_receptor, total (número). Sin texto extra, SOLO el JSON del arreglo. incluye el titulo de la imagen en el json";
+  "Tienes N imágenes de facturas. Devuelve SOLO un **arreglo JSON** donde cada elemento corresponde a una imagen en el mismo orden de entrada. Cada elemento debe tener exactamente estas claves: proveedor, numero_factura, fecha_emision (YYYY-MM-DD), moneda (Q|$), nit_emisor, nit_receptor, total (número),descripcion. Sin texto extra, SOLO el JSON del arreglo. incluye el titulo de la imagen en el json";
+
+function parseJsonArray(text) {
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const s = (m ? m[1] : text).trim();
+  return JSON.parse(s); // lanza si no es JSON válido
+}
 
 // --- Reconstruir __dirname en ESM ---
 const __filename = fileURLToPath(import.meta.url);
@@ -88,8 +94,7 @@ class ModeloIA {
 
     const text = result.response.text();
     try {
-      // Aquí esperamos un **array**
-      const arr = JSON.parse(text);
+      const arr = parseJsonArray(text);
       return Array.isArray(arr)
         ? arr
         : { error: "No devolvió un arreglo", raw: text };
