@@ -92,6 +92,10 @@ const noData = document.getElementById("noData");
 const noDataSubtext = document.getElementById("noDataSubtext");
 const downloadBtn = document.getElementById("downloadBtn");
 
+// === NUEVOS BOTONES (agregados) ===
+const requestBtn = document.getElementById("requestBtn");
+const consultBtn = document.getElementById("consultBtn");
+
 // ==============================
 // Utilidades
 // ==============================
@@ -613,6 +617,19 @@ if (downloadBtn) {
     } catch (err) {
       alert("No se pudieron descargar las facturas. " + (err?.message || ""));
     }
+  });
+}
+
+// === Listeners NUEVOS para los botones agregados ===
+if (requestBtn) {
+  requestBtn.addEventListener("click", () => {
+    window.location.href = "/viaticos/solicitar";
+  });
+}
+
+if (consultBtn) {
+  consultBtn.addEventListener("click", () => {
+    window.location.href = "/viaticos/consultar";
   });
 }
 

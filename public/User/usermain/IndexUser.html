@@ -27,7 +27,7 @@
                 </div>
 
                 <div class="header-controls">
-                    <!-- Botón Descargar facturas (nuevo) -->
+                    <!-- Botón Descargar facturas -->
                     <button class="theme-toggle" id="downloadBtn" title="Descargar facturas"
                         style="display:flex;align-items:center;gap:8px;width:auto;padding:0 12px;">
                         <svg class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -36,6 +36,28 @@
                                 d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
                         </svg>
                         <span style="color: var(--text-primary);">Descargar facturas</span>
+                    </button>
+
+                    <!-- Botón Consultar solicitudes de viáticos (entre descargar y solicitar) -->
+                    <button class="theme-toggle" id="consultBtn" title="Consultar solicitudes de viáticos"
+                        style="display:flex;align-items:center;gap:8px;width:auto;padding:0 12px;">
+                        <svg class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                        </svg>
+                        <span style="color: var(--text-primary);">Consultar solicitudes</span>
+                    </button>
+
+                    <!-- Botón Solicitar viáticos -->
+                    <button class="theme-toggle" id="requestBtn" title="Solicitar viáticos"
+                        style="display:flex;align-items:center;gap:8px;width:auto;padding:0 12px;">
+                        <svg class="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span style="color: var(--text-primary);">Solicitar viáticos</span>
                     </button>
 
                     <!-- Toggle de tema -->

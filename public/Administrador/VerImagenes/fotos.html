@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Automatix Facturas – Buscar</title>
+  <link rel="stylesheet" href="fotos.css">
+</head>
+<body class="dark-theme">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="header-content">
+        <div class="header-brand">
+          <div>
+            <h1 class="brand-title">Automatix Facturas</h1>
+            <p class="brand-subtitle">Búsqueda y edición de comprobantes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="search-grid">
+      <!-- Panel izquierdo: Visor -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Visor de factura</h2>
+          <div class="status-indicator">
+            <span class="status-dot hidden" id="viewerStatusDot"></span>
+            <span class="status-text" id="viewerStatusText">Sin cargar</span>
+          </div>
+        </div>
+
+        <div id="viewer" class="dropzone">
+          <div id="emptyState" class="dropzone-content">
+            <div class="dropzone-title">Aún no hay factura</div>
+            <div class="dropzone-subtitle">Busca por ID y la verás aquí.</div>
+          </div>
+          <!-- La <img> se inyectará aquí desde tu JS -->
+        </div>
+
+        <!-- Barra de zoom (0% - 100%) -->
+        <div class="zoombar">
+          <span class="zoom-label">Zoom</span>
+          <input id="zoomSlider" class="range" type="range" min="0" max="100" value="0" />
+          <span id="zoomValue" class="counter-text">0%</span>
+        </div>
+      </section>
+
+      <!-- Panel derecho: Buscar + Detalles -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Buscar y editar</h2>
+          <div class="status-indicator">
+            <span class="status-dot" id="editStateDot"></span>
+            <span class="status-text" id="editStateText">Bloqueado</span>
+          </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="form-group full-width">
+          <label for="facturaId" class="form-label">ID FACTURA</label>
+          <div class="search-row">
+            <input id="facturaId" type="text" class="form-input" placeholder="Ej. 2025-000123" />
+            <button id="btnBuscar" class="btn btn-primary">Buscar</button>
+          </div>
+          <p id="searchHint">Ingresa un ID y presiona “Buscar”.</p>
+        </div>
+
+        <!-- Detalles (oculto hasta encontrar) -->
+        <div id="details" class="hidden fade-in">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="proveedor">Proveedor</label>
+              <input id="proveedor" class="form-input" type="text" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="serie">Serie</label>
+              <input id="serie" class="form-input" type="text" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="noFactura">No. factura</label>
+              <input id="noFactura" class="form-input" type="text" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="fecha">Fecha</label>
+              <input id="fecha" class="form-input" type="date" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="moneda">Moneda</label>
+              <select id="moneda" class="form-select" disabled>
+                <option value="Q">Q</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="nitEmisor">NIT Emisor</label>
+              <input id="nitEmisor" class="form-input" type="text" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="nitReceptor">NIT Receptor</label>
+              <input id="nitReceptor" class="form-input" type="text" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="total">Total</label>
+              <input id="total" class="form-input" type="number" step="0.01" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="tipoGasto">Tipo de gasto</label>
+              <select id="tipoGasto" class="form-select" disabled>
+                <option>Transporte</option>
+                <option>Hospedaje</option>
+                <option>Alimentación</option>
+                <option>Combustible</option>
+                <option>Otros</option>
+              </select>
+            </div>
+
+            <!-- Visible solo si tipoGasto = Alimentación -->
+            <div class="form-group" id="tipoComidaField" style="display:none;">
+              <label class="form-label" for="tipoComida">Tipo comida</label>
+              <select id="tipoComida" class="form-select" disabled>
+                <option>Desayuno</option>
+                <option>Almuerzo</option>
+                <option>Cena</option>
+                <option>Refrigerio</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="descripcion">Descripción</label>
+              <textarea id="descripcion" class="form-input" rows="3" placeholder="Detalle breve…" disabled></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="btnEditar" class="btn btn-secondary" disabled>Editar</button>
+            <button id="btnGuardar" class="btn btn-primary" disabled>Guardar</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Script -->
+  <script src="fotos.js"></script>
+</body>
+</html>
