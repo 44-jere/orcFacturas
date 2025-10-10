@@ -292,9 +292,9 @@ adminRouter.get("/buscarTicketsActivos", async (req, res) => {
   const norm = (v) =>
     typeof v === "string" && v.trim() === "" ? undefined : v;
   const response = await db.administradorBuscarTicketsActivosYNoActivos({
-    id: norm(id),
+    id: norm(id), //id del beneficiario/subordinado
     idTicket: norm(idTicket),
-    nombre: norm(nombre),
+    nombre: norm(nombre), //del beneficiario/subordinado
     fechaInicio: norm(fechaInicio),
     fechaFin: norm(fechaFin),
     idSuperior: norm(decoded.id), // ← obligatorio

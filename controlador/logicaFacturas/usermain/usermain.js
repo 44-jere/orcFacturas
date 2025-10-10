@@ -43,6 +43,31 @@ userMainRouter.get("/", (req, res) => {
   }
 });
 
+userMainRouter.get("/buscarTicketsActivos", async (req, res) => {
+  try {
+    const decoded = protegerRuta({ req, res });
+    if (!decoded) return;
+    if (!allowOrRedirect(decoded, res)) return;
+
+    const { idTicket, fechaInicio, fechaFin, inactivosOnly, size } = req.query;
+    const norm = (v) =>
+      typeof v === "string" && v.trim() === "" ? undefined : v;
+    const response = await req.db.administradorBuscarTicketsActivosYNoActivos({
+      id: norm(decoded.id), //id del beneficiario/subordinado
+      idTicket: norm(idTicket),
+      fechaInicio: norm(fechaInicio),
+      fechaFin: norm(fechaFin),
+      idSuperior: norm(decoded.superiorId), // ← obligatorio
+      inactivosOnly,
+      size,
+    });
+    res.send(response);
+  } catch (err) {
+    console.error("❌ /buscarTicketsActivos:", err);
+    res.status(500).json({ error: "Error al traer tickets asignados" });
+  }
+});
+
 userMainRouter.get("/ticketEmpleado", async (req, res) => {
   try {
     const decoded = protegerRuta({ req, res });

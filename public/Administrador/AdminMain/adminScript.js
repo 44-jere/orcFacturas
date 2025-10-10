@@ -369,7 +369,9 @@ async function searchUsersIncremental(query) {
   try {
     // ▶️ Usar /buscarUsuario con parámetro ?nombre=
     const response = await fetch(
-      `${API_BASE}/subordinados/buscarUsuario?nombre=${encodeURIComponent(query)}`,
+      `${API_BASE}/subordinados/buscarUsuario?nombre=${encodeURIComponent(
+        query
+      )}`,
       {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -1310,8 +1312,7 @@ function mapApiItemToUiTicket(api) {
   const finDmy = isoToDmyFromZ(api?.fecha_fin);
   const creadoDmy = isoToDmyFromZ(api?.creado_en);
 
-  const estado =
-    isNowBetweenDates(inicioDmy, finDmy) ? "activo" : "completado";
+  const estado = isNowBetweenDates(inicioDmy, finDmy) ? "activo" : "completado";
 
   return {
     id: api?.id_ticket,
@@ -1398,7 +1399,9 @@ function createTicketCard(ticket) {
           )}%"></div>
         </div>
         <p class="budget-percentage">
-          ${isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"}% utilizado
+          ${
+            isFinite(usedPct) ? Math.min(usedPct, 100).toFixed(1) : "0.0"
+          }% utilizado
         </p>
 
         ${
@@ -1482,11 +1485,14 @@ async function fetchActiveTicketsRemote(params) {
   if (params?.fechaFin) qs.set("fechaFin", params.fechaFin); // YYYY-MM-DD
 
   try {
-    const resp = await fetch(`${API_BASE}/buscarTicketsActivos?${qs.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      credentials: "include",
-    });
+    const resp = await fetch(
+      `${API_BASE}/buscarTicketsActivos?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+      }
+    );
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
     const items = Array.isArray(data.items) ? data.items : [];
@@ -1515,7 +1521,9 @@ function updateTicketsTab() {
       if (noTickets) noTickets.classList.add("hidden");
       if (ticketsContainer) {
         ticketsContainer.classList.remove("hidden");
-        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+        ticketsContainer.innerHTML = list
+          .map((t) => createTicketCard(t))
+          .join("");
       }
     });
     return;
@@ -1527,7 +1535,9 @@ function updateTicketsTab() {
 
   if (mode === "nombre") {
     // Convertir fechas UI a YYYY-MM-DD para API
-    const fromISO = (document.getElementById("gestFromDate")?.value || "").trim();
+    const fromISO = (
+      document.getElementById("gestFromDate")?.value || ""
+    ).trim();
     const toISO = (document.getElementById("gestToDate")?.value || "").trim();
 
     // Disparar búsqueda remota y render
@@ -1545,13 +1555,17 @@ function updateTicketsTab() {
       if (noTickets) noTickets.classList.add("hidden");
       if (ticketsContainer) {
         ticketsContainer.classList.remove("hidden");
-        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+        ticketsContainer.innerHTML = list
+          .map((t) => createTicketCard(t))
+          .join("");
       }
     });
     return;
   } else if (mode === "id") {
     const idQ = parseInt(gestCriteria.idQuery, 10);
-    const fromISO = (document.getElementById("gestFromDate")?.value || "").trim();
+    const fromISO = (
+      document.getElementById("gestFromDate")?.value || ""
+    ).trim();
     const toISO = (document.getElementById("gestToDate")?.value || "").trim();
 
     fetchActiveTicketsRemote({
@@ -1568,7 +1582,9 @@ function updateTicketsTab() {
       if (noTickets) noTickets.classList.add("hidden");
       if (ticketsContainer) {
         ticketsContainer.classList.remove("hidden");
-        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+        ticketsContainer.innerHTML = list
+          .map((t) => createTicketCard(t))
+          .join("");
       }
     });
     return;
@@ -1587,7 +1603,9 @@ function updateTicketsTab() {
       if (noTickets) noTickets.classList.add("hidden");
       if (ticketsContainer) {
         ticketsContainer.classList.remove("hidden");
-        ticketsContainer.innerHTML = list.map((t) => createTicketCard(t)).join("");
+        ticketsContainer.innerHTML = list
+          .map((t) => createTicketCard(t))
+          .join("");
       }
     });
     return;

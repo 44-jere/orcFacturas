@@ -21,7 +21,12 @@ async function login({ validador, res, req } = {}) {
     });
     if (!isValid) return res.status(401).send("no encontrado");
     const token = jwt.sign(
-      { user: isValid.usuario, id: isValid.id, role: isValid.role },
+      {
+        user: isValid.usuario,
+        id: isValid.id,
+        role: isValid.role,
+        superiorId: isValid.superiorId,
+      },
       process.env.SECRET_KEY,
       {
         expiresIn: "1h",

@@ -254,6 +254,27 @@ async function buscarTicketsActivosYNoActivos({
   inactivosOnly = normBool(inactivosOnly);
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const client = await baseDeDatos.conectar();
+  const queryBase = ({ where, limitSQL } = {}) => `
+    SELECT
+      t.id_ticket,
+      t.id_usuario_creador,
+      t.id_usuario_beneficiario,
+      t.fecha_inicio,
+      t.fecha_fin,
+      t.monto_presupuestado,
+      t.total_gastado,
+      t.creado_en,
+      t.actualizado_en,
+      t.descripcion,
+      uc.nombre AS nombre_creador,
+      ub.nombre AS nombre_beneficiario
+    FROM viaticos.tickets t
+    JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
+    JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
+    WHERE ${where.join(" AND ")}
+    ORDER BY t.fecha_fin ASC, t.id_ticket ASC
+    ${limitSQL}
+  `;
 
   // Normalización
   const hasIdTicket =
@@ -300,7 +321,7 @@ async function buscarTicketsActivosYNoActivos({
     `t.fecha_inicio >= $${startIdx}::date AND t.fecha_fin <= $${endIdx}::date`;
 
   const activoHoySQL = inactivosOnly
-    ? "t.fecha_fin < NOW()"
+    ? "t.fecha_fin < CURRENT_DATE"
     : `t.fecha_inicio <= CURRENT_DATE AND t.fecha_fin >= CURRENT_DATE`;
 
   try {
@@ -319,26 +340,7 @@ async function buscarTicketsActivosYNoActivos({
       }
 
       const { rows } = await client.query(
-        `
-        SELECT
-          t.id_ticket,
-          t.id_usuario_creador,
-          t.id_usuario_beneficiario,
-          t.fecha_inicio,
-          t.fecha_fin,
-          t.monto_presupuestado,
-          t.total_gastado,
-          t.creado_en,
-          t.actualizado_en,
-          t.descripcion,
-          uc.nombre AS nombre_creador,
-          ub.nombre AS nombre_beneficiario
-        FROM viaticos.tickets t
-        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
-        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${where.join(" AND ")}
-        ${limitSQL}
-        `,
+        queryBase({ where, limitSQL }),
         params
       );
 
@@ -367,27 +369,7 @@ async function buscarTicketsActivosYNoActivos({
       }
 
       const { rows } = await client.query(
-        `
-        SELECT
-          t.id_ticket,
-          t.id_usuario_creador,
-          t.id_usuario_beneficiario,
-          t.fecha_inicio,
-          t.fecha_fin,
-          t.monto_presupuestado,
-          t.total_gastado,
-          t.creado_en,
-          t.actualizado_en,
-          t.descripcion,
-          uc.nombre AS nombre_creador,
-          ub.nombre AS nombre_beneficiario
-        FROM viaticos.tickets t
-        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
-        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${where.join(" AND ")}
-        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        ${limitSQL}
-        `,
+        queryBase({ where, limitSQL }),
         params
       );
 
@@ -416,27 +398,7 @@ async function buscarTicketsActivosYNoActivos({
       }
 
       const { rows } = await client.query(
-        `
-        SELECT
-          t.id_ticket,
-          t.id_usuario_creador,
-          t.id_usuario_beneficiario,
-          t.fecha_inicio,
-          t.fecha_fin,
-          t.monto_presupuestado,
-          t.total_gastado,
-          t.creado_en,
-          t.actualizado_en,
-          t.descripcion,
-          uc.nombre AS nombre_creador,
-          ub.nombre AS nombre_beneficiario
-        FROM viaticos.tickets t
-        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
-        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${where.join(" AND ")}
-        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        ${limitSQL}
-        `,
+        queryBase({ where, limitSQL }),
         params
       );
 
@@ -465,27 +427,7 @@ async function buscarTicketsActivosYNoActivos({
       }
 
       const { rows } = await client.query(
-        `
-        SELECT
-          t.id_ticket,
-          t.id_usuario_creador,
-          t.id_usuario_beneficiario,
-          t.fecha_inicio,
-          t.fecha_fin,
-          t.monto_presupuestado,
-          t.total_gastado,
-          t.creado_en,
-          t.actualizado_en,
-          t.descripcion,
-          uc.nombre AS nombre_creador,
-          ub.nombre AS nombre_beneficiario
-        FROM viaticos.tickets t
-        JOIN viaticos.usuarios uc ON uc.id_usuario = t.id_usuario_creador
-        JOIN viaticos.usuarios ub ON ub.id_usuario = t.id_usuario_beneficiario
-        WHERE ${where.join(" AND ")}
-        ORDER BY t.fecha_fin ASC, t.id_ticket ASC
-        ${limitSQL}
-        `,
+        queryBase({ where, limitSQL }),
         params
       );
 
@@ -507,15 +449,6 @@ async function buscarTicketsActivosYNoActivos({
   }
 }
 
-async function testQuery({}) {
-  try {
-    const { baseDeDatos } = await import("../../baseDeDatos.js");
-    const client = await baseDeDatos.conectar();
-
-    const { rows } = await client.query("$2 , $1", [param1, param2]);
-  } catch (e) {}
-}
-
 async function asignarMetodos() {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   baseDeDatos.administradorTraerUsuariosPorSuperior =
@@ -525,6 +458,5 @@ async function asignarMetodos() {
   baseDeDatos.administradorBuscarUsuarios = buscarUsuarios;
   baseDeDatos.administradorBuscarTicketsActivosYNoActivos =
     buscarTicketsActivosYNoActivos;
-  baseDeDatos.administradorTestQuery = testQuery;
 }
 asignarMetodos();
