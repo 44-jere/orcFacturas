@@ -10,6 +10,7 @@ import { homeRouter } from "./controlador/logicaFacturas/home/home.js";
 import { adminRouter } from "./controlador/logicaFacturas/administrador/administrador.js";
 import { supervisorRouter } from "./controlador/logicaFacturas/supervisor/supervisor.js";
 import { userMainRouter } from "./controlador/logicaFacturas/usermain/usermain.js";
+import { registrarUsuariosRouter } from "./controlador/logicaFacturas/registrarUsuarios/registrarUsuarios.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors"; // 👈 agregado
@@ -89,12 +90,7 @@ app.use("/mainfacturas", mainFacturasRouter);
 
 app.use("/usermain", userMainRouter);
 
-app.get("/test", (req, res) => {
-  const db = req.db;
-  const params = req.query;
-
-  db.administradorTestQuery({ params });
-});
+app.use("/registrar", registrarUsuariosRouter);
 
 app.listen(port, "0.0.0.0");
 console.log("Server started at http://localhost:" + port);

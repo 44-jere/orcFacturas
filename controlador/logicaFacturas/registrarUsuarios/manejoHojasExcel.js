@@ -5,9 +5,9 @@ import crypto from "crypto";
 const HOJA_PLANTILLA = "usuarios";
 
 const HEADER_MAP = {
-  nombre: ["nombre", "name"],
-  dpi: ["dpi", "cui", "dpi/cui", "dpi cui", "documento"],
-  email: ["email", "correo", "e-mail", "mail"],
+  nombre: ["nombre", "name", "Nombre completo"],
+  dpi: ["dpi", "cui", "dpi/cui", "dpi cui", "documento", "dpi/cui (opcional)"],
+  email: ["email", "correo", "e-mail", "mail", "correo electronico (opcional)"],
 };
 
 // normaliza SOLO para comparar encabezados (no toca el nombre real)
@@ -28,7 +28,10 @@ function pickHeaderIndex(headers, keys) {
   return -1;
 }
 function generarCredenciales(nombre) {
-  const base = norm(nombre).split(" ")[0].replace(/[^a-z0-9]/g, "") || "user";
+  const base =
+    norm(nombre)
+      .split(" ")[0]
+      .replace(/[^a-z0-9]/g, "") || "user";
   const suf = Math.floor(Math.random() * 900 + 100);
   const usuario = `${base}${suf}`;
   const password = crypto.randomBytes(4).toString("hex");
@@ -53,13 +56,18 @@ export async function procesarExcelUsuarios({
   }
 
   // límites (si pasas range se respeta)
-  let startRow = 1, endRow = ws.rowCount, startCol = 1, endCol = ws.columnCount;
+  let startRow = 1,
+    endRow = ws.rowCount,
+    startCol = 1,
+    endCol = ws.columnCount;
   if (range) {
     const [a, b] = range.split(":");
     const aCell = ws.getCell(a);
     const bCell = ws.getCell(b);
-    startRow = aCell.row; startCol = aCell.col;
-    endRow = bCell.row;   endCol = bCell.col;
+    startRow = aCell.row;
+    startCol = aCell.col;
+    endRow = bCell.row;
+    endCol = bCell.col;
   }
 
   const normalize = (v) => {
@@ -68,7 +76,7 @@ export async function procesarExcelUsuarios({
     if (typeof v === "object") {
       if ("text" in v) return v.text;
       if ("result" in v) return v.result;
-      if ("richText" in v) return v.richText.map(t => t.text).join("");
+      if ("richText" in v) return v.richText.map((t) => t.text).join("");
       if ("formula" in v) return v.result ?? null;
     }
     return v;
@@ -81,22 +89,24 @@ export async function procesarExcelUsuarios({
     for (let c = startCol; c <= endCol; c++) {
       arr.push(normalize(row.getCell(c).value));
     }
-    const allEmpty = arr.every(x => x == null || String(x).trim?.() === "");
+    const allEmpty = arr.every((x) => x == null || String(x).trim?.() === "");
     if (!allEmpty) rows.push(arr);
   }
 
   if (rows.length === 0) return { ok: true, rows: [], errors: [] };
 
   const [hdr, ...body] = rows;
-  const headers = hdr.map(h => (h == null ? "" : String(h)));
+  const headers = hdr.map((h) => (h == null ? "" : String(h)));
 
   const idxNombre = pickHeaderIndex(headers, HEADER_MAP.nombre);
-  const idxDpi    = pickHeaderIndex(headers, HEADER_MAP.dpi);
-  const idxEmail  = pickHeaderIndex(headers, HEADER_MAP.email);
+  const idxDpi = pickHeaderIndex(headers, HEADER_MAP.dpi);
+  const idxEmail = pickHeaderIndex(headers, HEADER_MAP.email);
 
   if (idxNombre === -1) {
     throw new Error(
-      `Falta la columna "nombre" en la fila 1. Detectados: ${headers.map(h => String(h).trim()).join(", ")}`
+      `Falta la columna "nombre" en la fila 1. Detectados: ${headers
+        .map((h) => String(h).trim())
+        .join(", ")}`
     );
   }
 
@@ -107,11 +117,12 @@ export async function procesarExcelUsuarios({
     const filaExcel = i + 2; // + encabezado
     const safe = (idx) => (idx >= 0 && idx < r.length ? r[idx] : null);
 
-    const nombre = safe(idxNombre) != null ? String(safe(idxNombre)).trim() : "";
+    const nombre =
+      safe(idxNombre) != null ? String(safe(idxNombre)).trim() : "";
     const dpiRaw = safe(idxDpi);
     const emailRaw = safe(idxEmail);
 
-    const isAllEmpty = r.every(x => x == null || String(x).trim?.() === "");
+    const isAllEmpty = r.every((x) => x == null || String(x).trim?.() === "");
     if (isAllEmpty) return;
 
     const errs = [];
@@ -142,22 +153,22 @@ export async function procesarExcelUsuarios({
   return { ok: true, rows: out, errors };
 }
 
-
 /**
  * Inserta filas en la plantilla 'usuarios.xlsx' SIN modificar la original.
  * rows: [{ nombre, dpi, email, usuario, password }]
  * Devuelve un Buffer del Excel nuevo.
  */
 export async function insertarDatosEnPlantilla({
-  plantillaPath,
   rows,
   sheetName = "usuarios",
+  file,
 }) {
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.readFile(plantillaPath);
+  await wb.xlsx.load(file.buffer);
 
   const ws = wb.getWorksheet(sheetName);
-  if (!ws) throw new Error(`No se encontró la hoja "${sheetName}" en la plantilla.`);
+  if (!ws)
+    throw new Error(`No se encontró la hoja "${sheetName}" en la plantilla.`);
 
   // 1) Tomamos encabezados existentes (fila 1)
   const headerRow = ws.getRow(1);
@@ -177,9 +188,8 @@ export async function insertarDatosEnPlantilla({
 
   // 3) Ubicaciones de columnas de la plantilla (por nombre humano)
   const idxNombre =
-    headers.findIndex((h) =>
-      ["nombre", "nombre completo"].includes(norm(h))
-    ) + 1 || 1; // por defecto col A
+    headers.findIndex((h) => ["nombre", "nombre completo"].includes(norm(h))) +
+      1 || 1; // por defecto col A
 
   const idxDpi =
     headers.findIndex((h) =>
@@ -192,10 +202,8 @@ export async function insertarDatosEnPlantilla({
     ) + 1 || 3; // por defecto col C
 
   // 4) Asegurar columnas usuario/password (crear si no están)
-  let idxUsuario =
-    headers.findIndex((h) => norm(h) === "usuario") + 1;
-  let idxPassword =
-    headers.findIndex((h) => norm(h) === "password") + 1;
+  let idxUsuario = headers.findIndex((h) => norm(h) === "usuario") + 1;
+  let idxPassword = headers.findIndex((h) => norm(h) === "password") + 1;
 
   const insertAt = ws.columnCount + 1;
   if (!idxUsuario) {
@@ -221,18 +229,24 @@ export async function insertarDatosEnPlantilla({
 
   // 6) Escribir filas
   let r = 2;
-  for (const item of rows) {
+  rows.forEach((item) => {
     ws.getRow(r).getCell(idxNombre).value = item.nombre ?? "";
     ws.getRow(r).getCell(idxDpi).value = item.dpi ?? "";
     ws.getRow(r).getCell(idxEmail).value = item.email ?? "";
     ws.getRow(r).getCell(idxUsuario).value = item.usuario ?? "";
     ws.getRow(r).getCell(idxPassword).value = item.password ?? "";
     r++;
-  }
+  });
 
   // 7) Ajustes rápidos de ancho (opcional)
-  ws.getColumn(idxNombre).width = Math.max(ws.getColumn(idxNombre).width ?? 10, 25);
-  ws.getColumn(idxEmail).width = Math.max(ws.getColumn(idxEmail).width ?? 10, 28);
+  ws.getColumn(idxNombre).width = Math.max(
+    ws.getColumn(idxNombre).width ?? 10,
+    25
+  );
+  ws.getColumn(idxEmail).width = Math.max(
+    ws.getColumn(idxEmail).width ?? 10,
+    28
+  );
   ws.getColumn(idxUsuario).width = 18;
   ws.getColumn(idxPassword).width = 18;
 
