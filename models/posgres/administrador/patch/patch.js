@@ -5,7 +5,7 @@ export async function actualizarTicket({
   monto_presupuestado,
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = baseDeDatos;
 
   try {
     const campos = [];

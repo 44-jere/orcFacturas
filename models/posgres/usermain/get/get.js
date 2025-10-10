@@ -1,7 +1,7 @@
 export async function usuarioPoseeTicket({ id_usuario, id_ticket }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const db = baseDeDatos;
-  const client = await db.conectar();
+  const client = db;
 
   try {
     const { rows } = await client.query(

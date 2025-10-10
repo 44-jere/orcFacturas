@@ -10,46 +10,56 @@ const __dirname = path.dirname(__filename);
 // Carga el .env que está JUNTO a baseDeDatos.js
 dotenv.config({ path: path.join(__dirname, ".env.dbConection") });
 
-const { Client } = pkg;
+const { Pool } = pkg;
 
 class BaseDeDatos {
-  static instancia; // propiedad estática para el singleton
+  static #instancia = null; // propiedad privada
 
   constructor() {
-    if (BaseDeDatos.instancia) {
-      return BaseDeDatos.instancia;
+    if (BaseDeDatos.#instancia) return BaseDeDatos.#instancia;
+
+    // Validar configuración
+    const required = ["DB_HOST", "DB_PORT", "DB_USER", "DB_NAME"];
+    for (const key of required) {
+      if (!process.env[key]) {
+        throw new Error(`❌ Falta variable de entorno: ${key}`);
+      }
     }
 
-    this.client = new Client({
+    // Crear pool de conexiones (mejor que Client para apps web)
+    this.pool = new Pool({
       host: process.env.DB_HOST,
       port: Number(process.env.DB_PORT),
       user: process.env.DB_USER,
       password: String(process.env.DB_PASSWORD ?? ""),
       database: process.env.DB_NAME,
+      max: 12, // número máximo de conexiones
+      idleTimeoutMillis: 10_000, // cerrar conexiones inactivas
     });
 
-    this.conectado = false; // bandera propia
-    BaseDeDatos.instancia = this;
+    BaseDeDatos.#instancia = this;
   }
 
-  async conectar() {
-    if (!this.conectado) {
-      try {
-        await this.client.connect();
-        this.conectado = true;
-      } catch (err) {
-        console.error("❌ Error al conectar:", err.message);
-      }
+  static obtenerInstancia() {
+    return BaseDeDatos.#instancia ?? new BaseDeDatos();
+  }
+
+  async query(text, params = []) {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query(text, params);
+      return res;
+    } catch (err) {
+      console.error("❌ Error en query:", err.message);
+      throw err;
+    } finally {
+      client.release();
     }
-    return this.client;
   }
 
   async desconectar() {
-    if (this.conectado) {
-      await this.client.end();
-      this.conectado = false;
-      console.log("🔒 Conexión cerrada");
-    }
+    await this.pool.end();
+    console.log("🔒 Pool de conexiones cerrado");
   }
 }
 

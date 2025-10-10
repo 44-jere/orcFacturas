@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 async function validarLogin({ usuario, password, tabla }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const db = baseDeDatos;
-  const client = await db.conectar();
+  const client = db;
 
   try {
     // ✅ validación del nombre de tabla para evitar SQL Injection

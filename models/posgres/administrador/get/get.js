@@ -7,7 +7,7 @@ export async function traerUsuariosPorSuperiorPaginado({
     return { error: true, message: "id_superior es requerido" };
 
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = baseDeDatos;
 
   const limit = Math.max(1, Math.min(pageSize, 100));
   const offset = (Math.max(1, page) - 1) * limit;
@@ -171,7 +171,7 @@ export async function traerTicketsPorUsuarioPaginado({
   pageSize = 20,
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = baseDeDatos;
 
   const limit = Math.max(1, Math.min(pageSize, 100)); // cap 100
   const offset = (Math.max(1, page) - 1) * limit;

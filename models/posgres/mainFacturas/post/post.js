@@ -1,7 +1,7 @@
 export async function crearComprobante(payload) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
   const db = baseDeDatos;
-  const client = await db.conectar();
+  const client = db;
 
   // ===== Helpers =====
   const hasValue = (v) => v !== undefined && v !== null && v !== "";

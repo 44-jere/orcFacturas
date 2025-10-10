@@ -8,7 +8,7 @@ export async function crearTicket({
   descripcion_ticket,
 }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = baseDeDatos;
 
   try {
     const { rows } = await client.query(
