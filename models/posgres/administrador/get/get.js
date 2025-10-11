@@ -253,7 +253,7 @@ async function buscarTicketsActivosYNoActivos({
 }) {
   inactivosOnly = normBool(inactivosOnly);
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = await baseDeDatos;
   const queryBase = ({ where, limitSQL } = {}) => `
     SELECT
       t.id_ticket,
