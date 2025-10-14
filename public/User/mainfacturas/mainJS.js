@@ -570,44 +570,58 @@ function updateButtons() {
   if (removeAllBtn) removeAllBtn.disabled = appState.facturas.length === 0;
 }
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// NUEVA utilidad para extraer el ID numérico desde la URL (p.ej. /mainfacturas/25)
+function getMainfacturasIdFromUrl() {
+  const m = window.location.pathname.match(/\/mainfacturas\/(\d+)/);
+  if (m) return m[1];
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (/^\d+$/.test(parts[i])) return parts[i];
+  }
+  return null;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 function makeGuardarFacturasHandler() {
-  let frozenCopy = null; // closure interna
-  let filesCopy = [];
+  let frozenCopy = null; // copia inmutable de la IA
 
   // 1️⃣ Se llama desde extractWithMVC cuando llega el primer POST
-  function almacenarRespuesta(data, files) {
-    frozenCopy = Object.freeze(
-      Array.isArray(data) ? data.map((d) => ({ ...d })) : { ...data }
-    );
-    filesCopy = [...files];
+  function almacenarRespuesta(data) {
+    frozenCopy = Array.isArray(data) ? data.map((d) => ({ ...d })) : [{ ...data }];
+    Object.freeze(frozenCopy);
     console.log("📥 Respuesta congelada lista:", frozenCopy);
   }
 
   // 2️⃣ Se llama desde el listener de sendBtn
-  async function enviarRespuesta(id) {
+  async function enviarRespuesta() {
     if (!frozenCopy) {
       console.warn("⚠️ No hay respuesta congelada para enviar");
       return;
     }
 
-    const formData = new FormData();
+    const id = getMainfacturasIdFromUrl();
+    if (!id) {
+      throw new Error("No se encontró el ID de mainfacturas en la URL");
+    }
 
-    // ✅ Archivos de imagen
-    filesCopy.forEach((file) => formData.append("images", file));
+    // ✅ Datos editables de la UI (facturas) SIN nombre de archivo
+    const userDataStripped = appState.facturas.map((f) => ({ ...f, _archivo: "" }));
 
-    // ✅ Datos editables de la UI (facturas)
-    formData.append("userDataPerFile", JSON.stringify(appState.facturas));
+    // ✅ Copia congelada de IA (array válido) SIN nombre de archivo
+    const iaFrozenStripped = frozenCopy.map((f) => ({ ...f, _archivo: "" }));
 
-    // ✅ Copia congelada de IA (array válido)
-    formData.append(
-      "iaFrozenPerFile",
-      JSON.stringify(Array.isArray(frozenCopy) ? frozenCopy : [frozenCopy])
-    );
+    // Enviar como JSON (no multipart), acorde a tu backend que hace JSON.parse(...)
+    const payload = {
+      userDataPerFile: JSON.stringify(userDataStripped),
+      iaFrozenPerFile: JSON.stringify(iaFrozenStripped),
+    };
 
     const response = await fetch(`/mainfacturas/${id}/guardarFactura`, {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -685,7 +699,7 @@ async function extractAll() {
     const results = await extractWithMVC(appState.files);
 
     console.log("📥 Respuesta procesada:", results);
-    guardarFacturasHandler.almacenarRespuesta(results, appState.files);
+    guardarFacturasHandler.almacenarRespuesta(results);
 
     // Agregar nombres de archivo a cada factura
     results.forEach((factura, index) => {
@@ -741,8 +755,13 @@ function init() {
   const sendBtn = document.getElementById("sendBtn");
   if (sendBtn) {
     sendBtn.addEventListener("click", async () => {
-      const id = window.location.pathname.split("/").filter(Boolean).pop();
-      await guardarFacturasHandler.enviarRespuesta(id);
+      try {
+        const r = await guardarFacturasHandler.enviarRespuesta();
+        showSuccess("Facturas guardadas correctamente");
+        console.log("✅ Guardado en backend:", r);
+      } catch (e) {
+        showError(e.message || "Error al guardar facturas");
+      }
     });
   }
 
