@@ -85,6 +85,9 @@ registrarUsuariosRouter.post(
   "/",
   handleMulter(upload.single("file")), // tu wrapper reutilizado
   async (req, res) => {
+    const decoded = protegerRuta({ req, res });
+    if (!decoded) return; // protegerRuta ya manejó el flujo
+    if (!allowOrRedirect(decoded, res)) return;
     try {
       if (!req.file) {
         return res
@@ -99,20 +102,21 @@ registrarUsuariosRouter.post(
         // range: "A1:F500",
       });
 
-      // resultado esperado
-      // [
-      //  {
-      //    nombre: "Jeremy",
-      //    dpi: "1234567890101",       // opcional (null si no viene)
-      //    email: "jeremy@test.com",   // opcional (null si no viene)
-      //    usuario: "jeremy123",       // generado internamente
-      //     password: "a3f91b2c"        // generado internamente
-      //  },
-      // ]
+      const { id_rol, id_ministerio } = req.body;
 
-      // TODO: validar/mapear/insertar en DB
-      // const usuarios = datos.map(({ Nombre, Email, Password }) => ({ ... }));
-      // await req.db.usuarios.bulkInsert(usuarios);
+      if (!id_rol || !id_ministerio || !usuarios?.length) {
+        return res
+          .status(400)
+          .json({ ok: false, error: "Faltan parámetros obligatorios" });
+      }
+
+      const insertados = await req.db.registrarUsuariosRegistrar({
+        id_rol,
+        id_ministerio,
+        id_createdby: decoded.id,
+        id_superior: decoded.superiorId,
+        usuarios: datos,
+      });
 
       const buffer = await insertarDatosEnPlantilla({
         rows: datos.rows,
@@ -134,3 +138,63 @@ registrarUsuariosRouter.post(
     }
   }
 );
+
+/* --------------------------- OBTENER ROLES --------------------------- */
+registrarUsuariosRouter.get("/obtenerRoles", async (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+  try {
+    const roles = await req.db.registrarUsuariosObtenerRoles();
+    res.json({ ok: true, roles });
+  } catch (err) {
+    console.error("❌ /registrar/obtenerRoles:", err.message);
+    res.status(500).json({ ok: false, error: "Error al obtener roles" });
+  }
+});
+
+/* ------------------------ OBTENER MINISTERIOS ------------------------ */
+registrarUsuariosRouter.get("/obtenerMinisterios", async (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+  try {
+    const ministerios = await req.db.registrarUsuariosObtenerMinisterios();
+    res.json({ ok: true, ministerios });
+  } catch (err) {
+    console.error("❌ /registrar/obtenerMinisterios:", err.message);
+    res.status(500).json({ ok: false, error: "Error al obtener ministerios" });
+  }
+});
+
+/* ---------------------------- AGREGAR ROLES ---------------------------- */
+registrarUsuariosRouter.post("/agregarRoles", async (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+  try {
+    const { roles } = req.body;
+    const insertados = await req.db.registrarUsuariosAgregarRoles({ roles });
+    res.json({ ok: true, insertados });
+  } catch (err) {
+    console.error("❌ /registrar/agregarRoles:", err.message);
+    res.status(500).json({ ok: false, error: "Error al agregar roles" });
+  }
+});
+
+/* ------------------------ AGREGAR MINISTERIOS ------------------------ */
+registrarUsuariosRouter.post("/agregarMinisterios", async (req, res) => {
+  const decoded = protegerRuta({ req, res });
+  if (!decoded) return; // protegerRuta ya manejó el flujo
+  if (!allowOrRedirect(decoded, res)) return;
+  try {
+    const { ministerios } = req.body;
+    const insertados = await req.db.registrarUsuariosAgregarMinisterios({
+      ministerios,
+    });
+    res.json({ ok: true, insertados });
+  } catch (err) {
+    console.error("❌ /registrar/agregarMinisterios:", err.message);
+    res.status(500).json({ ok: false, error: "Error al agregar ministerios" });
+  }
+});

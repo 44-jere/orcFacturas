@@ -2,7 +2,6 @@ import { Router } from "express";
 import { protegerRuta } from "../protegerRuta.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { loginRedirecter } from "../redirigirAlLogin.js";
 import { modeloIA } from "../../../modelosIA/gemini/gemini.js";
 import { handleMulter, uploadImages } from "../../../middlewares/upload.js";
 import crypto from "node:crypto";
@@ -170,8 +169,6 @@ mainFacturasRouter.post(
           };
 
           const out = await db.mainFacturasCrearComprobante(payload);
-          console.log(payload);
-          console.log(out);
 
           return {
             archivo: file.originalname,

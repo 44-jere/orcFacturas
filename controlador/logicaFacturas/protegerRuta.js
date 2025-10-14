@@ -17,7 +17,6 @@ export function protegerRuta({ req, res }) {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     return decoded; // aquí tienes el payload
   } catch (err) {
-    console.error("❌ Token inválido:", err.message);
     loginRedirecter({ req, res });
   }
 }
