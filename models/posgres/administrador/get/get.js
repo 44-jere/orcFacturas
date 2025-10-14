@@ -67,7 +67,7 @@ export async function traerUsuariosPorSuperiorPaginado({
 
 export async function buscarUsuarios({ id, nombre, idSuperior }) {
   const { baseDeDatos } = await import("../../baseDeDatos.js");
-  const client = await baseDeDatos.conectar();
+  const client = await baseDeDatos;
 
   // Normalizamos entrada
   const hasId =
