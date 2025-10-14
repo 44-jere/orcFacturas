@@ -69,7 +69,8 @@ async function apiFetch(path, opts = {}) {
 // ==============================
 let TICKETS = []; // <- se cargan desde API
 let isDark = true;
-let selectedFilter = "todos";
+// >>> CAMBIO: por eliminación de pestaña "todos", usar "activos" como default
+let selectedFilter = "activos";
 let showProfile = false;
 
 // NUEVO: estado de búsqueda para pestaña "completados"
@@ -77,6 +78,8 @@ let completedSearchMode = "id"; // "id" | "fecha"
 let completedIdQuery = ""; // int como string
 let completedStartDate = ""; // YYYY-MM-DD
 let completedEndDate = ""; // YYYY-MM-DD
+// NUEVO: resultados de búsqueda en "completados" provenientes de /admin/buscarTicketsActivos
+let COMPLETED_RESULTS = null;
 
 // ==============================
 // Referencias a elementos DOM
@@ -149,24 +152,37 @@ function matchTicketById(ticket, qInt) {
   return String(idVal ?? "").includes(String(qInt));
 }
 
-function toYMD(dateStr) {
-  if (!dateStr) return null;
-  // Soporta "YYYY-MM-DD" / ISO, o "DD/MM/YYYY"
-  if (dateStr.includes("-")) {
-    const d = new Date(dateStr);
+// ✅ FIX: aceptar Date y strings ("YYYY-MM-DD" o "DD/MM/YYYY")
+function toYMD(dateInput) {
+  if (!dateInput) return null;
+
+  // Si ya es Date
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput)) return null;
+    const y = dateInput.getFullYear();
+    const m = String(dateInput.getMonth() + 1).padStart(2, "0");
+    const d = String(dateInput.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  // Si es string
+  if (typeof dateInput === "string") {
+    if (dateInput.includes("/")) {
+      const [dd, mm, yyyy] = dateInput.split("/");
+      if (!dd || !mm || !yyyy) return null;
+      return `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+    }
+    // ISO u otros
+    const d = new Date(dateInput);
     if (isNaN(d)) return null;
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   }
-  if (dateStr.includes("/")) {
-    const [dd, mm, yyyy] = dateStr.split("/");
-    if (!dd || !mm || !yyyy) return null;
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-  }
-  // último intento
-  const d = new Date(dateStr);
+
+  // Último intento
+  const d = new Date(dateInput);
   if (isNaN(d)) return null;
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -174,8 +190,8 @@ function toYMD(dateStr) {
   return `${y}-${m}-${day}`;
 }
 
-function inDateRange(ticketDateStr, startYMD, endYMD) {
-  const t = toYMD(ticketDateStr);
+function inDateRange(ticketDate, startYMD, endYMD) {
+  const t = toYMD(ticketDate);
   if (!t) return false;
   const tN = Number(t.replaceAll("-", ""));
   const sN = startYMD ? Number(startYMD.replaceAll("-", "")) : null;
@@ -218,6 +234,48 @@ async function downloadInvoices() {
   } else {
     throw new Error("El endpoint de descarga no devolvió un archivo binario.");
   }
+}
+
+// ==============================
+// NUEVO: búsquedas a /admin/buscarTicketsActivos
+// ==============================
+async function searchCompletedById(idTicket) {
+  const params = new URLSearchParams({
+    inactivosOnly: "true",
+    size: "100",
+    idTicket: String(idTicket),
+  });
+  const data = await apiFetch(`/usermain/buscarTicketsActivos?${params.toString()}`);
+  if (!Array.isArray(data.items)) {
+    throw new Error("La búsqueda por ID no devolvió 'items' como arreglo");
+  }
+  COMPLETED_RESULTS = data.items.map((item) =>
+    normalizeTicket({
+      ...item,
+      creador: item.nombre_creador,
+      beneficiario: item.nombre_beneficiario,
+    })
+  );
+}
+
+async function searchCompletedByDate(fechaInicio, fechaFin) {
+  const params = new URLSearchParams({
+    inactivosOnly: "true",
+    size: "100",
+  });
+  if (fechaInicio) params.append("fechaInicio", fechaInicio);
+  if (fechaFin) params.append("fechaFin", fechaFin);
+  const data = await apiFetch(`/usermain/buscarTicketsActivos?${params.toString()}`);
+  if (!Array.isArray(data.items)) {
+    throw new Error("La búsqueda por fechas no devolvió 'items' como arreglo");
+  }
+  COMPLETED_RESULTS = data.items.map((item) =>
+    normalizeTicket({
+      ...item,
+      creador: item.nombre_creador,
+      beneficiario: item.nombre_beneficiario,
+    })
+  );
 }
 
 // ==============================
@@ -287,7 +345,7 @@ function renderStats() {
 
 function renderFilters() {
   const filterOptions = [
-    { key: "todos", label: "Todos", count: TICKETS.length },
+    // Eliminado "Todos"
     {
       key: "activos",
       label: "Activos",
@@ -373,28 +431,59 @@ function renderFilters() {
     });
 
     if (idInput && idSearchBtn && idClearBtn) {
-      idSearchBtn.addEventListener("click", () => {
+      idSearchBtn.addEventListener("click", async () => {
         completedIdQuery = (idInput.value || "").trim();
+        const qInt = parseInt(completedIdQuery, 10);
+        if (Number.isNaN(qInt)) {
+          COMPLETED_RESULTS = [];
+          renderTickets();
+          return;
+        }
+        try {
+          await searchCompletedById(qInt);
+        } catch (err) {
+          console.error("Error en búsqueda por ID:", err);
+          COMPLETED_RESULTS = [];
+        }
         renderTickets();
       });
       idClearBtn.addEventListener("click", () => {
         completedIdQuery = "";
         if (idInput) idInput.value = "";
+        COMPLETED_RESULTS = null;
         renderTickets();
       });
       // enter en el input
-      idInput.addEventListener("keydown", (e) => {
+      idInput.addEventListener("keydown", async (e) => {
         if (e.key === "Enter") {
           completedIdQuery = (idInput.value || "").trim();
+          const qInt = parseInt(completedIdQuery, 10);
+          if (Number.isNaN(qInt)) {
+            COMPLETED_RESULTS = [];
+            renderTickets();
+            return;
+          }
+          try {
+            await searchCompletedById(qInt);
+          } catch (err) {
+            console.error("Error en búsqueda por ID (Enter):", err);
+            COMPLETED_RESULTS = [];
+          }
           renderTickets();
         }
       });
     }
 
     if (startEl && endEl && dateSearchBtn && dateClearBtn) {
-      dateSearchBtn.addEventListener("click", () => {
+      dateSearchBtn.addEventListener("click", async () => {
         completedStartDate = startEl.value || "";
         completedEndDate = endEl.value || "";
+        try {
+          await searchCompletedByDate(completedStartDate, completedEndDate);
+        } catch (err) {
+          console.error("Error en búsqueda por fechas:", err);
+          COMPLETED_RESULTS = [];
+        }
         renderTickets();
       });
       dateClearBtn.addEventListener("click", () => {
@@ -402,6 +491,7 @@ function renderFilters() {
         completedEndDate = "";
         startEl.value = "";
         endEl.value = "";
+        COMPLETED_RESULTS = null;
         renderTickets();
       });
     }
@@ -429,8 +519,14 @@ function renderFilters() {
 }
 
 function renderTickets() {
+  // Fuente de datos: si hay resultados de búsqueda en "completados", usarlos
+  let sourceTickets =
+    selectedFilter === "completados" && COMPLETED_RESULTS !== null
+      ? COMPLETED_RESULTS
+      : TICKETS;
+
   // Filtrar por pestaña
-  let filteredTickets = TICKETS.filter((ticket) => {
+  let filteredTickets = sourceTickets.filter((ticket) => {
     if (selectedFilter === "todos") return true;
     if (selectedFilter === "activos") return ticket.estado === "activo";
     if (selectedFilter === "proximo_vencer")
@@ -448,7 +544,6 @@ function renderTickets() {
           matchTicketById(t, qInt)
         );
       } else {
-        // si no es número válido, no muestra nada para evitar confusión
         filteredTickets = [];
       }
     } else if (
